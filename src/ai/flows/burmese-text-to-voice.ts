@@ -37,9 +37,6 @@ const burmeseTextToVoiceFlow = ai.defineFlow(
         responseModalities: ['AUDIO'],
         speechConfig: {
           languageCode: 'my-MM',
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Algenib' },
-          },
         },
       },
       prompt: query,
