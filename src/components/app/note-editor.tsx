@@ -32,12 +32,14 @@ import {
   Plus,
   Loader2,
   Volume2,
+  Upload,
 } from "lucide-react";
 import { suggestTags } from "@/ai/flows/suggest-tags";
 import { generateTitle } from "@/ai/flows/title-generation";
 import { summarizeNote } from "@/ai/flows/note-summarization";
 import { burmeseTextToVoice } from "@/ai/flows/burmese-text-to-voice";
 import { AudioTranscriber } from "./audio-transcriber";
+import { AudioRecorder } from "./audio-recorder";
 
 type NoteEditorProps = {
   isOpen: boolean;
@@ -61,6 +63,7 @@ export function NoteEditor({
   const [newChecklistItem, setNewChecklistItem] = React.useState("");
   const [isAiLoading, setIsAiLoading] = React.useState(false);
   const [isTranscriberOpen, setIsTranscriberOpen] = React.useState(false);
+  const [isRecorderOpen, setIsRecorderOpen] = React.useState(false);
   const [imageUrl, setImageUrl] = React.useState<string | undefined>();
   const [generatedAudio, setGeneratedAudio] = React.useState<string | null>(null);
 
@@ -224,6 +227,15 @@ export function NoteEditor({
     }
   };
 
+  const handleSaveRecording = (blob: Blob) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = () => {
+      setGeneratedAudio(reader.result as string);
+      toast({ title: "Audio Attached", description: "Your recording has been added to the note." });
+    };
+  };
+
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -286,8 +298,11 @@ export function NoteEditor({
 
             {generatedAudio && (
                 <div className="space-y-2">
-                    <Label>Generated Audio</Label>
+                    <Label>Attached Audio</Label>
                     <audio controls src={generatedAudio} className="w-full" />
+                    <Button variant="destructive" size="sm" className="w-full" onClick={() => setGeneratedAudio(null)}>
+                      <Trash2 className="mr-2 h-4 w-4" /> Remove Audio
+                    </Button>
                 </div>
             )}
 
@@ -361,7 +376,8 @@ export function NoteEditor({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
                 <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
-                <Button variant="outline" onClick={handleAttachAudio}><Mic className="mr-2 h-4 w-4"/>Upload Audio</Button>
+                <Button variant="outline" onClick={() => setIsRecorderOpen(true)}><Mic className="mr-2 h-4 w-4"/>Record Audio</Button>
+                <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>
                 <Button variant="outline" onClick={() => setIsTranscriberOpen(true)}><BookText className="mr-2 h-4 w-4" />Transcribe (BU)</Button>
                 <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateAudio}><Volume2 className="mr-2 h-4 w-4"/>Listen (BU)</Button>
             </div>
@@ -385,6 +401,11 @@ export function NoteEditor({
         open={isTranscriberOpen}
         setOpen={setIsTranscriberOpen}
         onTranscriptionComplete={handleTranscriptionComplete}
+      />
+      <AudioRecorder
+        open={isRecorderOpen}
+        setOpen={setIsRecorderOpen}
+        onSave={handleSaveRecording}
       />
     </Sheet>
   );
