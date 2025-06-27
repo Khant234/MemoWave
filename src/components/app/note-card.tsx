@@ -1,6 +1,7 @@
 
 "use client";
 
+import * as React from "react";
 import Image from "next/image";
 import { type Note } from "@/lib/types";
 import {
@@ -42,6 +43,12 @@ export function NoteCard({
   onToggleArchive,
   onDeleteNote,
 }: NoteCardProps) {
+  const [formattedDate, setFormattedDate] = React.useState("");
+
+  React.useEffect(() => {
+    setFormattedDate(new Date(note.updatedAt).toLocaleDateString());
+  }, [note.updatedAt]);
+  
   const handlePinClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onTogglePin(note.id);
@@ -132,7 +139,7 @@ export function NoteCard({
           ))}
         </div>
         <p className="text-xs text-muted-foreground pt-2">
-          {new Date(note.updatedAt).toLocaleDateString()}
+          {formattedDate}
         </p>
       </CardFooter>
     </Card>
