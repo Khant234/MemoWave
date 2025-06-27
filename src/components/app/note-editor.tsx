@@ -64,6 +64,9 @@ export function NoteEditor({
   const [imageUrl, setImageUrl] = React.useState<string | undefined>();
   const [generatedAudio, setGeneratedAudio] = React.useState<string | null>(null);
 
+  const imageInputRef = React.useRef<HTMLInputElement>(null);
+  const audioInputRef = React.useRef<HTMLInputElement>(null);
+
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -154,9 +157,9 @@ export function NoteEditor({
     try {
         await action();
         toast({ title: messages.success });
-    } catch(error) {
+    } catch(error: any) {
         console.error(error);
-        toast({ title: "AI Error", description: messages.error, variant: "destructive"});
+        toast({ title: "AI Error", description: error.message || messages.error, variant: "destructive"});
     }
     setIsAiLoading(false);
   }
@@ -190,14 +193,54 @@ export function NoteEditor({
   };
 
   const handleAttachImage = () => {
-    // In a real app, this would open a file picker.
-    // For this demo, we'll just add a placeholder image.
-    setImageUrl("https://placehold.co/600x400.png");
-    toast({ title: "Image Attached", description: "A placeholder image has been added to your note." });
+    imageInputRef.current?.click();
   };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageUrl(reader.result as string);
+        toast({ title: "Image Attached", description: "Your image has been added to the note." });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAttachAudio = () => {
+    audioInputRef.current?.click();
+  };
+
+  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setGeneratedAudio(reader.result as string);
+        toast({ title: "Audio Attached", description: "Your audio file has been added to the note." });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <input
+        type="file"
+        ref={imageInputRef}
+        onChange={handleImageUpload}
+        accept="image/*"
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={audioInputRef}
+        onChange={handleAudioUpload}
+        accept="audio/*"
+        className="hidden"
+      />
       <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
         <SheetHeader className="p-6">
           <SheetTitle className="font-headline">{note ? "Edit Note" : "New Note"}</SheetTitle>
@@ -318,7 +361,7 @@ export function NoteEditor({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
                 <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
-                <Button variant="outline"><Mic className="mr-2 h-4 w-4"/>Record Audio</Button>
+                <Button variant="outline" onClick={handleAttachAudio}><Mic className="mr-2 h-4 w-4"/>Upload Audio</Button>
                 <Button variant="outline" onClick={() => setIsTranscriberOpen(true)}><BookText className="mr-2 h-4 w-4" />Transcribe (BU)</Button>
                 <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateAudio}><Volume2 className="mr-2 h-4 w-4"/>Listen (BU)</Button>
             </div>
