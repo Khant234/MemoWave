@@ -32,7 +32,7 @@ const prompt = ai.definePrompt({
   name: 'burmeseVoiceToTextPrompt',
   input: {schema: BurmeseVoiceToTextInputSchema},
   output: {schema: BurmeseVoiceToTextOutputSchema},
-  prompt: `Transcribe the following Burmese speech audio to text:\n\n{{media url=audioDataUri}}`,
+  prompt: `You are a transcription expert specializing in the Burmese language. Transcribe the following Burmese audio recording into Burmese text.\n\nAudio: {{media url=audioDataUri}}`,
 });
 
 const burmeseVoiceToTextFlow = ai.defineFlow(
