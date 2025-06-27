@@ -24,6 +24,8 @@ type AppHeaderProps = {
   layout: "grid" | "list";
   setLayout: Dispatch<SetStateAction<"grid" | "list">>;
   onNewNote: () => void;
+  activeFilter: "all" | "archived";
+  setActiveFilter: Dispatch<SetStateAction<"all" | "archived">>;
 };
 
 export function AppHeader({
@@ -32,6 +34,8 @@ export function AppHeader({
   layout,
   setLayout,
   onNewNote,
+  activeFilter,
+  setActiveFilter,
 }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -42,13 +46,8 @@ export function AppHeader({
             <span className="sr-only">Toggle Menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="sm:max-w-xs">
-          {/* This is a placeholder for mobile sidebar content, the actual sidebar logic is in AppSidebar */}
-          <nav className="grid gap-6 text-lg font-medium">
-             <h1 className="text-xl font-bold font-headline">MemoWeave</h1>
-             {/* You might want to pass activeFilter and setActiveFilter here if needed */}
-             {/* <AppSidebar activeFilter={'all'} setActiveFilter={() => {}} /> */}
-          </nav>
+        <SheetContent side="left" className="sm:max-w-xs p-0">
+          <AppSidebar isMobile activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
         </SheetContent>
       </Sheet>
       <div className="relative ml-auto flex-1 md:grow-0">

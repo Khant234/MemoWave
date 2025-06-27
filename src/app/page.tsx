@@ -100,6 +100,8 @@ export default function Home() {
           layout={layout}
           setLayout={setLayout}
           onNewNote={handleNewNote}
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
         />
         <main className="p-4 sm:px-6 sm:py-0 md:p-6 flex-1">
           <NoteList

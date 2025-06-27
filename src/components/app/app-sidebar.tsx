@@ -9,9 +9,43 @@ import { cn } from "@/lib/utils";
 type AppSidebarProps = {
   activeFilter: "all" | "archived";
   setActiveFilter: React.Dispatch<React.SetStateAction<"all" | "archived">>;
+  isMobile?: boolean;
 };
 
-export function AppSidebar({ activeFilter, setActiveFilter }: AppSidebarProps) {
+export function AppSidebar({ activeFilter, setActiveFilter, isMobile }: AppSidebarProps) {
+  if (isMobile) {
+    return (
+      <nav className="grid gap-6 text-lg font-medium p-6">
+        <div
+          className="flex items-center gap-2 text-lg font-semibold"
+        >
+          <PenSquare className="h-6 w-6" />
+          <span className="">MemoWeave</span>
+        </div>
+        <button
+          onClick={() => setActiveFilter("all")}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+            activeFilter === "all" && "bg-muted text-primary"
+          )}
+        >
+          <NotepadText className="h-4 w-4" />
+          All Notes
+        </button>
+        <button
+          onClick={() => setActiveFilter("archived")}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+            activeFilter === "archived" && "bg-muted text-primary"
+          )}
+        >
+          <Archive className="h-4 w-4" />
+          Archived
+        </button>
+      </nav>
+    );
+  }
+  
   return (
     <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
       <nav className="flex flex-col items-center gap-4 px-2 py-4">
