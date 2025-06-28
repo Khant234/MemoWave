@@ -390,7 +390,7 @@ export default function Home() {
             onTagClick={handleTagClick}
             activeTag={searchTerm}
           />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-muted/40">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">
             <NoteList
               notes={filteredNotes}
               layout={layout}
