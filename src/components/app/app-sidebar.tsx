@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, PenSquare, Trash2, Tag, Menu } from "lucide-react";
+import { NotepadText, Archive, Trash2, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type AppSidebarProps = {
@@ -44,7 +44,7 @@ export function AppSidebar({
     if (isMobile && onFilterChange) {
       onFilterChange();
     }
-  }
+  };
 
   const Logo = () => (
     <svg
@@ -69,85 +69,29 @@ export function AppSidebar({
     </svg>
   );
 
-  if (isMobile) {
-    return (
-      <nav className="grid gap-1 p-4 font-medium">
-        <div className="flex items-center gap-2 px-1 pb-2 mb-2 text-lg font-semibold border-b">
-          <Logo />
-          <span>MemoWeave</span>
-        </div>
-        <Button
-          variant={activeFilter === 'all' && activeTag === '' ? 'secondary' : 'ghost'}
-          className="w-full justify-start"
-          onClick={() => handleFilterClick('all')}
-        >
-          <NotepadText className="mr-2 h-4 w-4" />
-          <span>All Notes</span>
-        </Button>
-        <Button
-          variant={activeFilter === 'archived' ? 'secondary' : 'ghost'}
-          className="w-full justify-start"
-          onClick={() => handleFilterClick('archived')}
-        >
-          <Archive className="mr-2 h-4 w-4" />
-          <span>Archived</span>
-        </Button>
-        <Button
-          variant={activeFilter === 'trash' ? 'secondary' : 'ghost'}
-          className="w-full justify-start"
-          onClick={() => handleFilterClick('trash')}
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          <span>Trash</span>
-        </Button>
-
-        {tags.length > 0 && (
-          <div className="pt-4 mt-2 border-t">
-            <h3 className="px-2 pb-2 text-xs font-semibold text-muted-foreground tracking-wider uppercase">Tags</h3>
-            <div className="flex flex-col gap-1">
-              {tags.map((tag) => (
-                <Button
-                  key={tag}
-                  variant={activeTag === tag ? 'secondary' : 'ghost'}
-                  className="w-full justify-start"
-                  onClick={() => handleTagClick(tag)}
-                >
-                  <Tag className="mr-2 h-4 w-4" />
-                  <span className="truncate">{tag}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-      </nav>
-    );
-  }
-  
-  const mainNavItems = [
+  const navItems = [
     { filter: "all", label: "All Notes", icon: NotepadText, active: activeFilter === "all" && activeTag === '' },
     { filter: "archived", label: "Archived", icon: Archive, active: activeFilter === "archived" },
     { filter: "trash", label: "Trash", icon: Trash2, active: activeFilter === "trash" },
   ];
 
-  return (
-    <aside
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
-      className={cn(
-        "z-20 fixed inset-y-0 left-0 hidden flex-col border-r bg-background sm:flex transition-[width] duration-300 ease-in-out",
-        isExpanded ? "w-72" : "w-20"
-      )}
-    >
-      <div className="flex flex-col h-full py-2">
-        <nav className={cn("flex flex-col gap-1 px-2.5")}>
-          {mainNavItems.map(({ filter, label, icon: Icon, active }) => (
+  const NavContent = () => (
+    <>
+       {isMobile && (
+         <div className="flex items-center gap-2 px-4 py-3 mb-2 text-lg font-semibold border-b">
+          <Logo />
+          <span>MemoWeave</span>
+        </div>
+       )}
+      <nav className="flex flex-col gap-1 p-2">
+          {navItems.map(({ filter, label, icon: Icon, active }) => (
             <Button
               key={filter}
               variant="ghost"
               className={cn(
-                  "w-full h-12 justify-start",
-                  active ? "bg-secondary font-semibold" : "font-normal",
-                  isExpanded ? 'px-4 rounded-r-full rounded-l-none' : 'w-12 justify-center rounded-full'
+                "h-12 justify-start rounded-full",
+                active && "bg-primary/20 text-primary-foreground font-semibold",
+                isExpanded ? "w-full px-4" : "w-12 justify-center"
               )}
               aria-label={label}
               onClick={() => handleFilterClick(filter as any)}
@@ -159,7 +103,7 @@ export function AppSidebar({
         </nav>
 
         {tags.length > 0 && (
-           <div className="flex flex-col gap-1 mt-4 pt-4 border-t px-2.5">
+           <div className="flex flex-col gap-1 p-2 mt-2 border-t">
              {isExpanded && (
                  <h3 className="px-4 pb-2 text-sm font-semibold text-muted-foreground tracking-tight">Tags</h3>
             )}
@@ -168,9 +112,9 @@ export function AppSidebar({
                   key={tag}
                   variant="ghost"
                   className={cn(
-                    "w-full h-12 justify-start",
-                    activeTag === tag ? "bg-secondary font-semibold" : "font-normal",
-                    isExpanded ? 'px-4 rounded-r-full rounded-l-none' : 'w-12 justify-center rounded-full'
+                    "h-12 justify-start rounded-full",
+                    activeTag === tag && "bg-primary/20 text-primary-foreground font-semibold",
+                    isExpanded ? 'w-full px-4' : 'w-12 justify-center'
                   )}
                   aria-label={tag}
                   onClick={() => onTagClick(tag)}
@@ -181,7 +125,23 @@ export function AppSidebar({
             ))}
           </div>
         )}
-      </div>
+    </>
+  )
+
+  if (isMobile) {
+    return <NavContent />;
+  }
+  
+  return (
+    <aside
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 hidden flex-col border-r bg-background sm:flex transition-[width] duration-300 ease-in-out",
+        isExpanded ? "w-72" : "w-20"
+      )}
+    >
+        <NavContent />
     </aside>
   );
 }
