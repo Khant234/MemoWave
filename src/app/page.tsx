@@ -57,7 +57,7 @@ export default function Home() {
     type: 'trash' | 'permanent';
   } | null>(null);
 
-  const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true);
+  const [isSidebarHovered, setIsSidebarHovered] = React.useState(false);
 
 
   const notesCollectionRef = collection(db, "notes");
@@ -365,8 +365,9 @@ export default function Home() {
   return (
     <div className="flex min-h-screen w-full bg-muted/40">
       <AppSidebar
-        isExpanded={isSidebarExpanded}
-        setIsExpanded={setIsSidebarExpanded}
+        isExpanded={isSidebarHovered}
+        onMouseEnter={() => setIsSidebarHovered(true)}
+        onMouseLeave={() => setIsSidebarHovered(false)}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
         setSearchTerm={setSearchTerm}
@@ -377,7 +378,7 @@ export default function Home() {
       <div
         className={cn(
           "flex flex-col sm:gap-4 sm:py-4 w-full transition-[padding-left] duration-300 ease-in-out",
-          isSidebarExpanded ? "sm:pl-64" : "sm:pl-14"
+          isSidebarHovered ? "sm:pl-64" : "sm:pl-14"
         )}
       >
         <AppHeader

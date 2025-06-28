@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, PenSquare, Trash2, Tag, ChevronsLeft } from "lucide-react";
+import { NotepadText, Archive, PenSquare, Trash2, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type AppSidebarProps = {
@@ -16,7 +16,8 @@ type AppSidebarProps = {
   isMobile?: boolean;
   onFilterChange?: () => void;
   isExpanded: boolean;
-  setIsExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
 };
 
 export function AppSidebar({
@@ -29,7 +30,8 @@ export function AppSidebar({
   isMobile,
   onFilterChange,
   isExpanded,
-  setIsExpanded
+  onMouseEnter,
+  onMouseLeave,
 }: AppSidebarProps) {
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     setActiveFilter(filter);
@@ -108,6 +110,8 @@ export function AppSidebar({
 
   return (
     <aside
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       className={cn(
         "fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background sm:flex transition-[width] duration-300 ease-in-out",
         isExpanded ? "w-64" : "w-14"
@@ -166,19 +170,6 @@ export function AppSidebar({
             ))}
           </nav>
         )}
-
-        <nav className={cn("mt-auto flex flex-col gap-4 px-2 py-4 border-t", isExpanded ? "items-stretch" : "items-center")}>
-            <Button
-                variant="ghost"
-                size={isExpanded ? "default" : "icon"}
-                className={cn("w-full rounded-lg", isExpanded ? "justify-start" : "justify-center")}
-                onClick={() => setIsExpanded(!isExpanded)}
-            >
-                <ChevronsLeft className={cn("h-5 w-5 shrink-0 transition-transform duration-300", !isExpanded && "rotate-180")} />
-                {isExpanded && <span className="ml-2">Collapse</span>}
-                <span className="sr-only">{isExpanded ? "Collapse sidebar" : "Expand sidebar"}</span>
-            </Button>
-        </nav>
       </div>
     </aside>
   );
