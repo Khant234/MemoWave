@@ -31,8 +31,6 @@ type AppHeaderProps = {
   layout: "grid" | "list";
   setLayout: Dispatch<SetStateAction<"grid" | "list">>;
   onNewNote: () => void;
-  onToggleSidebar: () => void;
-  isSidebarOpen: boolean;
   activeFilter: "all" | "archived" | "trash";
   setActiveFilter: Dispatch<SetStateAction<"all" | "archived" | "trash">>;
   tags: string[];
@@ -46,8 +44,6 @@ export function AppHeader({
   layout,
   setLayout,
   onNewNote,
-  onToggleSidebar,
-  isSidebarOpen,
   activeFilter,
   setActiveFilter,
   tags,
@@ -68,14 +64,7 @@ export function AppHeader({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs p-0">
-            <SheetHeader className="p-4 border-b">
-              <SheetTitle>MemoWeave</SheetTitle>
-              <SheetDescription>
-                Menu
-              </SheetDescription>
-            </SheetHeader>
             <AppSidebar
-              isOpen
               isMobile
               activeFilter={activeFilter}
               setActiveFilter={(filter) => {
@@ -96,13 +85,7 @@ export function AppHeader({
           </SheetContent>
         </Sheet>
         
-        {/* Desktop Sidebar Toggle */}
-        <Button size="icon" variant="ghost" className="hidden sm:inline-flex h-10 w-10" onClick={onToggleSidebar}>
-          <Menu className="h-6 w-6" />
-          <span className="sr-only">Toggle Sidebar</span>
-        </Button>
-        
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 sm:flex">
             <svg
                 width="40"
                 height="40"

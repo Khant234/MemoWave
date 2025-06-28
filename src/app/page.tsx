@@ -57,9 +57,6 @@ export default function Home() {
     type: 'trash' | 'permanent';
   } | null>(null);
 
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
-
-
   const notesCollectionRef = collection(db, "notes");
 
   const fetchNotes = async () => {
@@ -86,19 +83,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  React.useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setIsSidebarOpen(false);
-      } else {
-        setIsSidebarOpen(true);
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    handleResize(); // Initial check
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   useHotkeys("n", () => handleNewNote(), { preventDefault: true });
 
   const handleNewNote = () => {
@@ -378,7 +362,6 @@ export default function Home() {
   return (
     <div className="min-h-screen w-full bg-background">
       <AppSidebar
-        isOpen={isSidebarOpen}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
         setSearchTerm={setSearchTerm}
@@ -386,25 +369,20 @@ export default function Home() {
         onTagClick={handleTagClick}
         activeTag={searchTerm}
       />
-      <div className={cn(
-          "flex flex-col transition-all duration-300 ease-in-out",
-          isSidebarOpen ? "sm:ml-72" : "sm:ml-20"
-        )}>
+      <div className="flex flex-col sm:ml-20">
           <AppHeader
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             layout={layout}
             setLayout={setLayout}
             onNewNote={handleNewNote}
-            onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
-            isSidebarOpen={isSidebarOpen}
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
             tags={allTags}
             onTagClick={handleTagClick}
             activeTag={searchTerm}
           />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">
             <NoteList
               notes={filteredNotes}
               layout={layout}
