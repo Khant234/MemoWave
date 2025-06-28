@@ -74,25 +74,69 @@ export function NoteEditor({
 
   React.useEffect(() => {
     if (isOpen) {
-        if (note) {
-            setTitle(note.title);
-            setContent(note.content);
-            setTags(note.tags);
-            setColor(note.color);
-            setChecklist(note.checklist || []);
-            setImageUrl(note.imageUrl);
-            setGeneratedAudio(note.audioUrl || null);
-        } else {
-            setTitle("");
-            setContent("");
+      if (note) {
+        // We are editing an existing note
+        setTitle(note.title);
+        setContent(note.content);
+        setTags(note.tags);
+        setColor(note.color);
+        setChecklist(note.checklist || []);
+        setImageUrl(note.imageUrl);
+        setGeneratedAudio(note.audioUrl || null);
+      } else {
+        // We are creating a new note, check for a draft in localStorage
+        const savedDraftRaw = localStorage.getItem('noteDraft');
+        if (savedDraftRaw) {
+          try {
+            const savedDraft = JSON.parse(savedDraftRaw);
+            setTitle(savedDraft.title || '');
+            setContent(savedDraft.content || '');
+            setTags(savedDraft.tags || []);
+            setColor(savedDraft.color || NOTE_COLORS[0]);
+            setChecklist(savedDraft.checklist || []);
+            setImageUrl(savedDraft.imageUrl);
+            setGeneratedAudio(savedDraft.audioUrl || null);
+          } catch (e) {
+            console.error("Failed to parse note draft", e);
+            // Reset if draft is corrupted
+            setTitle('');
+            setContent('');
             setTags([]);
             setColor(NOTE_COLORS[0]);
             setChecklist([]);
             setImageUrl(undefined);
             setGeneratedAudio(null);
+          }
+        } else {
+          // No draft exists, start with a blank note
+          setTitle('');
+          setContent('');
+          setTags([]);
+          setColor(NOTE_COLORS[0]);
+          setChecklist([]);
+          setImageUrl(undefined);
+          setGeneratedAudio(null);
         }
+      }
     }
   }, [note, isOpen]);
+
+  // This effect saves the current input as a draft for new notes.
+  React.useEffect(() => {
+    if (isOpen && !note) {
+      const draftNote = {
+        title,
+        content,
+        tags,
+        color,
+        checklist,
+        imageUrl,
+        audioUrl: generatedAudio,
+      };
+      localStorage.setItem('noteDraft', JSON.stringify(draftNote));
+    }
+  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio]);
+
 
   const handleSave = () => {
     if (!title && !content) {
@@ -119,6 +163,12 @@ export function NoteEditor({
       audioUrl: generatedAudio || undefined,
     };
     onSave(newNote);
+    
+    // If it was a new note, clear the draft from localStorage
+    if (!note) {
+        localStorage.removeItem('noteDraft');
+    }
+    
     setIsOpen(false);
   };
   
