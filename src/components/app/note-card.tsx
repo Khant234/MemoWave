@@ -44,7 +44,7 @@ type NoteCardProps = {
   onToggleArchive: (noteId: string) => void;
   onDeleteNote: (noteId: string) => void;
   onRestoreNote: (noteId: string) => void;
-  onPermanentlyDeleteNote: (noteId: string) => void;
+  onPermanentlyDeleteNote: (noteId:string) => void;
   onCopyNote: (noteId: string) => void;
   onTagClick: (tag: string) => void;
   onRemoveTagFromNote: (noteId: string, tag: string) => void;
@@ -187,11 +187,10 @@ export function NoteCard({
             />
           </div>
         )}
-        <div className="relative max-h-[80px] overflow-hidden">
+        <div className="max-h-[80px] overflow-hidden">
           <p className="text-sm text-muted-foreground line-clamp-4">
             {note.content}
           </p>
-          <div className="absolute bottom-0 left-0 h-8 w-full bg-gradient-to-t from-card to-transparent pointer-events-none" />
         </div>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 px-4 pb-4 pt-0">
