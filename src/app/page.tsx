@@ -57,6 +57,7 @@ export default function Home() {
     type: 'trash' | 'permanent';
   } | null>(null);
 
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const notesCollectionRef = collection(db, "notes");
 
   const fetchNotes = async () => {
@@ -368,8 +369,14 @@ export default function Home() {
         tags={allTags}
         onTagClick={handleTagClick}
         activeTag={searchTerm}
+        isSidebarOpen={isSidebarOpen}
       />
-      <div className="flex flex-col sm:ml-20">
+      <div
+        className={cn(
+          "flex flex-col transition-all duration-300 ease-in-out",
+          isSidebarOpen ? "sm:ml-72" : "sm:ml-20"
+        )}
+      >
           <AppHeader
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -381,8 +388,9 @@ export default function Home() {
             tags={allTags}
             onTagClick={handleTagClick}
             activeTag={searchTerm}
+            onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
           />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-secondary">
             <NoteList
               notes={filteredNotes}
               layout={layout}

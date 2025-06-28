@@ -14,6 +14,7 @@ type AppSidebarProps = {
   onTagClick: (tag: string) => void;
   activeTag: string;
   isMobile?: boolean;
+  isSidebarOpen?: boolean;
 };
 
 export function AppSidebar({
@@ -24,6 +25,7 @@ export function AppSidebar({
   onTagClick,
   activeTag,
   isMobile,
+  isSidebarOpen,
 }: AppSidebarProps) {
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     setActiveFilter(filter);
@@ -40,7 +42,7 @@ export function AppSidebar({
     <div className="flex flex-col h-full">
       <div className={cn(
           "flex items-center gap-2 p-4 shrink-0",
-          isMobile ? 'border-b' : 'h-16' // Match header height on desktop
+          isMobile ? 'border-b' : 'h-16 pt-6' 
       )}>
          <svg
             width="40"
@@ -64,8 +66,7 @@ export function AppSidebar({
           </svg>
         <span className={cn(
           "text-xl font-semibold text-foreground/90 tracking-tight whitespace-nowrap transition-opacity",
-          // On desktop, hide text when collapsed
-          !isMobile && "opacity-0 group-hover/sidebar:opacity-100"
+          !isMobile && (isSidebarOpen ? "opacity-100" : "opacity-0")
         )}>MemoWeave</span>
       </div>
       <nav className="flex flex-col gap-1 p-2">
@@ -82,7 +83,7 @@ export function AppSidebar({
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className={cn(
                   "ml-4 whitespace-nowrap transition-opacity",
-                  !isMobile && "opacity-0 group-hover/sidebar:opacity-100"
+                  !isMobile && (isSidebarOpen ? "opacity-100" : "opacity-0")
                 )}>{label}</span>
               </Button>
             );
@@ -93,7 +94,7 @@ export function AppSidebar({
            <div className="flex flex-col gap-1 p-2 mt-2 border-t">
              <h3 className={cn(
                 "px-4 pb-2 text-sm font-semibold text-muted-foreground tracking-tight whitespace-nowrap transition-opacity",
-                 !isMobile && "opacity-0 group-hover/sidebar:opacity-100"
+                 !isMobile && (isSidebarOpen ? "opacity-100" : "opacity-0")
               )}>Tags</h3>
             {tags.map(tag => {
               const isActive = activeTag === tag;
@@ -108,7 +109,7 @@ export function AppSidebar({
                   <Tag className="h-5 w-5 shrink-0" />
                   <span className={cn(
                     "ml-4 truncate whitespace-nowrap transition-opacity",
-                     !isMobile && "opacity-0 group-hover/sidebar:opacity-100"
+                     !isMobile && (isSidebarOpen ? "opacity-100" : "opacity-0")
                     )}>{tag}</span>
                 </Button>
               )
@@ -124,14 +125,10 @@ export function AppSidebar({
   
   return (
     <aside
-      // Add group/sidebar to control child visibility on hover
       className={cn(
-        "group/sidebar",
         "fixed top-0 left-0 h-screen z-40 hidden sm:flex flex-col bg-background shadow-lg",
-        // Transition for width
         "transition-all duration-300 ease-in-out overflow-x-hidden",
-        // Collapsed and expanded widths
-        "w-20 hover:w-72"
+        isSidebarOpen ? "w-72" : "w-20"
       )}
     >
         <NavContent />

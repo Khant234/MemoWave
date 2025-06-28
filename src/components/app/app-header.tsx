@@ -36,6 +36,7 @@ type AppHeaderProps = {
   tags: string[];
   onTagClick: (tag: string) => void;
   activeTag: string;
+  onToggleSidebar: () => void;
 };
 
 export function AppHeader({
@@ -49,11 +50,12 @@ export function AppHeader({
   tags,
   onTagClick,
   activeTag,
+  onToggleSidebar,
 }: AppHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 shadow-sm backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 px-4 shadow-sm backdrop-blur-md sm:px-6">
       <div className="flex items-center gap-2">
          {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -64,6 +66,10 @@ export function AppHeader({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs p-0">
+            <SheetHeader className="p-4 border-b">
+              <SheetTitle className="sr-only">Menu</SheetTitle>
+              <SheetDescription className="sr-only">Main navigation and filters</SheetDescription>
+            </SheetHeader>
             <AppSidebar
               isMobile
               activeFilter={activeFilter}
@@ -85,6 +91,11 @@ export function AppHeader({
           </SheetContent>
         </Sheet>
         
+        <Button size="icon" variant="ghost" className="hidden sm:inline-flex h-10 w-10" onClick={onToggleSidebar}>
+            <Menu className="h-6 w-6" />
+            <span className="sr-only">Toggle Sidebar</span>
+        </Button>
+
         <div className="hidden items-center gap-2 sm:flex">
             <svg
                 width="40"
