@@ -53,7 +53,7 @@ export function AppHeader({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-card px-4 shadow-sm backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 bg-card px-4 shadow-md backdrop-blur-md sm:px-6">
       <div className="flex items-center gap-2">
          {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -64,10 +64,6 @@ export function AppHeader({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs p-0 bg-card">
-            <SheetHeader className="p-4 border-b">
-              <SheetTitle className="sr-only">Menu</SheetTitle>
-              <SheetDescription className="sr-only">Main navigation and filters</SheetDescription>
-            </SheetHeader>
             <AppSidebar
               isMobile
               activeFilter={activeFilter}
