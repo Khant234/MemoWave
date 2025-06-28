@@ -57,8 +57,7 @@ export default function Home() {
     type: 'trash' | 'permanent';
   } | null>(null);
 
-  const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true);
-  const toggleSidebar = () => setIsSidebarExpanded(prev => !prev);
+  const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(false);
 
 
   const notesCollectionRef = collection(db, "notes");
@@ -367,6 +366,7 @@ export default function Home() {
     <div className="flex min-h-screen w-full bg-background">
       <AppSidebar
         isExpanded={isSidebarExpanded}
+        setIsExpanded={setIsSidebarExpanded}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
         setSearchTerm={setSearchTerm}
@@ -374,7 +374,10 @@ export default function Home() {
         onTagClick={handleTagClick}
         activeTag={searchTerm}
       />
-       <div className="flex flex-1 flex-col">
+       <div className={cn(
+          "flex flex-1 flex-col transition-all duration-300 ease-in-out",
+          isSidebarExpanded ? "sm:ml-72" : "sm:ml-20"
+        )}>
           <AppHeader
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -386,7 +389,6 @@ export default function Home() {
             tags={allTags}
             onTagClick={handleTagClick}
             activeTag={searchTerm}
-            onToggleSidebar={toggleSidebar}
           />
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-muted/40">
             <NoteList

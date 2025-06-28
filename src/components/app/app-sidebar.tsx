@@ -16,6 +16,7 @@ type AppSidebarProps = {
   isMobile?: boolean;
   onFilterChange?: () => void;
   isExpanded: boolean;
+  setIsExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function AppSidebar({
@@ -28,6 +29,7 @@ export function AppSidebar({
   isMobile,
   onFilterChange,
   isExpanded,
+  setIsExpanded,
 }: AppSidebarProps) {
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     setActiveFilter(filter);
@@ -129,6 +131,8 @@ export function AppSidebar({
 
   return (
     <aside
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
       className={cn(
         "z-20 fixed inset-y-0 left-0 hidden flex-col border-r bg-background sm:flex transition-[width] duration-300 ease-in-out",
         isExpanded ? "w-72" : "w-20"

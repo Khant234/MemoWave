@@ -35,7 +35,6 @@ type AppHeaderProps = {
   tags: string[];
   onTagClick: (tag: string) => void;
   activeTag: string;
-  onToggleSidebar: () => void;
 };
 
 export function AppHeader({
@@ -49,7 +48,6 @@ export function AppHeader({
   tags,
   onTagClick,
   activeTag,
-  onToggleSidebar,
 }: AppHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
@@ -94,6 +92,7 @@ export function AppHeader({
             <AppSidebar
               isMobile
               isExpanded={false}
+              setIsExpanded={() => {}}
               activeFilter={activeFilter}
               setActiveFilter={setActiveFilter}
               setSearchTerm={setSearchTerm}
@@ -105,12 +104,6 @@ export function AppHeader({
           </SheetContent>
         </Sheet>
         
-        {/* Desktop Menu Toggle */}
-        <Button size="icon" variant="ghost" className="hidden sm:inline-flex h-10 w-10" onClick={onToggleSidebar}>
-          <Menu className="h-6 w-6" />
-          <span className="sr-only">Toggle Sidebar</span>
-        </Button>
-      
         <div className="flex items-center gap-2">
           <Logo />
           <span className="hidden sm:inline-block text-2xl font-semibold text-foreground/90 tracking-tight">
