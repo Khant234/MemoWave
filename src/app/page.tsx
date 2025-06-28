@@ -375,7 +375,7 @@ export default function Home() {
         activeTag={searchTerm}
       />
        <div className={cn(
-          "flex flex-1 flex-col transition-all duration-300 ease-in-out bg-secondary",
+          "flex flex-1 flex-col transition-all duration-300 ease-in-out bg-background",
           isSidebarExpanded ? "sm:ml-72" : "sm:ml-20"
         )}>
           <AppHeader
