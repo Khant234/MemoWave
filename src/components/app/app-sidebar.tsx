@@ -38,35 +38,6 @@ export function AppSidebar({
 
   const NavContent = () => (
     <div className="flex flex-col h-full">
-      <div className={cn(
-          "flex items-center gap-2 p-4 shrink-0 h-16",
-          !isMobile && "justify-center group-hover:justify-start"
-      )}>
-         <svg
-            width="40"
-            height="40"
-            viewBox="0 0 40 40"
-            className="h-8 w-8 shrink-0"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M25.8333 11.6667L11.6667 11.6667C10.2 11.6667 9 12.8667 9 14.3333V28.3333C9 29.8 10.2 31 11.6667 31H25.8333C27.3 31 28.5 29.8 28.5 28.3333V14.3333C28.5 12.8667 27.3 11.6667 25.8333 11.6667Z"
-              fill="#FBC02D"
-            />
-            <path
-              d="M18.75 22.5C20.5784 22.5 22.0833 21.0312 22.0833 19.1667C22.0833 17.3021 20.5784 15.8333 18.75 15.8333C16.9216 15.8333 15.4167 17.3021 15.4167 19.1667C15.4167 21.0312 16.9216 22.5 18.75 22.5Z"
-              fill="white"
-            />
-            <path
-              d="M15.4167 25H22.0833C22.4667 25 22.9167 24.5 22.9167 24.1667C22.9167 23.8333 22.4667 23.3333 22.0833 23.3333H15.4167C15.0333 23.3333 14.5833 23.8333 14.5833 24.1667C14.5833 24.5 15.0333 25 15.4167 25Z"
-              fill="white"
-            />
-          </svg>
-        <span className={cn(
-          "text-xl font-semibold text-foreground/90 tracking-tight whitespace-nowrap transition-opacity",
-          !isMobile && "opacity-0 group-hover:opacity-100"
-        )}>MemoWeave</span>
-      </div>
       <nav className="flex flex-col gap-1 p-2">
           {navItems.map(({ filter, label, icon: Icon }) => {
             const isActive = activeFilter === filter && (filter === 'all' ? activeTag === '' : true);
@@ -124,7 +95,7 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "group hidden sm:flex flex-col bg-card shadow-lg h-full",
+        "group hidden sm:flex flex-col bg-card shadow-lg fixed top-0 pt-16 h-screen z-40",
         "transition-all duration-300 ease-in-out overflow-y-auto overflow-x-hidden",
         "w-20 hover:w-72"
       )}
