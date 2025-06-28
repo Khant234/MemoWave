@@ -31,6 +31,8 @@ type AppHeaderProps = {
   layout: "grid" | "list";
   setLayout: Dispatch<SetStateAction<"grid" | "list">>;
   onNewNote: () => void;
+  onToggleSidebar: () => void;
+  isSidebarOpen: boolean;
   activeFilter: "all" | "archived" | "trash";
   setActiveFilter: Dispatch<SetStateAction<"all" | "archived" | "trash">>;
   tags: string[];
@@ -44,6 +46,8 @@ export function AppHeader({
   layout,
   setLayout,
   onNewNote,
+  onToggleSidebar,
+  isSidebarOpen,
   activeFilter,
   setActiveFilter,
   tags,
@@ -53,7 +57,7 @@ export function AppHeader({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 px-4 shadow-md backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 shadow-sm backdrop-blur-md sm:px-6">
       <div className="flex items-center gap-2">
          {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -64,26 +68,39 @@ export function AppHeader({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs p-0">
-             <SheetHeader className="sr-only">
-              <SheetTitle>Menu</SheetTitle>
+            <SheetHeader className="p-4 border-b">
+              <SheetTitle>MemoWeave</SheetTitle>
               <SheetDescription>
-                Main navigation for notes, archives, and tags.
+                Menu
               </SheetDescription>
             </SheetHeader>
             <AppSidebar
+              isOpen
               isMobile
-              isExpanded={true}
-              setIsExpanded={() => {}}
               activeFilter={activeFilter}
-              setActiveFilter={setActiveFilter}
-              setSearchTerm={setSearchTerm}
-              onFilterChange={() => setIsMobileMenuOpen(false)}
+              setActiveFilter={(filter) => {
+                setActiveFilter(filter);
+                setIsMobileMenuOpen(false);
+              }}
+              setSearchTerm={(term) => {
+                setSearchTerm(term);
+                setIsMobileMenuOpen(false);
+              }}
               tags={tags}
-              onTagClick={onTagClick}
+              onTagClick={(tag) => {
+                onTagClick(tag);
+                setIsMobileMenuOpen(false);
+              }}
               activeTag={activeTag}
             />
           </SheetContent>
         </Sheet>
+        
+        {/* Desktop Sidebar Toggle */}
+        <Button size="icon" variant="ghost" className="hidden sm:inline-flex h-10 w-10" onClick={onToggleSidebar}>
+          <Menu className="h-6 w-6" />
+          <span className="sr-only">Toggle Sidebar</span>
+        </Button>
         
         <div className="flex items-center gap-2">
             <svg

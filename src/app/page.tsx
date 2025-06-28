@@ -17,8 +17,8 @@ import { db } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppHeader } from "@/components/app/app-header";
 import { NoteList } from "@/components/app/note-list";
-import { NoteEditor } from "@/components/app/note-editor";
 import { NoteViewer } from "@/components/app/note-viewer";
+import { NoteEditor } from "@/components/app/note-editor";
 import { type Note } from "@/lib/types";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -57,7 +57,7 @@ export default function Home() {
     type: 'trash' | 'permanent';
   } | null>(null);
 
-  const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
 
   const notesCollectionRef = collection(db, "notes");
@@ -84,6 +84,19 @@ export default function Home() {
   React.useEffect(() => {
     fetchNotes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Initial check
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useHotkeys("n", () => handleNewNote(), { preventDefault: true });
@@ -363,10 +376,9 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="min-h-screen w-full bg-background">
       <AppSidebar
-        isExpanded={isSidebarExpanded}
-        setIsExpanded={setIsSidebarExpanded}
+        isOpen={isSidebarOpen}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
         setSearchTerm={setSearchTerm}
@@ -374,9 +386,9 @@ export default function Home() {
         onTagClick={handleTagClick}
         activeTag={searchTerm}
       />
-       <div className={cn(
-          "flex flex-1 flex-col transition-all duration-300 ease-in-out bg-background",
-          isSidebarExpanded ? "sm:ml-72" : "sm:ml-20"
+      <div className={cn(
+          "flex flex-col transition-all duration-300 ease-in-out",
+          isSidebarOpen ? "sm:ml-72" : "sm:ml-20"
         )}>
           <AppHeader
             searchTerm={searchTerm}
@@ -384,6 +396,8 @@ export default function Home() {
             layout={layout}
             setLayout={setLayout}
             onNewNote={handleNewNote}
+            onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+            isSidebarOpen={isSidebarOpen}
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
             tags={allTags}

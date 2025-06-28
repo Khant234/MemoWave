@@ -3,10 +3,11 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, Trash2, Tag, Menu } from "lucide-react";
+import { NotepadText, Archive, Trash2, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type AppSidebarProps = {
+  isOpen: boolean;
   activeFilter: "all" | "archived" | "trash";
   setActiveFilter: React.Dispatch<React.SetStateAction<"all" | "archived" | "trash">>;
   setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
@@ -14,12 +15,10 @@ type AppSidebarProps = {
   onTagClick: (tag: string) => void;
   activeTag: string;
   isMobile?: boolean;
-  onFilterChange?: () => void;
-  isExpanded: boolean;
-  setIsExpanded: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function AppSidebar({
+  isOpen,
   activeFilter,
   setActiveFilter,
   setSearchTerm,
@@ -27,34 +26,21 @@ export function AppSidebar({
   onTagClick,
   activeTag,
   isMobile,
-  onFilterChange,
-  isExpanded,
-  setIsExpanded,
 }: AppSidebarProps) {
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     setActiveFilter(filter);
     setSearchTerm("");
-    if (isMobile && onFilterChange) {
-      onFilterChange();
-    }
-  };
-
-  const handleTagClick = (tag: string) => {
-    onTagClick(tag);
-    if (isMobile && onFilterChange) {
-      onFilterChange();
-    }
   };
 
   const navItems = [
-    { filter: "all", label: "All Notes", icon: NotepadText, active: activeFilter === "all" && activeTag === '' },
-    { filter: "archived", label: "Archived", icon: Archive, active: activeFilter === "archived" },
-    { filter: "trash", label: "Trash", icon: Trash2, active: activeFilter === "trash" },
+    { filter: "all", label: "All Notes", icon: NotepadText },
+    { filter: "archived", label: "Archived", icon: Archive },
+    { filter: "trash", label: "Trash", icon: Trash2 },
   ];
 
   const NavContent = () => (
-    <>
-       {isMobile && (
+    <div className="flex flex-col h-full">
+      {isMobile && (
          <div className="flex items-center gap-2 px-4 py-3 mb-2 text-lg font-semibold border-b">
            <svg
               width="40"
@@ -80,46 +66,52 @@ export function AppSidebar({
         </div>
        )}
       <nav className="flex flex-col gap-1 p-2">
-          {navItems.map(({ filter, label, icon: Icon, active }) => (
-            <Button
-              key={filter}
-              variant={active ? 'secondary' : 'ghost'}
-              className={cn(
-                "h-12 justify-start rounded-lg",
-                isExpanded ? "w-full px-4" : "w-12 justify-center"
-              )}
-              aria-label={label}
-              onClick={() => handleFilterClick(filter as any)}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              <span className={cn("ml-4", !isExpanded && "sr-only")}>{label}</span>
-            </Button>
-          ))}
+          {navItems.map(({ filter, label, icon: Icon }) => {
+            const isActive = activeFilter === filter && (filter === 'all' ? activeTag === '' : true);
+            return (
+              <Button
+                key={filter}
+                variant={isActive ? 'secondary' : 'ghost'}
+                className={cn(
+                  "h-12 justify-start",
+                  isOpen ? "w-full px-4 rounded-lg" : "w-12 justify-center rounded-full",
+                )}
+                aria-label={label}
+                onClick={() => handleFilterClick(filter as any)}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                <span className={cn("ml-4", !isOpen && "sr-only")}>{label}</span>
+              </Button>
+            );
+          })}
         </nav>
 
         {tags.length > 0 && (
            <div className="flex flex-col gap-1 p-2 mt-2 border-t">
-             {isExpanded && (
+             {isOpen && (
                  <h3 className="px-4 pb-2 text-sm font-semibold text-muted-foreground tracking-tight">Tags</h3>
             )}
-            {tags.map(tag => (
+            {tags.map(tag => {
+              const isActive = activeTag === tag;
+              return (
                 <Button
                   key={tag}
-                  variant={activeTag === tag ? 'secondary' : 'ghost'}
+                  variant={isActive ? 'secondary' : 'ghost'}
                   className={cn(
-                    "h-12 justify-start rounded-lg",
-                    isExpanded ? 'w-full px-4' : 'w-12 justify-center'
+                    "h-12 justify-start",
+                    isOpen ? 'w-full px-4 rounded-lg' : 'w-12 justify-center rounded-full'
                   )}
                   aria-label={tag}
-                  onClick={() => handleTagClick(tag)}
+                  onClick={() => onTagClick(tag)}
                 >
                   <Tag className="h-5 w-5 shrink-0" />
-                  <span className={cn("ml-4 truncate", !isExpanded && "sr-only")}>{tag}</span>
+                  <span className={cn("ml-4 truncate", !isOpen && "sr-only")}>{tag}</span>
                 </Button>
-            ))}
+              )
+            })}
           </div>
         )}
-    </>
+    </div>
   )
 
   if (isMobile) {
@@ -128,11 +120,9 @@ export function AppSidebar({
   
   return (
     <aside
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
       className={cn(
-        "fixed top-0 left-0 h-screen z-40 hidden flex-col bg-secondary pt-16 sm:flex transition-[width] duration-300 ease-in-out shadow-lg",
-        isExpanded ? "w-72" : "w-20"
+        "fixed top-0 left-0 h-screen z-20 hidden flex-col bg-background pt-16 sm:flex transition-[width] duration-300 ease-in-out border-r",
+        isOpen ? "w-72" : "w-20"
       )}
     >
         <NavContent />

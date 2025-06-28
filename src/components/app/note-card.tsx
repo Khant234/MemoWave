@@ -72,7 +72,7 @@ export function NoteCard({
     <Card
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
-        "cursor-pointer hover:shadow-lg transition-shadow duration-200 flex flex-col h-full overflow-hidden",
+        "cursor-pointer hover:shadow-lg transition-shadow duration-200 flex flex-col h-full overflow-hidden border-transparent",
         note.isPinned && "border-primary/50 bg-primary/10",
         note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}
@@ -158,7 +158,7 @@ export function NoteCard({
           <div className="relative mb-4 aspect-video w-full rounded-md overflow-hidden">
             <Image
               src={note.imageUrl}
-              alt={note.title}
+              alt={note.title || 'Note image'}
               fill
               className="object-cover"
               data-ai-hint="note image"
