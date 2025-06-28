@@ -16,10 +16,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
 import { cn } from "@/lib/utils";
@@ -31,6 +27,7 @@ type AppHeaderProps = {
   layout: "grid" | "list";
   setLayout: Dispatch<SetStateAction<"grid" | "list">>;
   onNewNote: () => void;
+  onToggleSidebar: () => void;
   activeFilter: "all" | "archived" | "trash";
   setActiveFilter: Dispatch<SetStateAction<"all" | "archived" | "trash">>;
   tags: string[];
@@ -44,6 +41,7 @@ export function AppHeader({
   layout,
   setLayout,
   onNewNote,
+  onToggleSidebar,
   activeFilter,
   setActiveFilter,
   tags,
@@ -53,8 +51,13 @@ export function AppHeader({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 bg-card px-4 shadow-md backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 shadow-sm sm:px-6">
       <div className="flex items-center gap-2">
+         {/* Desktop Menu Toggle */}
+         <Button size="icon" variant="ghost" className="hidden sm:flex h-10 w-10" onClick={onToggleSidebar}>
+            <Menu className="h-6 w-6" />
+            <span className="sr-only">Toggle Menu</span>
+          </Button>
          {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
@@ -85,7 +88,7 @@ export function AppHeader({
           </SheetContent>
         </Sheet>
         
-        <div className="hidden items-center gap-2 sm:flex">
+        <div className="flex items-center gap-2">
             <svg
                 width="40"
                 height="40"
