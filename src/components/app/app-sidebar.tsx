@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -44,8 +45,11 @@ export function AppSidebar({
           return (
             <Button
               key={filter}
-              variant={isActive ? 'secondary' : 'ghost'}
-              className="w-full justify-start h-10 px-3"
+              variant="ghost"
+              className={cn(
+                "w-full justify-start h-10 px-3",
+                isActive && "bg-primary/10 text-primary hover:bg-primary/10"
+              )}
               aria-label={label}
               onClick={() => handleFilterClick(filter as any)}
             >
@@ -72,8 +76,11 @@ export function AppSidebar({
               return (
                 <Button
                   key={tag}
-                  variant={isActive ? 'secondary' : 'ghost'}
-                  className="w-full justify-start h-10 px-3"
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start h-10 px-3",
+                    isActive && "bg-primary/10 text-primary hover:bg-primary/10"
+                  )}
                   aria-label={tag}
                   onClick={() => onTagClick(tag)}
                 >
