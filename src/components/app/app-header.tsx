@@ -16,6 +16,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sheet,
   SheetContent,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
 import { cn } from "@/lib/utils";
