@@ -17,9 +17,23 @@ type AppSidebarProps = {
   isMobile?: boolean;
   onFilterChange?: () => void;
   isExpanded?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 };
 
-export function AppSidebar({ activeFilter, setActiveFilter, setSearchTerm, tags, onTagClick, activeTag, isMobile, onFilterChange, isExpanded = false }: AppSidebarProps) {
+export function AppSidebar({
+  activeFilter,
+  setActiveFilter,
+  setSearchTerm,
+  tags,
+  onTagClick,
+  activeTag,
+  isMobile,
+  onFilterChange,
+  isExpanded = false,
+  onMouseEnter,
+  onMouseLeave,
+}: AppSidebarProps) {
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     setActiveFilter(filter);
     setSearchTerm("");
@@ -96,10 +110,14 @@ export function AppSidebar({ activeFilter, setActiveFilter, setSearchTerm, tags,
   ];
 
   return (
-    <aside className={cn(
-        "fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background sm:flex transition-all duration-200",
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background sm:flex transition-[width] duration-300 ease-in-out",
         isExpanded ? "w-64" : "w-14"
-    )}>
+      )}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       <nav className={cn("flex flex-col gap-4 px-2 py-4", isExpanded ? "items-stretch" : "items-center")}>
         <div className={cn(
             "group flex h-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:text-base",

@@ -364,24 +364,20 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen w-full bg-muted/40">
-      <div
-        className="hidden sm:block"
+      <AppSidebar
+        isExpanded={isSidebarHovered}
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
-      >
-        <AppSidebar
-          isExpanded={isSidebarHovered}
-          activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
-          setSearchTerm={setSearchTerm}
-          tags={allTags}
-          onTagClick={handleTagClick}
-          activeTag={searchTerm}
-        />
-      </div>
+        activeFilter={activeFilter}
+        setActiveFilter={setActiveFilter}
+        setSearchTerm={setSearchTerm}
+        tags={allTags}
+        onTagClick={handleTagClick}
+        activeTag={searchTerm}
+      />
       <div
         className={cn(
-          "flex flex-col sm:gap-4 sm:py-4 w-full transition-all duration-200",
+          "flex flex-col sm:gap-4 sm:py-4 w-full transition-[padding-left] duration-300 ease-in-out",
           isSidebarHovered ? "sm:pl-64" : "sm:pl-14"
         )}
       >
