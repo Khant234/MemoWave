@@ -376,7 +376,10 @@ export default function Home() {
         activeTag={searchTerm}
       />
       <div
-        className="flex flex-col sm:gap-4 sm:py-4 w-full sm:pl-14"
+        className={cn(
+          "flex h-screen w-full flex-col transition-[padding] duration-300 ease-in-out",
+          isSidebarHovered ? "sm:pl-64" : "sm:pl-14"
+        )}
       >
         <AppHeader
           searchTerm={searchTerm}
@@ -390,7 +393,7 @@ export default function Home() {
           onTagClick={handleTagClick}
           activeTag={searchTerm}
         />
-        <main className="p-4 sm:px-6 sm:py-0 md:p-6 flex-1">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <NoteList
             notes={filteredNotes}
             layout={layout}
