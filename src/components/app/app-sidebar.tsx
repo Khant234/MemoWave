@@ -36,63 +36,52 @@ export function AppSidebar({ activeFilter, setActiveFilter, setSearchTerm, tags,
 
   if (isMobile) {
     return (
-      <nav className="grid gap-4 text-lg font-medium p-6">
-        <div
-          className="flex items-center gap-2 text-lg font-semibold"
-        >
+      <nav className="grid gap-1 p-4 font-medium">
+        <div className="flex items-center gap-2 px-1 pb-2 mb-2 text-lg font-semibold border-b">
           <PenSquare className="h-6 w-6" />
-          <span className="">MemoWeave</span>
+          <span>MemoWeave</span>
         </div>
-        <button
-          onClick={() => handleFilterClick("all")}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-            activeFilter === "all" && activeTag === '' && "bg-muted text-primary"
-          )}
+        <Button
+          variant={activeFilter === 'all' && activeTag === '' ? 'secondary' : 'ghost'}
+          className="w-full justify-start"
+          onClick={() => handleFilterClick('all')}
         >
           <NotepadText className="h-4 w-4" />
-          All Notes
-        </button>
-        <button
-          onClick={() => handleFilterClick("archived")}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-            activeFilter === "archived" && "bg-muted text-primary"
-          )}
+          <span>All Notes</span>
+        </Button>
+        <Button
+          variant={activeFilter === 'archived' ? 'secondary' : 'ghost'}
+          className="w-full justify-start"
+          onClick={() => handleFilterClick('archived')}
         >
           <Archive className="h-4 w-4" />
-          Archived
-        </button>
-        <button
-          onClick={() => handleFilterClick("trash")}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-            activeFilter === "trash" && "bg-muted text-primary"
-          )}
+          <span>Archived</span>
+        </Button>
+        <Button
+          variant={activeFilter === 'trash' ? 'secondary' : 'ghost'}
+          className="w-full justify-start"
+          onClick={() => handleFilterClick('trash')}
         >
           <Trash2 className="h-4 w-4" />
-          Trash
-        </button>
+          <span>Trash</span>
+        </Button>
 
         {tags.length > 0 && (
-          <div className="space-y-2 pt-4">
-              <div className="border-t -mx-6"></div>
-              <h3 className="px-3 pt-4 text-sm font-semibold text-muted-foreground tracking-wider uppercase">Tags</h3>
-              <div className="flex flex-col gap-1">
-                  {tags.map((tag) => (
-                      <button
-                          key={tag}
-                          onClick={() => handleTagClick(tag)}
-                          className={cn(
-                              "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-base",
-                              activeTag === tag && "bg-muted text-primary"
-                          )}
-                      >
-                          <Tag className="h-4 w-4" />
-                          {tag}
-                      </button>
-                  ))}
-              </div>
+          <div className="pt-4 mt-2 border-t">
+            <h3 className="px-2 pb-2 text-xs font-semibold text-muted-foreground tracking-wider uppercase">Tags</h3>
+            <div className="flex flex-col gap-1">
+              {tags.map((tag) => (
+                <Button
+                  key={tag}
+                  variant={activeTag === tag ? 'secondary' : 'ghost'}
+                  className="w-full justify-start"
+                  onClick={() => handleTagClick(tag)}
+                >
+                  <Tag className="h-4 w-4" />
+                  <span>{tag}</span>
+                </Button>
+              ))}
+            </div>
           </div>
         )}
       </nav>
