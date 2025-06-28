@@ -1,3 +1,9 @@
+export type NoteVersion = {
+  title: string;
+  content: string;
+  updatedAt: string;
+};
+
 export type Note = {
   id: string;
   title: string;
@@ -13,4 +19,5 @@ export type Note = {
   audioUrl?: string;
   checklist: { id: string; text: string; completed: boolean }[];
   isDraft?: boolean;
+  history: NoteVersion[];
 };

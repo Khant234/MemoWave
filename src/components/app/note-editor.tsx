@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { type Note } from "@/lib/types";
+import { type Note, type NoteVersion } from "@/lib/types";
 import { NOTE_COLORS } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import {
@@ -44,6 +44,7 @@ import {
   Volume2,
   Upload,
   ListTodo,
+  History
 } from "lucide-react";
 import {
   Tooltip,
@@ -57,6 +58,7 @@ import { burmeseTextToVoice } from "@/ai/flows/burmese-text-to-voice";
 import { AudioTranscriber } from "./audio-transcriber";
 import { AudioRecorder } from "./audio-recorder";
 import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
+import { NoteVersionHistory } from "./note-version-history";
 
 type NoteEditorProps = {
   isOpen: boolean;
@@ -85,6 +87,7 @@ export function NoteEditor({
   const [isAiLoading, setIsAiLoading] = React.useState(false);
   const [isTranscriberOpen, setIsTranscriberOpen] = React.useState(false);
   const [isRecorderOpen, setIsRecorderOpen] = React.useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
   const [imageUrl, setImageUrl] = React.useState<string | undefined>();
   const [generatedAudio, setGeneratedAudio] = React.useState<string | null>(null);
   const [isDirty, setIsDirty] = React.useState(false);
@@ -228,6 +231,7 @@ export function NoteEditor({
       createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       checklist,
+      history: note?.history || [],
       isDraft: false,
     };
 
@@ -273,6 +277,7 @@ export function NoteEditor({
       createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       checklist,
+      history: note?.history || [],
       isDraft: true,
     };
 
@@ -437,6 +442,15 @@ export function NoteEditor({
       setGeneratedAudio(reader.result as string);
       toast({ title: "Audio Attached", description: "Your recording has been added to the note." });
     };
+  };
+
+  const handleRestoreVersion = (version: NoteVersion) => {
+    setTitle(version.title);
+    setContent(version.content);
+    toast({
+        title: "Version Restored",
+        description: "The note content has been updated to the selected version.",
+    });
   };
 
   return (
@@ -623,6 +637,7 @@ export function NoteEditor({
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleAutoChecklist}><ListTodo className="mr-2 h-4 w-4"/>Auto Checklist</Button>
+                  <Button variant="outline" disabled={!note} onClick={() => setIsHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>History</Button>
                   <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
                   <Button variant="outline" onClick={() => setIsRecorderOpen(true)}><Mic className="mr-2 h-4 w-4"/>Record Audio</Button>
                   <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>
@@ -687,6 +702,12 @@ export function NoteEditor({
         open={isRecorderOpen}
         setOpen={setIsRecorderOpen}
         onSave={handleSaveRecording}
+      />
+      <NoteVersionHistory
+        open={isHistoryOpen}
+        setOpen={setIsHistoryOpen}
+        history={note?.history || []}
+        onRestore={handleRestoreVersion}
       />
     </>
   );

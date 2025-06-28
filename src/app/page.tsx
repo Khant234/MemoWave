@@ -19,7 +19,7 @@ import { AppHeader } from "@/components/app/app-header";
 import { NoteList } from "@/components/app/note-list";
 import { NoteViewer } from "@/components/app/note-viewer";
 import { NoteEditor } from "@/components/app/note-editor";
-import { type Note } from "@/lib/types";
+import { type Note, type NoteVersion } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus } from "lucide-react";
 import {
@@ -111,16 +111,35 @@ export default function Home() {
 
     try {
       if (isExisting) {
+        const originalNote = notes.find((n) => n.id === noteToSave.id);
+        
+        let newHistory: Note['history'] = originalNote?.history ? [...originalNote.history] : [];
+        if (originalNote && (originalNote.content !== noteToSave.content || originalNote.title !== noteToSave.title)) {
+            const version: NoteVersion = {
+                title: originalNote.title,
+                content: originalNote.content,
+                updatedAt: originalNote.updatedAt,
+            };
+            newHistory.unshift(version);
+        }
+        if (newHistory.length > 20) {
+            newHistory = newHistory.slice(0, 20); // Limit history to 20 entries
+        }
+
         const noteRef = doc(db, "notes", noteToSave.id);
         const {id, ...noteData} = noteToSave;
-        await updateDoc(noteRef, { ...noteData });
+        const finalNoteData = { ...noteData, history: newHistory };
+        await updateDoc(noteRef, finalNoteData);
+
+        const updatedNoteInState = { ...noteToSave, history: newHistory };
         setNotes((prevNotes) =>
-          prevNotes.map((n) => (n.id === noteToSave.id ? noteToSave : n))
+          prevNotes.map((n) => (n.id === updatedNoteInState.id ? updatedNoteInState : n))
         );
       } else {
         const { id, ...noteData } = noteToSave;
-        const docRef = await addDoc(notesCollectionRef, noteData);
-        setNotes((prevNotes) => [{ ...noteToSave, id: docRef.id }, ...prevNotes]);
+        const finalNoteData = { ...noteData, history: [] }; // New notes start with empty history
+        const docRef = await addDoc(notesCollectionRef, finalNoteData);
+        setNotes((prevNotes) => [{ ...noteToSave, id: docRef.id, history: [] }, ...prevNotes]);
       }
       if (noteToSave.isDraft) {
         toast({
@@ -218,7 +237,7 @@ export default function Home() {
       return;
     }
 
-    const { id, isPinned, createdAt, updatedAt, ...restOfNote } = noteToCopy;
+    const { id, isPinned, createdAt, updatedAt, history, ...restOfNote } = noteToCopy;
 
     const newNoteData = {
       ...restOfNote,
@@ -227,6 +246,7 @@ export default function Home() {
       isDraft: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      history: [],
     };
 
     try {
