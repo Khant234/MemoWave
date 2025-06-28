@@ -21,6 +21,7 @@ import {
   Undo,
   MoreVertical,
   Copy,
+  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -40,6 +41,7 @@ type NoteCardProps = {
   onPermanentlyDeleteNote: (noteId: string) => void;
   onCopyNote: (noteId: string) => void;
   onTagClick: (tag: string) => void;
+  onRemoveTagFromNote: (noteId: string, tag: string) => void;
 };
 
 export function NoteCard({
@@ -52,6 +54,7 @@ export function NoteCard({
   onPermanentlyDeleteNote,
   onCopyNote,
   onTagClick,
+  onRemoveTagFromNote,
 }: NoteCardProps) {
   const [formattedDate, setFormattedDate] = React.useState("");
 
@@ -172,13 +175,28 @@ export function NoteCard({
             <Badge
               key={tag}
               variant="secondary"
-              className="cursor-pointer hover:bg-primary/20 transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTagClick(tag);
-              }}
             >
-              {tag}
+              <span
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick(tag);
+                }}
+              >
+                {tag}
+              </span>
+              {!note.isTrashed && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveTagFromNote(note.id, tag);
+                  }}
+                  className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
+                  aria-label={`Remove tag ${tag}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </Badge>
           ))}
         </div>

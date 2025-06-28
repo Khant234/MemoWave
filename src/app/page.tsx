@@ -249,6 +249,18 @@ export default function Home() {
     setActiveFilter("all");
     setSearchTerm(tag);
   };
+  
+  const handleRemoveTagFromNote = async (noteId: string, tagToRemove: string) => {
+    const note = notes.find((n) => n.id === noteId);
+    if (note) {
+      const updatedTags = note.tags.filter((tag) => tag !== tagToRemove);
+      await updateNoteField(noteId, { tags: updatedTags });
+      toast({
+        title: "Tag removed",
+        description: `The tag "${tagToRemove}" has been removed from the note.`,
+      });
+    }
+  };
 
   const handleConfirmDelete = async () => {
     if (!deleteConfirmation) return;
@@ -383,6 +395,7 @@ export default function Home() {
             onCopyNote={handleCopyNote}
             activeFilter={activeFilter}
             onTagClick={handleTagClick}
+            onRemoveTagFromNote={handleRemoveTagFromNote}
           />
         </main>
       </div>
