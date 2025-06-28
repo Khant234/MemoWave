@@ -360,19 +360,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-background">
-      <AppHeader
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        layout={layout}
-        setLayout={setLayout}
-        onNewNote={handleNewNote}
-        activeFilter={activeFilter}
-        setActiveFilter={setActiveFilter}
-        tags={allTags}
-        onTagClick={handleTagClick}
-        activeTag={searchTerm}
-      />
+    <div className="flex h-screen bg-background">
       <AppSidebar
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
@@ -381,22 +369,38 @@ export default function Home() {
         onTagClick={handleTagClick}
         activeTag={searchTerm}
       />
-      <main className="ml-20 h-[calc(100vh-4rem)] overflow-y-auto p-4 sm:p-6 bg-background">
-        <NoteList
-          notes={filteredNotes}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <AppHeader
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
           layout={layout}
-          onViewNote={handleViewNote}
-          onTogglePin={handleTogglePin}
-          onToggleArchive={handleToggleArchive}
-          onDeleteNote={handleMoveToTrash}
-          onRestoreNote={handleRestoreNote}
-          onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
-          onCopyNote={handleCopyNote}
+          setLayout={setLayout}
+          onNewNote={handleNewNote}
           activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          tags={allTags}
           onTagClick={handleTagClick}
-          onRemoveTagFromNote={handleRemoveTagFromNote}
+          activeTag={searchTerm}
         />
-      </main>
+        <main className="flex-1 overflow-y-auto p-6 bg-secondary/40">
+          <div className="max-w-7xl mx-auto">
+            <NoteList
+              notes={filteredNotes}
+              layout={layout}
+              onViewNote={handleViewNote}
+              onTogglePin={handleTogglePin}
+              onToggleArchive={handleToggleArchive}
+              onDeleteNote={handleMoveToTrash}
+              onRestoreNote={handleRestoreNote}
+              onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
+              onCopyNote={handleCopyNote}
+              activeFilter={activeFilter}
+              onTagClick={handleTagClick}
+              onRemoveTagFromNote={handleRemoveTagFromNote}
+            />
+          </div>
+        </main>
+      </div>
       <NoteViewer
         isOpen={isViewerOpen}
         setIsOpen={setIsViewerOpen}
