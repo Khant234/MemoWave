@@ -72,7 +72,7 @@ export function NoteCard({
     <Card
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
-        "cursor-pointer hover:shadow-xl transition-shadow duration-200 overflow-hidden shadow-md",
+        "cursor-pointer hover:shadow-xl transition-all duration-200 overflow-hidden shadow-md transform hover:scale-[1.02]",
         note.isPinned && "border-primary/50 bg-primary/10",
         note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}
@@ -177,7 +177,7 @@ export function NoteCard({
               variant="secondary"
             >
               <span
-                className="cursor-pointer"
+                className="cursor-pointer hover:underline"
                 onClick={(e) => {
                   e.stopPropagation();
                   onTagClick(tag);

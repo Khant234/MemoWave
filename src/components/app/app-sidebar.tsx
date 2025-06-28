@@ -56,7 +56,10 @@ export function AppSidebar({
               aria-label={label}
               onClick={() => handleFilterClick(filter as any)}
             >
-              <Icon className="h-5 w-5 shrink-0" />
+              <Icon className={cn(
+                "h-5 w-5 shrink-0 transition-colors",
+                isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+              )} />
               <span className={cn(
                 "whitespace-nowrap transition-opacity",
                 !isMobile && isCollapsed && "hidden"
@@ -90,7 +93,10 @@ export function AppSidebar({
                     aria-label={tag}
                     onClick={() => onTagClick(tag)}
                   >
-                    <Tag className="h-5 w-5 shrink-0" />
+                    <Tag className={cn(
+                      "h-5 w-5 shrink-0 transition-colors",
+                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+                    )} />
                     <span className={cn(
                       "truncate whitespace-nowrap transition-opacity",
                       !isMobile && isCollapsed && "hidden"
@@ -113,7 +119,7 @@ export function AppSidebar({
     <aside
       data-collapsed={isCollapsed}
       className={cn(
-        "hidden sm:flex h-full flex-col bg-card z-40",
+        "hidden sm:flex h-full flex-col bg-card z-40 border-r shadow-lg",
         "transition-all duration-300 ease-in-out",
         isCollapsed ? "w-20" : "w-60"
       )}
