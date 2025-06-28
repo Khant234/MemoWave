@@ -85,7 +85,7 @@ export function AppSidebar({
 
       {tags.length > 0 && (
         <>
-          <Separator className="mx-4 my-1" />
+          <Separator className={cn("mx-4 my-1", isCollapsed && "hidden")} />
            <Collapsible defaultOpen className="p-2">
             <CollapsibleTrigger asChild>
                 <button className={cn("flex w-full items-center justify-between p-2 hover:bg-secondary rounded-md", isCollapsed && "hidden")}>
