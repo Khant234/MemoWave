@@ -2,13 +2,24 @@
 
 import * as React from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppHeader } from "@/components/app/app-header";
 import { NoteList } from "@/components/app/note-list";
 import { NoteEditor } from "@/components/app/note-editor";
 import { type Note } from "@/lib/types";
-import { DUMMY_NOTES } from "@/lib/data";
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 export default function Home() {
@@ -21,36 +32,33 @@ export default function Home() {
   const [layout, setLayout] = React.useState<"grid" | "list">("grid");
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
+  const { toast } = useToast();
 
-  // Load notes from localStorage on initial render
-  React.useEffect(() => {
+  const notesCollectionRef = collection(db, "notes");
+
+  const fetchNotes = async () => {
+    setIsLoading(true);
     try {
-      const savedNotesRaw = localStorage.getItem("notes");
-      if (savedNotesRaw) {
-        const savedNotes = JSON.parse(savedNotesRaw);
-        const notesWithTrash = savedNotes.map((note: any) => ({
-          ...note,
-          isTrashed: note.isTrashed || false,
-        }));
-        setNotes(notesWithTrash);
-      } else {
-        // If no notes in storage, initialize with DUMMY_NOTES
-        setNotes(DUMMY_NOTES);
-      }
+      const data = await getDocs(query(notesCollectionRef, orderBy("updatedAt", "desc")));
+      const fetchedNotes = data.docs.map((doc) => {
+        return { ...doc.data(), id: doc.id } as Note;
+      });
+      setNotes(fetchedNotes);
     } catch (error) {
-      console.error("Failed to load notes from localStorage", error);
-      // Fallback to dummy notes in case of error
-      setNotes(DUMMY_NOTES);
+      console.error("Failed to fetch notes from Firestore", error);
+      toast({
+        title: "Error fetching notes",
+        description: "Could not load notes. Please check your Firebase configuration and internet connection.",
+        variant: "destructive",
+      });
     }
     setIsLoading(false);
-  }, []);
+  };
 
-  // Save notes to localStorage whenever they change
   React.useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem("notes", JSON.stringify(notes));
-    }
-  }, [notes, isLoading]);
+    fetchNotes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useHotkeys("n", () => handleNewNote(), { preventDefault: true });
 
@@ -64,48 +72,95 @@ export default function Home() {
     setIsEditorOpen(true);
   };
 
-  const handleSaveNote = (noteToSave: Note) => {
-    setNotes((prevNotes) => {
-      const isExisting = prevNotes.some((n) => n.id === noteToSave.id);
-      if (isExisting) {
-        return prevNotes.map((n) => (n.id === noteToSave.id ? noteToSave : n));
-      } else {
-        return [noteToSave, ...prevNotes];
-      }
-    });
+  const handleSaveNote = async (noteToSave: Note) => {
     setIsEditorOpen(false);
+    
+    const isExisting = notes.some((n) => n.id === noteToSave.id);
+
+    try {
+      if (isExisting) {
+        const noteRef = doc(db, "notes", noteToSave.id);
+        await updateDoc(noteRef, noteToSave);
+        setNotes((prevNotes) =>
+          prevNotes.map((n) => (n.id === noteToSave.id ? noteToSave : n))
+        );
+      } else {
+        const { id, ...noteData } = noteToSave;
+        const docRef = await addDoc(notesCollectionRef, noteData);
+        setNotes((prevNotes) => [{ ...noteToSave, id: docRef.id }, ...prevNotes]);
+      }
+       toast({
+          title: "Note Saved",
+          description: `Your note "${noteToSave.title || 'Untitled'}" has been saved.`,
+      });
+    } catch (error) {
+      console.error("Error saving note:", error);
+      toast({
+        title: "Error Saving Note",
+        description: "There was a problem saving your note.",
+        variant: "destructive",
+      });
+      fetchNotes(); // Refetch to sync state with db
+    } finally {
+        setEditingNote(null);
+    }
+  };
+  
+  const updateNoteField = async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
+    // Optimistic UI update
+    setNotes((prevNotes) =>
+      prevNotes.map((n) => (n.id === noteId ? { ...n, ...updates } : n))
+    );
+
+    try {
+      const noteRef = doc(db, "notes", noteId);
+      await updateDoc(noteRef, updates);
+    } catch (error) {
+      console.error("Error updating note:", error);
+      toast({
+        title: "Error Updating Note",
+        description: "Could not sync changes. Please try again.",
+        variant: "destructive",
+      });
+      fetchNotes(); // Revert and refetch
+    }
   };
 
   const handleTogglePin = (noteId: string) => {
-    setNotes((prevNotes) =>
-      prevNotes.map((n) =>
-        n.id === noteId ? { ...n, isPinned: !n.isPinned } : n
-      )
-    );
+    const note = notes.find((n) => n.id === noteId);
+    if (note) {
+      updateNoteField(noteId, { isPinned: !note.isPinned });
+    }
   };
 
   const handleToggleArchive = (noteId: string) => {
-    setNotes((prevNotes) =>
-      prevNotes.map((n) =>
-        n.id === noteId ? { ...n, isArchived: !n.isArchived, isPinned: false } : n
-      )
-    );
+    const note = notes.find((n) => n.id === noteId);
+    if (note) {
+      updateNoteField(noteId, { isArchived: !note.isArchived, isPinned: false });
+    }
   };
 
   const handleMoveToTrash = (noteId: string) => {
-    setNotes((prevNotes) =>
-      prevNotes.map((n) => (n.id === noteId ? { ...n, isTrashed: true, isPinned: false } : n))
-    );
+    updateNoteField(noteId, { isTrashed: true, isPinned: false });
   };
 
   const handleRestoreNote = (noteId: string) => {
-    setNotes((prevNotes) =>
-      prevNotes.map((n) => (n.id === noteId ? { ...n, isTrashed: false } : n))
-    );
+    updateNoteField(noteId, { isTrashed: false });
   };
 
-  const handlePermanentlyDeleteNote = (noteId: string) => {
+  const handlePermanentlyDeleteNote = async (noteId: string) => {
+    const originalNotes = [...notes];
     setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
+    try {
+      await deleteDoc(doc(db, "notes", noteId));
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      toast({
+        title: "Error Deleting Note",
+        variant: "destructive",
+      });
+      setNotes(originalNotes);
+    }
   };
 
 
