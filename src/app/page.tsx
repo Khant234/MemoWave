@@ -20,7 +20,6 @@ import { NoteList } from "@/components/app/note-list";
 import { NoteViewer } from "@/components/app/note-viewer";
 import { NoteEditor } from "@/components/app/note-editor";
 import { type Note } from "@/lib/types";
-import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus } from "lucide-react";
 import {
@@ -362,31 +361,31 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen bg-secondary/40">
-      <AppSidebar
-        isCollapsed={isSidebarCollapsed}
+    <div className="flex h-screen flex-col bg-secondary/40">
+      <AppHeader
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        layout={layout}
+        setLayout={setLayout}
+        onNewNote={handleNewNote}
+        onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
-        setSearchTerm={setSearchTerm}
         tags={allTags}
         onTagClick={handleTagClick}
         activeTag={searchTerm}
       />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <AppHeader
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          layout={layout}
-          setLayout={setLayout}
-          onNewNote={handleNewNote}
-          onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      <div className="flex flex-1 overflow-hidden">
+        <AppSidebar
+          isCollapsed={isSidebarCollapsed}
           activeFilter={activeFilter}
           setActiveFilter={setActiveFilter}
+          setSearchTerm={setSearchTerm}
           tags={allTags}
           onTagClick={handleTagClick}
           activeTag={searchTerm}
         />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6 transition-all duration-300 ease-in-out">
           <div className="mx-auto max-w-7xl">
             <NoteList
               notes={filteredNotes}
