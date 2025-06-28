@@ -168,8 +168,6 @@ export function NoteEditor({
     if (!note) {
         localStorage.removeItem('noteDraft');
     }
-    
-    setIsOpen(false);
   };
   
   const handleTagAdd = () => {
@@ -286,9 +284,19 @@ export function NoteEditor({
     };
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      // If we are closing a new note editor without saving, clear the draft.
+      if (!note) {
+        localStorage.removeItem('noteDraft');
+      }
+    }
+    setIsOpen(open);
+  };
+
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <input
         type="file"
         ref={imageInputRef}
