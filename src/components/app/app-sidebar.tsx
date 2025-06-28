@@ -45,10 +45,13 @@ export function AppSidebar({
               <Button
                 key={filter}
                 variant={isActive ? 'secondary' : 'ghost'}
-                className="h-12 justify-start px-4"
+                className="relative h-12 justify-start px-4"
                 aria-label={label}
                 onClick={() => handleFilterClick(filter as any)}
               >
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-primary" />
+                )}
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className={cn(
                   "ml-4 whitespace-nowrap transition-opacity",
@@ -71,10 +74,13 @@ export function AppSidebar({
                 <Button
                   key={tag}
                   variant={isActive ? 'secondary' : 'ghost'}
-                  className="h-12 justify-start px-4"
+                  className="relative h-12 justify-start px-4"
                   aria-label={tag}
                   onClick={() => onTagClick(tag)}
                 >
+                   {isActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-primary" />
+                  )}
                   <Tag className="h-5 w-5 shrink-0" />
                   <span className={cn(
                     "ml-4 truncate whitespace-nowrap transition-opacity",
@@ -97,7 +103,7 @@ export function AppSidebar({
       className={cn(
         "group hidden sm:flex flex-col bg-card shadow-lg",
         "transition-all duration-300 ease-in-out overflow-y-auto overflow-x-hidden",
-        "w-20 hover:w-72"
+        "w-20 hover:w-72 h-[calc(100vh-4rem)]"
       )}
     >
         <NavContent />
