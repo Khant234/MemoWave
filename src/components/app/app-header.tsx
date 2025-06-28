@@ -16,6 +16,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sheet,
   SheetContent,
+  SheetTrigger,
   SheetHeader,
   SheetTitle,
   SheetDescription,
@@ -52,7 +53,7 @@ export function AppHeader({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 bg-background/95 px-4 sm:px-6 shadow-md backdrop-blur-md">
+    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background/95 px-4 shadow-md backdrop-blur-md sm:px-6">
       <div className="flex items-center gap-2">
          {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
