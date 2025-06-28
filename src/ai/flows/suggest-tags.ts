@@ -29,7 +29,7 @@ const prompt = ai.definePrompt({
   name: 'suggestTagsPrompt',
   input: {schema: SuggestTagsInputSchema},
   output: {schema: SuggestTagsOutputSchema},
-  prompt: `Suggest a few relevant tags for the following note content. Aim for 3 to 5 tags. The tags should be concise and related to the main topics discussed in the note. Return the tags as a JSON array of strings.
+  prompt: `Suggest the single most relevant tag for the following note content. The tag should be a single word or a short phrase. Return the tag as a JSON array of strings, containing just one tag.
 
 Note Content:
 {{{noteContent}}}`,
