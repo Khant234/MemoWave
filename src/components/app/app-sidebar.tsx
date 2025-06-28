@@ -57,8 +57,9 @@ export function AppSidebar({
               onClick={() => handleFilterClick(filter as any)}
             >
               <Icon className={cn(
-                "h-5 w-5 shrink-0 transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+                "h-5 w-5 shrink-0 transition-all duration-200",
+                isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
+                "group-hover:-translate-y-0.5"
               )} />
               <span className={cn(
                 "whitespace-nowrap transition-opacity",
@@ -94,8 +95,9 @@ export function AppSidebar({
                     onClick={() => onTagClick(tag)}
                   >
                     <Tag className={cn(
-                      "h-5 w-5 shrink-0 transition-colors",
-                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+                      "h-5 w-5 shrink-0 transition-all duration-200",
+                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
+                      "group-hover:-translate-y-0.5"
                     )} />
                     <span className={cn(
                       "truncate whitespace-nowrap transition-opacity",
