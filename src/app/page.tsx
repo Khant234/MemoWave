@@ -245,6 +245,11 @@ export default function Home() {
     }
   };
 
+  const handleTagClick = (tag: string) => {
+    setActiveFilter("all");
+    setSearchTerm(tag);
+  };
+
   const handleConfirmDelete = async () => {
     if (!deleteConfirmation) return;
     const { noteId, type } = deleteConfirmation;
@@ -361,6 +366,7 @@ export default function Home() {
             onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
             onCopyNote={handleCopyNote}
             activeFilter={activeFilter}
+            onTagClick={handleTagClick}
           />
         </main>
       </div>

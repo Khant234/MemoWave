@@ -39,6 +39,7 @@ type NoteCardProps = {
   onRestoreNote: (noteId: string) => void;
   onPermanentlyDeleteNote: (noteId: string) => void;
   onCopyNote: (noteId: string) => void;
+  onTagClick: (tag: string) => void;
 };
 
 export function NoteCard({
@@ -50,6 +51,7 @@ export function NoteCard({
   onRestoreNote,
   onPermanentlyDeleteNote,
   onCopyNote,
+  onTagClick,
 }: NoteCardProps) {
   const [formattedDate, setFormattedDate] = React.useState("");
 
@@ -167,7 +169,15 @@ export function NoteCard({
       <CardFooter className="flex-col items-start gap-2 pt-0 px-6 pb-4">
         <div className="flex flex-wrap gap-2">
           {note.tags.map((tag) => (
-            <Badge key={tag} variant="secondary">
+            <Badge
+              key={tag}
+              variant="secondary"
+              className="cursor-pointer hover:bg-primary/20 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTagClick(tag);
+              }}
+            >
               {tag}
             </Badge>
           ))}
