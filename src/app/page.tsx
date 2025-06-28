@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -21,6 +22,18 @@ import { type Note } from "@/lib/types";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const [notes, setNotes] = React.useState<Note[]>([]);
@@ -33,6 +46,11 @@ export default function Home() {
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
   const { toast } = useToast();
+  const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
+    noteId: string;
+    type: 'trash' | 'permanent';
+  } | null>(null);
+
 
   const notesCollectionRef = collection(db, "notes");
 
@@ -141,26 +159,49 @@ export default function Home() {
   };
 
   const handleMoveToTrash = (noteId: string) => {
-    updateNoteField(noteId, { isTrashed: true, isPinned: false });
+    setDeleteConfirmation({ noteId, type: 'trash' });
   };
 
   const handleRestoreNote = (noteId: string) => {
     updateNoteField(noteId, { isTrashed: false });
   };
 
-  const handlePermanentlyDeleteNote = async (noteId: string) => {
-    const originalNotes = [...notes];
-    setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
-    try {
-      await deleteDoc(doc(db, "notes", noteId));
-    } catch (error) {
-      console.error("Error deleting note:", error);
+  const handlePermanentlyDeleteNote = (noteId: string) => {
+    setDeleteConfirmation({ noteId, type: 'permanent' });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmation) return;
+    const { noteId, type } = deleteConfirmation;
+
+    if (type === 'trash') {
+      await updateNoteField(noteId, { isTrashed: true, isPinned: false });
       toast({
-        title: "Error Deleting Note",
-        variant: "destructive",
+        title: "Note moved to trash",
+        description: "You can restore it from the trash folder.",
       });
-      setNotes(originalNotes);
+    } else if (type === 'permanent') {
+      const originalNotes = [...notes];
+      setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
+      try {
+        await deleteDoc(doc(db, "notes", noteId));
+        toast({
+          title: "Note permanently deleted",
+        });
+      } catch (error) {
+        console.error("Error deleting note:", error);
+        toast({
+          title: "Error Deleting Note",
+          variant: "destructive",
+        });
+        setNotes(originalNotes);
+      }
     }
+    setDeleteConfirmation(null);
+  };
+  
+  const handleCancelDelete = () => {
+    setDeleteConfirmation(null);
   };
 
 
@@ -250,6 +291,31 @@ export default function Home() {
         onSave={handleSaveNote}
       />
       <Toaster />
+      <AlertDialog open={!!deleteConfirmation} onOpenChange={(open) => !open && handleCancelDelete()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteConfirmation?.type === 'permanent'
+                ? 'Are you absolutely sure?'
+                : 'Move Note to Trash?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteConfirmation?.type === 'permanent'
+                ? 'This action cannot be undone. This will permanently delete this note.'
+                : 'This will move the note to the trash. You can restore it later.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={cn(deleteConfirmation?.type === 'permanent' && buttonVariants({ variant: 'destructive' }))}
+              onClick={handleConfirmDelete}
+            >
+              {deleteConfirmation?.type === 'permanent' ? 'Delete Permanently' : 'Move to Trash'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
