@@ -224,6 +224,7 @@ export default function Home() {
       ...restOfNote,
       title: `Copy of ${noteToCopy.title || 'Untitled'}`,
       isPinned: false,
+      isDraft: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
