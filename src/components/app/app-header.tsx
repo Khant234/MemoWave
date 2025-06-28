@@ -52,7 +52,7 @@ export function AppHeader({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 shadow-sm sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 sm:px-6">
       <div className="flex items-center gap-2">
          {/* Desktop Menu Toggle */}
          <Button size="icon" variant="ghost" className="hidden sm:flex h-10 w-10" onClick={onToggleSidebar}>
@@ -157,24 +157,32 @@ export function AppHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
-          variant={layout === "list" ? "default" : "ghost"}
-          size="icon"
-          onClick={() => setLayout("list")}
-          aria-label="List view"
-          className="hidden sm:inline-flex"
-        >
-          <List className="h-5 w-5" />
-        </Button>
-        <Button
-          variant={layout === "grid" ? "default" : "ghost"}
-          size="icon"
-          onClick={() => setLayout("grid")}
-          aria-label="Grid view"
-          className="hidden sm:inline-flex"
-        >
-          <LayoutGrid className="h-5 w-5" />
-        </Button>
+        <div className="hidden items-center gap-1 rounded-lg bg-secondary p-0.5 sm:flex">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLayout("list")}
+              aria-label="List view"
+              className={cn(
+                "w-9 px-0",
+                layout === "list" && "bg-background text-foreground shadow-sm hover:bg-background"
+              )}
+            >
+              <List className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLayout("grid")}
+              aria-label="Grid view"
+              className={cn(
+                "w-9 px-0",
+                layout === "grid" && "bg-background text-foreground shadow-sm hover:bg-background"
+              )}
+            >
+              <LayoutGrid className="h-5 w-5" />
+            </Button>
+          </div>
         <ThemeToggle />
         <Button
           size="sm"
