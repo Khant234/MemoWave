@@ -21,7 +21,7 @@ import { NoteEditor } from "@/components/app/note-editor";
 import { type Note } from "@/lib/types";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
@@ -98,7 +98,7 @@ export default function Home() {
     try {
       if (isExisting) {
         const noteRef = doc(db, "notes", noteToSave.id);
-        await updateDoc(noteRef, noteToSave);
+        await updateDoc(noteRef, { ...noteToSave });
         setNotes((prevNotes) =>
           prevNotes.map((n) => (n.id === noteToSave.id ? noteToSave : n))
         );
@@ -316,6 +316,14 @@ export default function Home() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Button
+        onClick={handleNewNote}
+        size="icon"
+        className="sm:hidden fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-lg"
+      >
+        <Plus className="h-6 w-6" />
+        <span className="sr-only">New Note</span>
+      </Button>
     </div>
   );
 }

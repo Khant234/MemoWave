@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
@@ -55,7 +56,7 @@ export function AppHeader({
           <AppSidebar isMobile activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
         </SheetContent>
       </Sheet>
-      <div className="relative ml-auto flex-1 md:grow-0">
+      <div className="relative ml-auto flex-1 sm:grow-0">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="search"
@@ -85,11 +86,11 @@ export function AppHeader({
         <ThemeToggle />
         <Button
           size="sm"
-          className="gap-1"
+          className="gap-1 hidden sm:inline-flex"
           onClick={onNewNote}
         >
           <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">New Note</span>
+          <span>New Note</span>
         </Button>
       </div>
     </header>
