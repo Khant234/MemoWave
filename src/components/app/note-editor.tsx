@@ -277,11 +277,7 @@ export function NoteEditor({
     }
     
     onSave(draftNote);
-    toast({
-        title: "Draft Saved",
-        description: "Your note has been saved as a draft.",
-    });
-
+    
     clearDraft();
     setIsCloseConfirmOpen(false);
     setIsOpen(false);

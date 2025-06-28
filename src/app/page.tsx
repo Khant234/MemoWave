@@ -121,10 +121,17 @@ export default function Home() {
         const docRef = await addDoc(notesCollectionRef, noteData);
         setNotes((prevNotes) => [{ ...noteToSave, id: docRef.id }, ...prevNotes]);
       }
-       toast({
+      if (noteToSave.isDraft) {
+        toast({
+          title: "Draft Saved",
+          description: "Your note has been saved as a draft.",
+        });
+      } else {
+        toast({
           title: "Note Saved",
           description: `Your note "${noteToSave.title || 'Untitled'}" has been saved.`,
-      });
+        });
+      }
     } catch (error) {
       console.error("Error saving note:", error);
       toast({
