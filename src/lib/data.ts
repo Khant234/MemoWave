@@ -2,13 +2,13 @@
 import { type Note } from "./types";
 
 export const NOTE_COLORS = [
-  "#FFFFFF", // White
-  "#FFDDC1", // Light Peach
-  "#D4F0F0", // Pale Blue
-  "#C9E4DE", // Mint Green
-  "#FEEAFA", // Soft Pink
-  "#D8E2DC", // Light Gray
-  "#E6E6FA", // Lavender
+  "#FCA5A5", // red-400
+  "#FCD34D", // amber-400
+  "#6EE7B7", // emerald-300
+  "#93C5FD", // blue-300
+  "#C4B5FD", // violet-300
+  "#F9A8D4", // pink-300
+  "#A1A1AA", // zinc-400
 ];
 
 
