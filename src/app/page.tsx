@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/hooks/use-sidebar";
 
 export default function Home() {
   const [notes, setNotes] = React.useState<Note[]>([]);
@@ -56,7 +57,7 @@ export default function Home() {
     type: 'trash' | 'permanent';
   } | null>(null);
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+  const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
 
   const notesCollectionRef = collection(db, "notes");
 
@@ -361,14 +362,14 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-screen w-full flex-col bg-secondary">
       <AppHeader
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         layout={layout}
         setLayout={setLayout}
         onNewNote={handleNewNote}
-        onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        onToggleSidebar={toggleSidebar}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
         tags={allTags}
@@ -385,7 +386,7 @@ export default function Home() {
           onTagClick={handleTagClick}
           activeTag={searchTerm}
         />
-        <main className="flex-1 overflow-y-auto p-8 transition-all duration-300 ease-in-out">
+        <main className="flex-1 overflow-y-auto bg-background p-8 transition-all duration-300 ease-in-out">
           <div className="mx-auto max-w-7xl">
             <NoteList
               notes={filteredNotes}
