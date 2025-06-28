@@ -11,6 +11,16 @@ import {
   SheetFooter,
   SheetClose,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,8 +81,9 @@ export function NoteEditor({
   const [imageUrl, setImageUrl] = React.useState<string | undefined>();
   const [generatedAudio, setGeneratedAudio] = React.useState<string | null>(null);
   const [isDirty, setIsDirty] = React.useState(false);
+  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
 
-
+  const isSavingRef = React.useRef(false);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -197,6 +208,7 @@ export function NoteEditor({
         return;
     }
 
+    isSavingRef.current = true;
     const newNote: Note = {
       id: note?.id || new Date().toISOString(),
       title,
@@ -225,14 +237,25 @@ export function NoteEditor({
   }
 
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      if (!note) { // Only clear draft for new notes on cancel/close
-        clearDraft();
-      }
+    if (!open && isDirty && !isSavingRef.current) {
+        setIsCloseConfirmOpen(true);
+    } else {
+        isSavingRef.current = false; // Reset ref
+        setIsOpen(open);
     }
-    setIsOpen(open);
   };
 
+  const handleSaveDraftAndClose = () => {
+    // Draft is already saved by useEffect, so just close the dialog and editor
+    setIsCloseConfirmOpen(false);
+    setIsOpen(false);
+  };
+
+  const handleDiscardAndClose = () => {
+    clearDraft();
+    setIsCloseConfirmOpen(false);
+    setIsOpen(false);
+  };
 
   const handleTagAdd = () => {
     if (tagInput && !tags.includes(tagInput.trim())) {
@@ -349,180 +372,201 @@ export function NoteEditor({
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-      <input
-        type="file"
-        ref={imageInputRef}
-        onChange={handleImageUpload}
-        accept="image/*"
-        className="hidden"
-      />
-      <input
-        type="file"
-        ref={audioInputRef}
-        onChange={handleAudioUpload}
-        accept="audio/*"
-        className="hidden"
-      />
-      <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
-        <SheetHeader className="p-6">
-          <SheetTitle className="font-headline">
-            {note ? "Edit Note" : "New Note"}
-          </SheetTitle>
-        </SheetHeader>
-        <ScrollArea className="flex-grow px-6">
-          <div className="space-y-6 pb-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Note title"
-                />
-                <Button variant="outline" size="icon" onClick={handleGenerateTitle} disabled={isAiLoading || !content}>
-                  <Sparkles className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="content">Content</Label>
-              <Textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Start weaving your thoughts..."
-                className="min-h-[200px]"
-              />
-            </div>
-            
-            {imageUrl && (
+    <>
+      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+        <input
+          type="file"
+          ref={imageInputRef}
+          onChange={handleImageUpload}
+          accept="image/*"
+          className="hidden"
+        />
+        <input
+          type="file"
+          ref={audioInputRef}
+          onChange={handleAudioUpload}
+          accept="audio/*"
+          className="hidden"
+        />
+        <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
+          <SheetHeader className="p-6">
+            <SheetTitle className="font-headline">
+              {note ? "Edit Note" : "New Note"}
+            </SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="flex-grow px-6">
+            <div className="space-y-6 pb-6">
               <div className="space-y-2">
-                  <Label>Attached Image</Label>
-                  <div className="relative">
-                      <Image width={600} height={400} src={imageUrl} alt="Note attachment" className="rounded-lg w-full h-auto" />
-                      <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={() => setImageUrl(undefined)}>
-                          <Trash2 className="h-4 w-4" />
+                <Label htmlFor="title">Title</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Note title"
+                  />
+                  <Button variant="outline" size="icon" onClick={handleGenerateTitle} disabled={isAiLoading || !content}>
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="content">Content</Label>
+                <Textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Start weaving your thoughts..."
+                  className="min-h-[200px]"
+                />
+              </div>
+              
+              {imageUrl && (
+                <div className="space-y-2">
+                    <Label>Attached Image</Label>
+                    <div className="relative">
+                        <Image width={600} height={400} src={imageUrl} alt="Note attachment" className="rounded-lg w-full h-auto" />
+                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={() => setImageUrl(undefined)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+              )}
+
+              {generatedAudio && (
+                  <div className="space-y-2">
+                      <Label>Attached Audio</Label>
+                      <audio controls src={generatedAudio} className="w-full" />
+                      <Button variant="destructive" size="sm" className="w-full" onClick={() => setGeneratedAudio(null)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Remove Audio
                       </Button>
                   </div>
+              )}
+
+              <div className="space-y-4 rounded-lg border p-4">
+                  <Label>Checklist</Label>
+                  <div className="space-y-2">
+                      {checklist.map(item => (
+                          <div key={item.id} className="flex items-center gap-2">
+                              <input type="checkbox" checked={item.completed} onChange={() => handleToggleChecklistItem(item.id)} className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                              <span className={cn("flex-grow", item.completed && "line-through text-muted-foreground")}>{item.text}</span>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveChecklistItem(item.id)}>
+                                  <Trash2 className="h-4 w-4 text-destructive"/>
+                              </Button>
+                          </div>
+                      ))}
+                  </div>
+                  <div className="flex gap-2">
+                      <Input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} placeholder="Add a checklist item" onKeyDown={e => e.key === 'Enter' && handleAddChecklistItem()} />
+                      <Button onClick={handleAddChecklistItem}><Plus className="h-4 w-4" /></Button>
+                  </div>
               </div>
-            )}
 
-            {generatedAudio && (
-                <div className="space-y-2">
-                    <Label>Attached Audio</Label>
-                    <audio controls src={generatedAudio} className="w-full" />
-                    <Button variant="destructive" size="sm" className="w-full" onClick={() => setGeneratedAudio(null)}>
-                      <Trash2 className="mr-2 h-4 w-4" /> Remove Audio
-                    </Button>
-                </div>
-            )}
-
-            <div className="space-y-4 rounded-lg border p-4">
-                <Label>Checklist</Label>
-                <div className="space-y-2">
-                    {checklist.map(item => (
-                        <div key={item.id} className="flex items-center gap-2">
-                            <input type="checkbox" checked={item.completed} onChange={() => handleToggleChecklistItem(item.id)} className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
-                            <span className={cn("flex-grow", item.completed && "line-through text-muted-foreground")}>{item.text}</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveChecklistItem(item.id)}>
-                                <Trash2 className="h-4 w-4 text-destructive"/>
-                            </Button>
-                        </div>
-                    ))}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="tags">Tags</Label>
                 <div className="flex gap-2">
-                    <Input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} placeholder="Add a checklist item" onKeyDown={e => e.key === 'Enter' && handleAddChecklistItem()} />
-                    <Button onClick={handleAddChecklistItem}><Plus className="h-4 w-4" /></Button>
-                </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="tags"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleTagAdd()}
-                  placeholder="Add a tag and press Enter"
-                />
-                <Button onClick={handleTagAdd}>Add</Button>
-                <Button variant="outline" size="icon" onClick={handleSuggestTags} disabled={isAiLoading || !content}>
-                  <Sparkles className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-2">
-                {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    {tag}
-                    <button
-                      onClick={() => handleTagRemove(tag)}
-                      className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Color</Label>
-              <div className="flex flex-wrap gap-2">
-                {NOTE_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setColor(c)}
-                    className={cn(
-                      "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110",
-                      color === c
-                        ? "border-primary ring-2 ring-primary ring-offset-2"
-                        : "border-transparent"
-                    )}
-                    style={{ backgroundColor: c }}
+                  <Input
+                    id="tags"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleTagAdd()}
+                    placeholder="Add a tag and press Enter"
                   />
-                ))}
+                  <Button onClick={handleTagAdd}>Add</Button>
+                  <Button variant="outline" size="icon" onClick={handleSuggestTags} disabled={isAiLoading || !content}>
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {tags.map((tag) => (
+                    <Badge key={tag} variant="secondary">
+                      {tag}
+                      <button
+                        onClick={() => handleTagRemove(tag)}
+                        className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
               </div>
+              <div className="space-y-2">
+                <Label>Color</Label>
+                <div className="flex flex-wrap gap-2">
+                  {NOTE_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setColor(c)}
+                      className={cn(
+                        "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110",
+                        color === c
+                          ? "border-primary ring-2 ring-primary ring-offset-2"
+                          : "border-transparent"
+                      )}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
+                  <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
+                  <Button variant="outline" onClick={() => setIsRecorderOpen(true)}><Mic className="mr-2 h-4 w-4"/>Record Audio</Button>
+                  <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>
+                  <Button variant="outline" onClick={() => setIsTranscriberOpen(true)}><BookText className="mr-2 h-4 w-4" />Transcribe (BU)</Button>
+                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateAudio}><Volume2 className="mr-2 h-4 w-4"/>Listen (BU)</Button>
+              </div>
+            </div>
+          </ScrollArea>
+          <SheetFooter className="p-6 bg-background border-t flex items-center gap-2">
+            <div className="mr-auto">
+              {isDirty && note && (
+                <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>
+                  Discard Changes
+                </Button>
+              )}
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
-                <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
-                <Button variant="outline" onClick={() => setIsRecorderOpen(true)}><Mic className="mr-2 h-4 w-4"/>Record Audio</Button>
-                <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>
-                <Button variant="outline" onClick={() => setIsTranscriberOpen(true)}><BookText className="mr-2 h-4 w-4" />Transcribe (BU)</Button>
-                <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateAudio}><Volume2 className="mr-2 h-4 w-4"/>Listen (BU)</Button>
-            </div>
-          </div>
-        </ScrollArea>
-        <SheetFooter className="p-6 bg-background border-t flex items-center gap-2">
-          <div className="mr-auto">
-            {isDirty && note && (
-              <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>
-                Discard Changes
-              </Button>
-            )}
-          </div>
-          
-          <span className="text-sm text-muted-foreground">
-            {isAiLoading
-              ? "AI is working..."
-              : isDirty
-              ? "Unsaved changes"
-              : note
-              ? "All changes saved"
-              : ""}
-          </span>
-  
-          <SheetClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </SheetClose>
-          <Button onClick={handleSave} disabled={isAiLoading || !isDirty}>
-            Save Note
-          </Button>
-        </SheetFooter>
-      </SheetContent>
+            <span className="text-sm text-muted-foreground">
+              {isAiLoading
+                ? "AI is working..."
+                : isDirty
+                ? "Unsaved changes"
+                : note
+                ? "All changes saved"
+                : ""}
+            </span>
+    
+            <SheetClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </SheetClose>
+            <Button onClick={handleSave} disabled={isAiLoading || !isDirty}>
+              Save Note
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+      <AlertDialog open={isCloseConfirmOpen} onOpenChange={setIsCloseConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>You have unsaved changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Do you want to save your changes as a draft, or discard them?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+            <Button variant="destructive" onClick={handleDiscardAndClose}>
+              Discard Changes
+            </Button>
+            <Button onClick={handleSaveDraftAndClose}>
+              Save Draft
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AudioTranscriber 
         open={isTranscriberOpen}
         setOpen={setIsTranscriberOpen}
@@ -533,6 +577,6 @@ export function NoteEditor({
         setOpen={setIsRecorderOpen}
         onSave={handleSaveRecording}
       />
-    </Sheet>
+    </>
   );
 }
