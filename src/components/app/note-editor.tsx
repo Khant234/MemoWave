@@ -48,6 +48,10 @@ type NoteEditorProps = {
   onSave: (note: Note) => void;
 };
 
+// Define a type for our draft for clarity
+type NoteDraft = Partial<Omit<Note, 'id' | 'isPinned' | 'isArchived' | 'isTrashed' | 'createdAt' | 'updatedAt'>>;
+
+
 export function NoteEditor({
   isOpen,
   setIsOpen,
@@ -66,65 +70,81 @@ export function NoteEditor({
   const [isRecorderOpen, setIsRecorderOpen] = React.useState(false);
   const [imageUrl, setImageUrl] = React.useState<string | undefined>();
   const [generatedAudio, setGeneratedAudio] = React.useState<string | null>(null);
+  const [hasDraft, setHasDraft] = React.useState(false);
+
 
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
 
+  const getDrafts = (): Record<string, NoteDraft> => {
+    if (typeof window === 'undefined') return {};
+    const draftsRaw = localStorage.getItem('noteDrafts');
+    try {
+        return draftsRaw ? JSON.parse(draftsRaw) : {};
+    } catch {
+        return {};
+    }
+  };
+
+  const saveDraft = React.useCallback((draftData: NoteDraft) => {
+    if (typeof window === 'undefined') return;
+    const draftId = note ? note.id : 'new';
+    const drafts = getDrafts();
+    drafts[draftId] = draftData;
+    localStorage.setItem('noteDrafts', JSON.stringify(drafts));
+    if (!hasDraft) setHasDraft(true);
+  }, [note, hasDraft]);
+
+  const clearDraft = React.useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const draftId = note ? note.id : 'new';
+    const drafts = getDrafts();
+    delete drafts[draftId];
+    localStorage.setItem('noteDrafts', JSON.stringify(drafts));
+    setHasDraft(false);
+  }, [note]);
+
+  const loadStateFromData = (data: Note | NoteDraft) => {
+    setTitle(data.title || '');
+    setContent(data.content || '');
+    setTags(data.tags || []);
+    setColor(data.color || NOTE_COLORS[0]);
+    setChecklist(data.checklist || []);
+    setImageUrl(data.imageUrl);
+    setGeneratedAudio('audioUrl' in data ? data.audioUrl || null : null);
+  };
+
   React.useEffect(() => {
     if (isOpen) {
-      if (note) {
-        // We are editing an existing note
-        setTitle(note.title);
-        setContent(note.content);
-        setTags(note.tags);
-        setColor(note.color);
-        setChecklist(note.checklist || []);
-        setImageUrl(note.imageUrl);
-        setGeneratedAudio(note.audioUrl || null);
+      const drafts = getDrafts();
+      const draftId = note ? note.id : 'new';
+      const draft = drafts[draftId];
+
+      if (draft) {
+        loadStateFromData(draft);
+        setHasDraft(true);
+      } else if (note) {
+        loadStateFromData(note);
+        setHasDraft(false);
       } else {
-        // We are creating a new note, check for a draft in localStorage
-        const savedDraftRaw = localStorage.getItem('noteDraft');
-        if (savedDraftRaw) {
-          try {
-            const savedDraft = JSON.parse(savedDraftRaw);
-            setTitle(savedDraft.title || '');
-            setContent(savedDraft.content || '');
-            setTags(savedDraft.tags || []);
-            setColor(savedDraft.color || NOTE_COLORS[0]);
-            setChecklist(savedDraft.checklist || []);
-            setImageUrl(savedDraft.imageUrl);
-            setGeneratedAudio(savedDraft.audioUrl || null);
-          } catch (e) {
-            console.error("Failed to parse note draft", e);
-            // Reset if draft is corrupted
-            setTitle('');
-            setContent('');
-            setTags([]);
-            setColor(NOTE_COLORS[0]);
-            setChecklist([]);
-            setImageUrl(undefined);
-            setGeneratedAudio(null);
-          }
-        } else {
-          // No draft exists, start with a blank note
-          setTitle('');
-          setContent('');
-          setTags([]);
-          setColor(NOTE_COLORS[0]);
-          setChecklist([]);
-          setImageUrl(undefined);
-          setGeneratedAudio(null);
-        }
+        // Reset for a truly new note
+        setTitle('');
+        setContent('');
+        setTags([]);
+        setColor(NOTE_COLORS[0]);
+        setChecklist([]);
+        setImageUrl(undefined);
+        setGeneratedAudio(null);
+        setHasDraft(false);
       }
     }
   }, [note, isOpen]);
 
-  // This effect saves the current input as a draft for new notes.
   React.useEffect(() => {
-    if (isOpen && !note) {
-      const draftNote = {
+    if (isOpen) {
+      const draftNote: NoteDraft = {
         title,
         content,
         tags,
@@ -133,10 +153,9 @@ export function NoteEditor({
         imageUrl,
         audioUrl: generatedAudio,
       };
-      localStorage.setItem('noteDraft', JSON.stringify(draftNote));
+      saveDraft(draftNote);
     }
-  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio]);
-
+  }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, saveDraft]);
 
   const handleSave = () => {
     if (!title && !content) {
@@ -164,13 +183,27 @@ export function NoteEditor({
       audioUrl: generatedAudio || undefined,
     };
     onSave(newNote);
-    
-    // If it was a new note, clear the draft from localStorage
-    if (!note) {
-        localStorage.removeItem('noteDraft');
-    }
+    clearDraft();
   };
   
+  const handleDiscardDraft = () => {
+    if (note) {
+      loadStateFromData(note);
+      clearDraft();
+      toast({ title: "Draft discarded", description: "Your changes have been discarded." });
+    }
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      if (!note) { // Only clear draft for new notes on cancel/close
+        clearDraft();
+      }
+    }
+    setIsOpen(open);
+  };
+
+
   const handleTagAdd = () => {
     if (tagInput && !tags.includes(tagInput.trim())) {
       setTags([...tags, tagInput.trim()]);
@@ -285,17 +318,6 @@ export function NoteEditor({
     };
   };
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      // If we are closing a new note editor without saving, clear the draft.
-      if (!note) {
-        localStorage.removeItem('noteDraft');
-      }
-    }
-    setIsOpen(open);
-  };
-
-
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <input
@@ -314,7 +336,10 @@ export function NoteEditor({
       />
       <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
         <SheetHeader className="p-6">
-          <SheetTitle className="font-headline">{note ? "Edit Note" : "New Note"}</SheetTitle>
+          <SheetTitle className="font-headline">
+            {note ? "Edit Note" : "New Note"}
+            {hasDraft && <span className="text-sm ml-2 text-muted-foreground font-normal">(Draft)</span>}
+          </SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex-grow px-6">
           <div className="space-y-6 pb-6">
@@ -443,6 +468,9 @@ export function NoteEditor({
           </div>
         </ScrollArea>
         <SheetFooter className="p-6 bg-background border-t">
+          {hasDraft && note && (
+            <Button variant="ghost" className="mr-auto text-destructive hover:text-destructive" onClick={handleDiscardDraft}>Discard Draft</Button>
+          )}
           <SheetClose asChild>
             <Button variant="outline">Cancel</Button>
           </SheetClose>
