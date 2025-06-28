@@ -16,10 +16,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
 import { cn } from "@/lib/utils";
@@ -53,7 +53,7 @@ export function AppHeader({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 sm:px-6 shadow-sm backdrop-blur-md">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-background/95 px-4 sm:px-6 shadow-md backdrop-blur-md">
       <div className="flex items-center gap-2">
          {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -64,7 +64,7 @@ export function AppHeader({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs p-0">
-            <SheetHeader className="sr-only">
+             <SheetHeader className="sr-only">
               <SheetTitle>Menu</SheetTitle>
               <SheetDescription>
                 Main navigation for notes, archives, and tags.

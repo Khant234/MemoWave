@@ -375,7 +375,7 @@ export default function Home() {
         activeTag={searchTerm}
       />
        <div className={cn(
-          "flex flex-1 flex-col transition-all duration-300 ease-in-out",
+          "flex flex-1 flex-col transition-all duration-300 ease-in-out bg-secondary",
           isSidebarExpanded ? "sm:ml-72" : "sm:ml-20"
         )}>
           <AppHeader
@@ -390,7 +390,7 @@ export default function Home() {
             onTagClick={handleTagClick}
             activeTag={searchTerm}
           />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
             <NoteList
               notes={filteredNotes}
               layout={layout}

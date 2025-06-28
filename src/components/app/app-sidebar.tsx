@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -130,7 +131,7 @@ export function AppSidebar({
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
       className={cn(
-        "fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 hidden flex-col border-r bg-background sm:flex transition-[width] duration-300 ease-in-out",
+        "fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 hidden flex-col bg-secondary sm:flex transition-[width] duration-300 ease-in-out shadow-lg",
         isExpanded ? "w-72" : "w-20"
       )}
     >
