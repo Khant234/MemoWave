@@ -72,7 +72,7 @@ export function NoteCard({
     <Card
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
-        "cursor-pointer hover:shadow-xl transition-all duration-200 overflow-hidden shadow-md transform hover:scale-[1.02]",
+        "cursor-pointer hover:shadow-xl transition-[transform,box-shadow] duration-300 ease-in-out overflow-hidden shadow-md transform hover:-translate-y-1",
         note.isPinned && "border-primary/50 bg-primary/10",
         note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}

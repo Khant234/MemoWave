@@ -119,8 +119,8 @@ export function AppSidebar({
     <aside
       data-collapsed={isCollapsed}
       className={cn(
-        "hidden sm:flex h-full flex-col bg-card z-40 border-r shadow-lg",
-        "transition-all duration-300 ease-in-out",
+        "hidden sm:flex h-full flex-col bg-card z-40 border-r",
+        "transition-[width] duration-300 ease-in-out",
         isCollapsed ? "w-20" : "w-60"
       )}
     >
