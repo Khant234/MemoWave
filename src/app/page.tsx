@@ -418,7 +418,6 @@ export default function Home() {
         note={editingNote}
         onSave={handleSaveNote}
       />
-      <Toaster />
       <AlertDialog open={!!deleteConfirmation} onOpenChange={(open) => !open && handleCancelDelete()}>
         <AlertDialogContent>
           <AlertDialogHeader>
