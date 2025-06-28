@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { type Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Edit, CheckSquare, Square, Music } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 type NoteViewerProps = {
   isOpen: boolean;
@@ -43,6 +44,21 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
       minute: '2-digit'
     });
   }
+
+  const checklistExists = note.checklist && note.checklist.length > 0;
+  
+  const sortedChecklist = checklistExists
+    ? [...note.checklist].sort((a, b) => {
+        if (a.completed === b.completed) return 0;
+        return a.completed ? 1 : -1;
+      })
+    : [];
+
+  const completedItems = checklistExists
+    ? note.checklist.filter((item) => item.completed).length
+    : 0;
+  const totalItems = checklistExists ? note.checklist.length : 0;
+  const checklistProgress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -73,11 +89,17 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
                 </div>
             )}
 
-            {note.checklist && note.checklist.length > 0 && (
+            {checklistExists && (
               <div className="space-y-4 rounded-lg border p-4">
-                  <h3 className="text-sm font-medium">Checklist</h3>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-sm font-medium">Checklist</h3>
+                    <span className="text-xs text-muted-foreground">
+                      {completedItems}/{totalItems} completed
+                    </span>
+                  </div>
+                  <Progress value={checklistProgress} className="h-2" />
                   <div className="space-y-2">
-                      {note.checklist.map(item => (
+                      {sortedChecklist.map(item => (
                           <button
                             key={item.id}
                             onClick={() => onChecklistItemToggle(note.id, item.id)}
