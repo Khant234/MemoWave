@@ -43,6 +43,7 @@ import {
   Loader2,
   Volume2,
   Upload,
+  ListTodo,
 } from "lucide-react";
 import { suggestTags } from "@/ai/flows/suggest-tags";
 import { generateTitle } from "@/ai/flows/title-generation";
@@ -50,6 +51,7 @@ import { summarizeNote } from "@/ai/flows/note-summarization";
 import { burmeseTextToVoice } from "@/ai/flows/burmese-text-to-voice";
 import { AudioTranscriber } from "./audio-transcriber";
 import { AudioRecorder } from "./audio-recorder";
+import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
 
 type NoteEditorProps = {
   isOpen: boolean;
@@ -322,11 +324,13 @@ export function NoteEditor({
     setChecklist(checklist.filter((item) => item.id !== id));
   };
 
-  const runAiAction = async (action: () => Promise<void>, messages: {loading: string, success: string, error: string}) => {
+  const runAiAction = async (action: () => Promise<boolean | void>, messages: {loading: string, success: string, error: string}) => {
     setIsAiLoading(true);
     try {
-        await action();
-        toast({ title: messages.success });
+        const shouldToast = await action();
+        if (shouldToast !== false) {
+          toast({ title: messages.success });
+        }
     } catch(error: any) {
         console.error(error);
         toast({ title: "AI Error", description: error.message || messages.error, variant: "destructive"});
@@ -351,6 +355,33 @@ export function NoteEditor({
     const result = await summarizeNote({ noteContent: content });
     if (result.summary) setContent(prev => `${prev}\n\n**Summary:**\n${result.summary}`);
   }, { loading: "Summarizing note...", success: "Note Summarized!", error: "Could not summarize note." });
+
+  const handleAutoChecklist = () => runAiAction(async () => {
+    if(!content) throw new Error("Please write some content to generate a checklist.");
+    const result = await extractChecklistItems({ noteContent: content });
+    if (result.items && result.items.length > 0) {
+        const newItems = result.items.map(item => ({...item, id: new Date().toISOString() + Math.random()}));
+        
+        let addedCount = 0;
+        setChecklist(prev => {
+            const existingTexts = new Set(prev.map(p => p.text.trim().toLowerCase()));
+            const filteredNewItems = newItems.filter(newItem => !existingTexts.has(newItem.text.trim().toLowerCase()));
+            addedCount = filteredNewItems.length;
+            return [...prev, ...filteredNewItems];
+        });
+        
+        if (addedCount > 0) {
+             toast({ title: "Checklist items added!", description: `${addedCount} new item(s) were added.` });
+        } else {
+             toast({ title: "No new items found", description: "Your checklist is already up to date." });
+        }
+
+    } else {
+        toast({ title: "No actionable items found", description: "The AI couldn't find any tasks in your note." });
+    }
+    return false;
+  }, { loading: "Analyzing note...", success: "Analysis complete!", error: "Could not generate checklist." });
+
 
   const handleGenerateAudio = () => runAiAction(async () => {
     if(!content) throw new Error("Please write some content to generate audio.");
@@ -544,6 +575,7 @@ export function NoteEditor({
               
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
+                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleAutoChecklist}><ListTodo className="mr-2 h-4 w-4"/>Auto Checklist</Button>
                   <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
                   <Button variant="outline" onClick={() => setIsRecorderOpen(true)}><Mic className="mr-2 h-4 w-4"/>Record Audio</Button>
                   <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>
