@@ -16,9 +16,10 @@ type AppSidebarProps = {
   activeTag: string;
   isMobile?: boolean;
   onFilterChange?: () => void;
+  isExpanded?: boolean;
 };
 
-export function AppSidebar({ activeFilter, setActiveFilter, setSearchTerm, tags, onTagClick, activeTag, isMobile, onFilterChange }: AppSidebarProps) {
+export function AppSidebar({ activeFilter, setActiveFilter, setSearchTerm, tags, onTagClick, activeTag, isMobile, onFilterChange, isExpanded = false }: AppSidebarProps) {
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     setActiveFilter(filter);
     setSearchTerm("");
@@ -78,7 +79,7 @@ export function AppSidebar({ activeFilter, setActiveFilter, setSearchTerm, tags,
                   onClick={() => handleTagClick(tag)}
                 >
                   <Tag className="h-4 w-4" />
-                  <span>{tag}</span>
+                  <span className="truncate">{tag}</span>
                 </Button>
               ))}
             </div>
@@ -88,94 +89,82 @@ export function AppSidebar({ activeFilter, setActiveFilter, setSearchTerm, tags,
     );
   }
   
+  const mainNavItems = [
+    { filter: "all", label: "All Notes", icon: NotepadText, active: activeFilter === "all" && activeTag === '' },
+    { filter: "archived", label: "Archived", icon: Archive, active: activeFilter === "archived" },
+    { filter: "trash", label: "Trash", icon: Trash2, active: activeFilter === "trash" },
+  ];
+
   return (
-    <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
-      <nav className="flex flex-col items-center gap-4 px-2 py-4">
-        <div className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base">
-          <PenSquare className="h-5 w-5 transition-all group-hover:scale-110" />
-          <span className="sr-only">MemoWeave</span>
+    <aside className={cn(
+        "fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background sm:flex transition-all duration-200",
+        isExpanded ? "w-64" : "w-14"
+    )}>
+      <nav className={cn("flex flex-col gap-4 px-2 py-4", isExpanded ? "items-stretch" : "items-center")}>
+        <div className={cn(
+            "group flex h-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:text-base",
+            isExpanded ? "w-auto self-start px-3" : "w-9"
+        )}>
+            <PenSquare className="h-5 w-5 transition-all group-hover:scale-110 shrink-0" />
+            {isExpanded && <span className="ml-1">MemoWeave</span>}
+            {!isExpanded && <span className="sr-only">MemoWeave</span>}
         </div>
         <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={activeFilter === "all" ? "secondary" : "ghost"}
-                size="icon"
-                className={cn(
-                  "rounded-lg",
-                  activeFilter === "all" && activeTag === '' && "bg-primary/10 text-primary"
-                )}
-                aria-label="All Notes"
-                onClick={() => handleFilterClick("all")}
-              >
-                <NotepadText className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">All Notes</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={activeFilter === "archived" ? "secondary" : "ghost"}
-                size="icon"
-                className={cn(
-                  "rounded-lg",
-                  activeFilter === "archived" && "bg-primary/10 text-primary"
-                )}
-                aria-label="Archived"
-                onClick={() => handleFilterClick("archived")}
-              >
-                <Archive className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Archived</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={activeFilter === "trash" ? "secondary" : "ghost"}
-                size="icon"
-                className={cn(
-                  "rounded-lg",
-                  activeFilter === "trash" && "bg-primary/10 text-primary"
-                )}
-                aria-label="Trash"
-                onClick={() => handleFilterClick("trash")}
-              >
-                <Trash2 className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Trash</TooltipContent>
-          </Tooltip>
+          {mainNavItems.map(({ filter, label, icon: Icon, active }) => (
+            <Tooltip key={filter} delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={active ? "secondary" : "ghost"}
+                  size={isExpanded ? "default" : "icon"}
+                  className={cn(
+                      "w-full rounded-lg",
+                      active && "bg-primary/10 text-primary",
+                      isExpanded ? "justify-start" : "justify-center"
+                  )}
+                  aria-label={label}
+                  onClick={() => handleFilterClick(filter as any)}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {isExpanded && <span className="ml-2">{label}</span>}
+                </Button>
+              </TooltipTrigger>
+              {!isExpanded && (
+                  <TooltipContent side="right">{label}</TooltipContent>
+              )}
+            </Tooltip>
+          ))}
         </TooltipProvider>
       </nav>
       {tags.length > 0 && (
-        <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-4 border-t">
-          {tags.map(tag => (
-            <TooltipProvider key={tag}>
-              <Tooltip>
+        <nav className={cn("mt-auto flex flex-col gap-4 px-2 py-4 border-t", isExpanded ? "items-stretch" : "items-center")}>
+          {isExpanded && (
+               <h3 className="px-2 text-xs font-semibold text-muted-foreground tracking-wider uppercase">Tags</h3>
+          )}
+          <TooltipProvider>
+            {tags.map(tag => (
+              <Tooltip key={tag} delayDuration={0}>
                 <TooltipTrigger asChild>
                   <Button
                     variant={activeTag === tag ? "secondary" : "ghost"}
-                    size="icon"
+                    size={isExpanded ? "default" : "icon"}
                     className={cn(
-                      "rounded-lg",
-                      activeTag === tag && "bg-primary/10 text-primary"
+                      "w-full rounded-lg",
+                      activeTag === tag && "bg-primary/10 text-primary",
+                      isExpanded ? "justify-start" : "justify-center"
                     )}
                     aria-label={tag}
                     onClick={() => onTagClick(tag)}
                   >
-                    <Tag className="h-5 w-5" />
+                    <Tag className="h-5 w-5 shrink-0" />
+                    {isExpanded && <span className="ml-2 truncate">{tag}</span>}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right">{tag}</TooltipContent>
+                {!isExpanded && (
+                    <TooltipContent side="right">{tag}</TooltipContent>
+                )}
               </Tooltip>
-            </TooltipProvider>
-          ))}
+            ))}
+          </TooltipProvider>
         </nav>
       )}
     </aside>
