@@ -1,3 +1,4 @@
+
 "use client";
 
 import { type Note } from "@/lib/types";
@@ -7,7 +8,7 @@ import { cn } from "@/lib/utils";
 type NoteListProps = {
   notes: Note[];
   layout: "grid" | "list";
-  onEditNote: (note: Note) => void;
+  onViewNote: (note: Note) => void;
   onTogglePin: (noteId: string) => void;
   onToggleArchive: (noteId: string) => void;
   onDeleteNote: (noteId: string) => void;
@@ -19,7 +20,7 @@ type NoteListProps = {
 export function NoteList({
   notes,
   layout,
-  onEditNote,
+  onViewNote,
   onTogglePin,
   onToggleArchive,
   onDeleteNote,
@@ -66,7 +67,7 @@ export function NoteList({
         <NoteCard
           key={note.id}
           note={note}
-          onEditNote={onEditNote}
+          onViewNote={onViewNote}
           onTogglePin={onTogglePin}
           onToggleArchive={onToggleArchive}
           onDeleteNote={onDeleteNote}

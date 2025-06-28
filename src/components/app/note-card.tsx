@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -30,7 +31,7 @@ import { cn } from "@/lib/utils";
 
 type NoteCardProps = {
   note: Note;
-  onEditNote: (note: Note) => void;
+  onViewNote: (note: Note) => void;
   onTogglePin: (noteId: string) => void;
   onToggleArchive: (noteId: string) => void;
   onDeleteNote: (noteId: string) => void;
@@ -40,7 +41,7 @@ type NoteCardProps = {
 
 export function NoteCard({
   note,
-  onEditNote,
+  onViewNote,
   onTogglePin,
   onToggleArchive,
   onDeleteNote,
@@ -60,7 +61,7 @@ export function NoteCard({
 
   return (
     <Card
-      onClick={() => !note.isTrashed && onEditNote(note)}
+      onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
         "cursor-pointer hover:shadow-lg transition-shadow duration-200 flex flex-col h-full overflow-hidden",
         note.isPinned && "border-primary/50 bg-primary/10",

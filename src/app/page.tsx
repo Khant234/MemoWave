@@ -18,6 +18,7 @@ import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppHeader } from "@/components/app/app-header";
 import { NoteList } from "@/components/app/note-list";
 import { NoteEditor } from "@/components/app/note-editor";
+import { NoteViewer } from "@/components/app/note-viewer";
 import { type Note } from "@/lib/types";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -43,9 +44,14 @@ export default function Home() {
   );
   const [searchTerm, setSearchTerm] = React.useState("");
   const [layout, setLayout] = React.useState<"grid" | "list">("grid");
+  const { toast } = useToast();
+  
+  // State for viewer and editor
+  const [isViewerOpen, setIsViewerOpen] = React.useState(false);
+  const [viewingNote, setViewingNote] = React.useState<Note | null>(null);
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
-  const { toast } = useToast();
+
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
     noteId: string;
     type: 'trash' | 'permanent';
@@ -84,11 +90,18 @@ export default function Home() {
     setEditingNote(null);
     setIsEditorOpen(true);
   };
-
-  const handleEditNote = (note: Note) => {
-    setEditingNote(note);
-    setIsEditorOpen(true);
+  
+  const handleViewNote = (note: Note) => {
+    setViewingNote(note);
+    setIsViewerOpen(true);
   };
+
+  const handleStartEditing = (note: Note) => {
+    setIsViewerOpen(false); // Close viewer
+    setEditingNote(note);   // Set note to edit
+    setIsEditorOpen(true);  // Open editor
+  };
+
 
   const handleSaveNote = async (noteToSave: Note) => {
     setIsEditorOpen(false);
@@ -98,7 +111,8 @@ export default function Home() {
     try {
       if (isExisting) {
         const noteRef = doc(db, "notes", noteToSave.id);
-        await updateDoc(noteRef, { ...noteToSave });
+        const {id, ...noteData} = noteToSave;
+        await updateDoc(noteRef, { ...noteData });
         setNotes((prevNotes) =>
           prevNotes.map((n) => (n.id === noteToSave.id ? noteToSave : n))
         );
@@ -274,7 +288,7 @@ export default function Home() {
           <NoteList
             notes={filteredNotes}
             layout={layout}
-            onEditNote={handleEditNote}
+            onViewNote={handleViewNote}
             onTogglePin={handleTogglePin}
             onToggleArchive={handleToggleArchive}
             onDeleteNote={handleMoveToTrash}
@@ -284,6 +298,12 @@ export default function Home() {
           />
         </main>
       </div>
+      <NoteViewer
+        isOpen={isViewerOpen}
+        setIsOpen={setIsViewerOpen}
+        note={viewingNote}
+        onEdit={handleStartEditing}
+      />
       <NoteEditor
         isOpen={isEditorOpen}
         setIsOpen={setIsEditorOpen}
