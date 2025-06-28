@@ -3,12 +3,12 @@
 import * as React from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, PenSquare } from "lucide-react";
+import { NotepadText, Archive, PenSquare, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type AppSidebarProps = {
-  activeFilter: "all" | "archived";
-  setActiveFilter: React.Dispatch<React.SetStateAction<"all" | "archived">>;
+  activeFilter: "all" | "archived" | "trash";
+  setActiveFilter: React.Dispatch<React.SetStateAction<"all" | "archived" | "trash">>;
   isMobile?: boolean;
 };
 
@@ -41,6 +41,16 @@ export function AppSidebar({ activeFilter, setActiveFilter, isMobile }: AppSideb
         >
           <Archive className="h-4 w-4" />
           Archived
+        </button>
+        <button
+          onClick={() => setActiveFilter("trash")}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+            activeFilter === "trash" && "bg-muted text-primary"
+          )}
+        >
+          <Trash2 className="h-4 w-4" />
+          Trash
         </button>
       </nav>
     );
@@ -89,6 +99,25 @@ export function AppSidebar({ activeFilter, setActiveFilter, isMobile }: AppSideb
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">Archived</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={activeFilter === "trash" ? "secondary" : "ghost"}
+                size="icon"
+                className={cn(
+                  "rounded-lg",
+                  activeFilter === "trash" && "bg-primary/10 text-primary"
+                )}
+                aria-label="Trash"
+                onClick={() => setActiveFilter("trash")}
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Trash</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </nav>

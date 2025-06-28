@@ -14,7 +14,7 @@ import { Loader2 } from "lucide-react";
 export default function Home() {
   const [notes, setNotes] = React.useState<Note[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [activeFilter, setActiveFilter] = React.useState<"all" | "archived">(
+  const [activeFilter, setActiveFilter] = React.useState<"all" | "archived" | "trash">(
     "all"
   );
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -28,7 +28,11 @@ export default function Home() {
       const savedNotesRaw = localStorage.getItem("notes");
       if (savedNotesRaw) {
         const savedNotes = JSON.parse(savedNotesRaw);
-        setNotes(savedNotes);
+        const notesWithTrash = savedNotes.map((note: any) => ({
+          ...note,
+          isTrashed: note.isTrashed || false,
+        }));
+        setNotes(notesWithTrash);
       } else {
         // If no notes in storage, initialize with DUMMY_NOTES
         setNotes(DUMMY_NOTES);
@@ -83,20 +87,46 @@ export default function Home() {
   const handleToggleArchive = (noteId: string) => {
     setNotes((prevNotes) =>
       prevNotes.map((n) =>
-        n.id === noteId ? { ...n, isArchived: !n.isArchived } : n
+        n.id === noteId ? { ...n, isArchived: !n.isArchived, isPinned: false } : n
       )
     );
   };
 
-  const handleDeleteNote = (noteId: string) => {
+  const handleMoveToTrash = (noteId: string) => {
+    setNotes((prevNotes) =>
+      prevNotes.map((n) => (n.id === noteId ? { ...n, isTrashed: true, isPinned: false } : n))
+    );
+  };
+
+  const handleRestoreNote = (noteId: string) => {
+    setNotes((prevNotes) =>
+      prevNotes.map((n) => (n.id === noteId ? { ...n, isTrashed: false } : n))
+    );
+  };
+
+  const handlePermanentlyDeleteNote = (noteId: string) => {
     setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
   };
+
 
   const filteredNotes = React.useMemo(() => {
     return notes
       .filter((note) => {
-        const matchesFilter =
-          activeFilter === "all" ? !note.isArchived : note.isArchived;
+        let matchesFilter;
+        switch (activeFilter) {
+          case 'all':
+            matchesFilter = !note.isArchived && !note.isTrashed;
+            break;
+          case 'archived':
+            matchesFilter = note.isArchived && !note.isTrashed;
+            break;
+          case 'trash':
+            matchesFilter = note.isTrashed;
+            break;
+          default:
+            matchesFilter = true;
+        }
+        
         const matchesSearch =
           searchTerm.trim() === "" ||
           note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,8 +137,10 @@ export default function Home() {
         return matchesFilter && matchesSearch;
       })
       .sort((a, b) => {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
+        if (activeFilter !== 'trash') {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+        }
         return (
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
         );
@@ -149,7 +181,10 @@ export default function Home() {
             onEditNote={handleEditNote}
             onTogglePin={handleTogglePin}
             onToggleArchive={handleToggleArchive}
-            onDeleteNote={handleDeleteNote}
+            onDeleteNote={handleMoveToTrash}
+            onRestoreNote={handleRestoreNote}
+            onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
+            activeFilter={activeFilter}
           />
         </main>
       </div>

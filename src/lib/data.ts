@@ -21,6 +21,7 @@ export const DUMMY_NOTES: Note[] = [
     color: NOTE_COLORS[1],
     isPinned: true,
     isArchived: false,
+    isTrashed: false,
     createdAt: "2024-05-20T10:00:00Z",
     updatedAt: "2024-05-20T11:30:00Z",
     checklist: [
@@ -36,6 +37,7 @@ export const DUMMY_NOTES: Note[] = [
     color: NOTE_COLORS[2],
     isPinned: false,
     isArchived: false,
+    isTrashed: false,
     createdAt: "2024-05-22T18:00:00Z",
     updatedAt: "2024-05-22T18:00:00Z",
     checklist: [
@@ -53,6 +55,7 @@ export const DUMMY_NOTES: Note[] = [
     color: NOTE_COLORS[3],
     isPinned: false,
     isArchived: false,
+    isTrashed: false,
     createdAt: "2024-05-18T14:20:00Z",
     updatedAt: "2024-05-21T09:00:00Z",
     imageUrl: "https://placehold.co/600x400.png",
@@ -66,6 +69,7 @@ export const DUMMY_NOTES: Note[] = [
     color: NOTE_COLORS[4],
     isPinned: false,
     isArchived: true,
+    isTrashed: false,
     createdAt: "2024-04-10T11:00:00Z",
     updatedAt: "2024-04-10T11:00:00Z",
     checklist: [],

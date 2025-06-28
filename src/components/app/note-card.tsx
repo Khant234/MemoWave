@@ -17,6 +17,7 @@ import {
   Trash2,
   Pin,
   PinOff,
+  Undo,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -33,6 +34,8 @@ type NoteCardProps = {
   onTogglePin: (noteId: string) => void;
   onToggleArchive: (noteId: string) => void;
   onDeleteNote: (noteId: string) => void;
+  onRestoreNote: (noteId: string) => void;
+  onPermanentlyDeleteNote: (noteId: string) => void;
 };
 
 export function NoteCard({
@@ -41,6 +44,8 @@ export function NoteCard({
   onTogglePin,
   onToggleArchive,
   onDeleteNote,
+  onRestoreNote,
+  onPermanentlyDeleteNote,
 }: NoteCardProps) {
   const [formattedDate, setFormattedDate] = React.useState("");
 
@@ -55,10 +60,11 @@ export function NoteCard({
 
   return (
     <Card
-      onClick={() => onEditNote(note)}
+      onClick={() => !note.isTrashed && onEditNote(note)}
       className={cn(
         "cursor-pointer hover:shadow-lg transition-shadow duration-200 flex flex-col h-full overflow-hidden",
-        note.isPinned && "border-primary/50 bg-primary/10"
+        note.isPinned && "border-primary/50 bg-primary/10",
+        note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}
       style={{ borderTop: `4px solid ${note.color}` }}
     >
@@ -67,21 +73,23 @@ export function NoteCard({
           {note.title}
         </CardTitle>
         <div className="absolute top-4 right-4 flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full"
-            onClick={handlePinClick}
-          >
-            {note.isPinned ? (
-              <Pin className="h-4 w-4 text-primary fill-primary" />
-            ) : (
-              <Pin className="h-4 w-4" />
-            )}
-            <span className="sr-only">
-              {note.isPinned ? "Unpin note" : "Pin note"}
-            </span>
-          </Button>
+          {!note.isTrashed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={handlePinClick}
+            >
+              {note.isPinned ? (
+                <Pin className="h-4 w-4 text-primary fill-primary" />
+              ) : (
+                <Pin className="h-4 w-4" />
+              )}
+              <span className="sr-only">
+                {note.isPinned ? "Unpin note" : "Pin note"}
+              </span>
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -98,17 +106,34 @@ export function NoteCard({
               align="end"
               onClick={(e) => e.stopPropagation()}
             >
-              <DropdownMenuItem onClick={() => onToggleArchive(note.id)}>
-                <Archive className="mr-2 h-4 w-4" />
-                <span>{note.isArchived ? "Unarchive" : "Archive"}</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive"
-                onClick={() => onDeleteNote(note.id)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                <span>Delete</span>
-              </DropdownMenuItem>
+              {note.isTrashed ? (
+                <>
+                  <DropdownMenuItem onClick={() => onRestoreNote(note.id)}>
+                    <Undo className="mr-2 h-4 w-4" />
+                    <span>Restore</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => onPermanentlyDeleteNote(note.id)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Delete Permanently</span>
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem onClick={() => onToggleArchive(note.id)}>
+                    <Archive className="mr-2 h-4 w-4" />
+                    <span>{note.isArchived ? "Unarchive" : "Archive"}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onDeleteNote(note.id)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Delete</span>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

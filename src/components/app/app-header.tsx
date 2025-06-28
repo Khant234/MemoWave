@@ -24,8 +24,8 @@ type AppHeaderProps = {
   layout: "grid" | "list";
   setLayout: Dispatch<SetStateAction<"grid" | "list">>;
   onNewNote: () => void;
-  activeFilter: "all" | "archived";
-  setActiveFilter: Dispatch<SetStateAction<"all" | "archived">>;
+  activeFilter: "all" | "archived" | "trash";
+  setActiveFilter: Dispatch<SetStateAction<"all" | "archived" | "trash">>;
 };
 
 export function AppHeader({

@@ -6,6 +6,7 @@ export type Note = {
   color: string;
   isPinned: boolean;
   isArchived: boolean;
+  isTrashed: boolean;
   createdAt: string;
   updatedAt: string;
   imageUrl?: string;

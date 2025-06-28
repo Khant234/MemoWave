@@ -11,6 +11,9 @@ type NoteListProps = {
   onTogglePin: (noteId: string) => void;
   onToggleArchive: (noteId: string) => void;
   onDeleteNote: (noteId: string) => void;
+  onRestoreNote: (noteId: string) => void;
+  onPermanentlyDeleteNote: (noteId: string) => void;
+  activeFilter: "all" | "archived" | "trash";
 };
 
 export function NoteList({
@@ -20,13 +23,31 @@ export function NoteList({
   onTogglePin,
   onToggleArchive,
   onDeleteNote,
+  onRestoreNote,
+  onPermanentlyDeleteNote,
+  activeFilter,
 }: NoteListProps) {
   if (notes.length === 0) {
+    const messages = {
+      all: {
+        title: "No Notes Yet",
+        description: "Click on \"New Note\" to start weaving your thoughts.",
+      },
+      archived: {
+        title: "No Archived Notes",
+        description: "Your archived notes will appear here.",
+      },
+      trash: {
+        title: "Trash is Empty",
+        description: "Notes you delete will be moved to the trash.",
+      },
+    };
+    const message = messages[activeFilter];
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8">
-        <h2 className="text-2xl font-semibold mb-2 font-headline">No Notes Yet</h2>
+        <h2 className="text-2xl font-semibold mb-2 font-headline">{message.title}</h2>
         <p className="text-muted-foreground">
-          Click on "New Note" to start weaving your thoughts.
+          {message.description}
         </p>
       </div>
     );
@@ -49,6 +70,8 @@ export function NoteList({
           onTogglePin={onTogglePin}
           onToggleArchive={onToggleArchive}
           onDeleteNote={onDeleteNote}
+          onRestoreNote={onRestoreNote}
+          onPermanentlyDeleteNote={onPermanentlyDeleteNote}
         />
       ))}
     </div>

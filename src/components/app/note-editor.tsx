@@ -156,6 +156,7 @@ export function NoteEditor({
       color,
       isPinned: note?.isPinned || false,
       isArchived: note?.isArchived || false,
+      isTrashed: note?.isTrashed || false,
       createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       checklist,
