@@ -64,6 +64,10 @@ export function NoteCard({
 }: NoteCardProps) {
   const [formattedDate, setFormattedDate] = React.useState("");
 
+  const contentPreview = React.useMemo(() => {
+    return note.content.split('\n\n**Summary:**')[0];
+  }, [note.content]);
+
   React.useEffect(() => {
     // Client-side effect to prevent hydration mismatch
     setFormattedDate(new Date(note.updatedAt).toLocaleDateString());
@@ -189,7 +193,7 @@ export function NoteCard({
         )}
         <div className="relative h-[60px] overflow-hidden">
           <p className="text-sm text-muted-foreground">
-            {note.content}
+            {contentPreview}
           </p>
           <div className="absolute bottom-0 h-6 w-full bg-gradient-to-t from-card to-transparent pointer-events-none" />
         </div>
@@ -236,27 +240,30 @@ export function NoteCard({
             <p className="text-xs text-muted-foreground">
               {formattedDate}
             </p>
-            <div className="flex items-center gap-2">
-              {note.checklist && note.checklist.length > 0 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CheckSquare className="h-4 w-4" />
-                      <span>
-                        {note.checklist.filter((item) => item.completed).length}/
-                        {note.checklist.length}
-                      </span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Checklist progress</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-              {note.isDraft && (
-                  <Badge variant="outline">Draft</Badge>
-              )}
-            </div>
+            
+            {(note.checklist?.length > 0 || note.isDraft) && (
+                 <div className="flex items-center gap-2">
+                 {note.checklist && note.checklist.length > 0 && (
+                   <Tooltip>
+                     <TooltipTrigger asChild>
+                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                         <CheckSquare className="h-4 w-4" />
+                         <span>
+                           {note.checklist.filter((item) => item.completed).length}/
+                           {note.checklist.length}
+                         </span>
+                       </div>
+                     </TooltipTrigger>
+                     <TooltipContent>
+                       <p>Checklist progress</p>
+                     </TooltipContent>
+                   </Tooltip>
+                 )}
+                 {note.isDraft && (
+                     <Badge variant="outline">Draft</Badge>
+                 )}
+               </div>
+            )}
         </div>
       </CardFooter>
     </Card>
