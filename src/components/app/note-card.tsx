@@ -72,14 +72,14 @@ export function NoteCard({
     <Card
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
-        "cursor-pointer hover:shadow-xl transition-[transform,box-shadow] duration-300 ease-in-out overflow-hidden shadow-md transform hover:-translate-y-1",
+        "cursor-pointer group hover:shadow-xl transition-[transform,box-shadow] duration-300 ease-in-out overflow-hidden shadow-md transform hover:-translate-y-1 flex flex-col",
         note.isPinned && "border-primary/50 bg-primary/10",
         note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}
       style={{ borderTop: `4px solid ${note.color}` }}
     >
       <CardHeader className="relative pb-2">
-        <CardTitle className="pr-12 text-lg font-bold font-headline">
+        <CardTitle className="pr-12 text-lg font-bold font-headline line-clamp-2">
           {note.title || "Untitled Note"}
         </CardTitle>
         <div className="absolute top-4 right-4 flex items-center gap-1">
@@ -93,7 +93,7 @@ export function NoteCard({
               {note.isPinned ? (
                 <Pin className="h-4 w-4 text-primary fill-primary" />
               ) : (
-                <Pin className="h-4 w-4" />
+                <Pin className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               )}
               <span className="sr-only">
                 {note.isPinned ? "Unpin note" : "Pin note"}
@@ -153,7 +153,7 @@ export function NoteCard({
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="pt-2 px-6 pb-4">
+      <CardContent className="pt-2 px-6 pb-4 flex-grow">
         {note.imageUrl && (
           <div className="relative mb-4 aspect-video w-full rounded-md overflow-hidden">
             <Image
@@ -165,9 +165,12 @@ export function NoteCard({
             />
           </div>
         )}
-        <p className="text-sm text-muted-foreground line-clamp-6">
-          {note.content}
-        </p>
+        <div className="relative max-h-[120px] overflow-hidden">
+          <p className="text-sm text-muted-foreground">
+            {note.content}
+          </p>
+          <div className="absolute bottom-0 left-0 h-10 w-full bg-gradient-to-t from-card to-transparent pointer-events-none" />
+        </div>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 pt-0 px-6 pb-4">
         <div className="flex flex-wrap gap-2">
