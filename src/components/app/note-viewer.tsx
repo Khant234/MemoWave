@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { type Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Edit, CheckSquare, Square, Music } from "lucide-react";
+import { Edit, CheckSquare, Square, Music, Download } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 type NoteViewerProps = {
@@ -60,6 +60,11 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
   const totalItems = checklistExists ? note.checklist.length : 0;
   const checklistProgress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
+  const audioFileExtension = React.useMemo(() => {
+    if (!note.audioUrl) return 'wav';
+    return note.audioUrl.match(/data:audio\/(.*?);/)?.[1] || 'wav';
+  }, [note.audioUrl]);
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0" style={{ borderLeft: `4px solid ${note.color}`}}>
@@ -81,9 +86,17 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
 
             {note.audioUrl && (
                 <div className="space-y-2 rounded-lg border p-4">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                        <Music className="h-4 w-4" />
-                        Attached Audio
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                            <Music className="h-4 w-4" />
+                            <span>Attached Audio</span>
+                        </div>
+                        <a href={note.audioUrl} download={`note-audio-${note.id}.${audioFileExtension}`}>
+                            <Button variant="ghost" size="icon">
+                                <Download className="h-4 w-4" />
+                                <span className="sr-only">Download audio</span>
+                            </Button>
+                        </a>
                     </div>
                     <audio controls src={note.audioUrl} className="w-full" />
                 </div>
