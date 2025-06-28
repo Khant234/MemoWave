@@ -155,12 +155,12 @@ export function NoteCard({
       </CardHeader>
       <CardContent className="flex-grow pt-2 px-6 pb-4">
         {note.imageUrl && (
-          <div className="relative mb-4 aspect-video w-full">
+          <div className="relative mb-4 aspect-video w-full rounded-md overflow-hidden">
             <Image
               src={note.imageUrl}
               alt={note.title}
               fill
-              className="rounded-md object-cover"
+              className="object-cover"
               data-ai-hint="note image"
             />
           </div>
