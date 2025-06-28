@@ -373,32 +373,30 @@ export default function Home() {
         onTagClick={handleTagClick}
         activeTag={searchTerm}
       />
-      <div className="flex h-[calc(100vh-4rem)]">
-        <AppSidebar
+      <AppSidebar
+        activeFilter={activeFilter}
+        setActiveFilter={setActiveFilter}
+        setSearchTerm={setSearchTerm}
+        tags={allTags}
+        onTagClick={handleTagClick}
+        activeTag={searchTerm}
+      />
+      <main className="ml-20 h-[calc(100vh-4rem)] overflow-y-auto p-4 sm:p-6 bg-background">
+        <NoteList
+          notes={filteredNotes}
+          layout={layout}
+          onViewNote={handleViewNote}
+          onTogglePin={handleTogglePin}
+          onToggleArchive={handleToggleArchive}
+          onDeleteNote={handleMoveToTrash}
+          onRestoreNote={handleRestoreNote}
+          onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
+          onCopyNote={handleCopyNote}
           activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
-          setSearchTerm={setSearchTerm}
-          tags={allTags}
           onTagClick={handleTagClick}
-          activeTag={searchTerm}
+          onRemoveTagFromNote={handleRemoveTagFromNote}
         />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-card transition-all duration-300 ease-in-out">
-          <NoteList
-            notes={filteredNotes}
-            layout={layout}
-            onViewNote={handleViewNote}
-            onTogglePin={handleTogglePin}
-            onToggleArchive={handleToggleArchive}
-            onDeleteNote={handleMoveToTrash}
-            onRestoreNote={handleRestoreNote}
-            onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
-            onCopyNote={handleCopyNote}
-            activeFilter={activeFilter}
-            onTagClick={handleTagClick}
-            onRemoveTagFromNote={handleRemoveTagFromNote}
-          />
-        </main>
-      </div>
+      </main>
       <NoteViewer
         isOpen={isViewerOpen}
         setIsOpen={setIsViewerOpen}
