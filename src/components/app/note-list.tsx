@@ -15,6 +15,7 @@ type NoteListProps = {
   onDeleteNote: (noteId: string) => void;
   onRestoreNote: (noteId: string) => void;
   onPermanentlyDeleteNote: (noteId: string) => void;
+  onCopyNote: (noteId: string) => void;
   activeFilter: "all" | "archived" | "trash";
 };
 
@@ -27,6 +28,7 @@ export function NoteList({
   onDeleteNote,
   onRestoreNote,
   onPermanentlyDeleteNote,
+  onCopyNote,
   activeFilter,
 }: NoteListProps) {
   if (notes.length === 0) {
@@ -80,6 +82,7 @@ export function NoteList({
           onDeleteNote={onDeleteNote}
           onRestoreNote={onRestoreNote}
           onPermanentlyDeleteNote={onPermanentlyDeleteNote}
+          onCopyNote={onCopyNote}
         />
       ))}
     </div>

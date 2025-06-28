@@ -206,6 +206,45 @@ export default function Home() {
     setDeleteConfirmation({ noteId, type: 'permanent' });
   };
 
+  const handleCopyNote = async (noteId: string) => {
+    const noteToCopy = notes.find((n) => n.id === noteId);
+    if (!noteToCopy) {
+      toast({
+        title: "Error",
+        description: "Note to copy not found.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { id, isPinned, createdAt, updatedAt, ...restOfNote } = noteToCopy;
+
+    const newNoteData = {
+      ...restOfNote,
+      title: `Copy of ${noteToCopy.title || 'Untitled'}`,
+      isPinned: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      const docRef = await addDoc(notesCollectionRef, newNoteData);
+      const newNote = { ...newNoteData, id: docRef.id } as Note;
+      setNotes((prevNotes) => [newNote, ...prevNotes]);
+      toast({
+        title: "Note Copied",
+        description: `A copy of "${noteToCopy.title || 'Untitled'}" has been created.`,
+      });
+    } catch (error) {
+      console.error("Error copying note:", error);
+      toast({
+        title: "Error Copying Note",
+        description: "There was a problem copying your note.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!deleteConfirmation) return;
     const { noteId, type } = deleteConfirmation;
@@ -219,6 +258,10 @@ export default function Home() {
     } else if (type === 'permanent') {
       const originalNotes = [...notes];
       setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
+      if (viewingNote?.id === noteId) {
+        setIsViewerOpen(false);
+        setViewingNote(null);
+      }
       try {
         await deleteDoc(doc(db, "notes", noteId));
         toast({
@@ -316,6 +359,7 @@ export default function Home() {
             onDeleteNote={handleMoveToTrash}
             onRestoreNote={handleRestoreNote}
             onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
+            onCopyNote={handleCopyNote}
             activeFilter={activeFilter}
           />
         </main>

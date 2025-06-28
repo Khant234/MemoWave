@@ -20,6 +20,7 @@ import {
   PinOff,
   Undo,
   MoreVertical,
+  Copy,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,6 +38,7 @@ type NoteCardProps = {
   onDeleteNote: (noteId: string) => void;
   onRestoreNote: (noteId: string) => void;
   onPermanentlyDeleteNote: (noteId: string) => void;
+  onCopyNote: (noteId: string) => void;
 };
 
 export function NoteCard({
@@ -47,6 +49,7 @@ export function NoteCard({
   onDeleteNote,
   onRestoreNote,
   onPermanentlyDeleteNote,
+  onCopyNote,
 }: NoteCardProps) {
   const [formattedDate, setFormattedDate] = React.useState("");
 
@@ -124,6 +127,10 @@ export function NoteCard({
                 </>
               ) : (
                 <>
+                  <DropdownMenuItem onClick={() => onCopyNote(note.id)}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    <span>Make a copy</span>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onToggleArchive(note.id)}>
                     <Archive className="mr-2 h-4 w-4" />
                     <span>{note.isArchived ? "Unarchive" : "Archive"}</span>
