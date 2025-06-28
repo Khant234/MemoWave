@@ -4,17 +4,20 @@
 import * as React from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, PenSquare, Trash2 } from "lucide-react";
+import { NotepadText, Archive, PenSquare, Trash2, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type AppSidebarProps = {
   activeFilter: "all" | "archived" | "trash";
   setActiveFilter: React.Dispatch<React.SetStateAction<"all" | "archived" | "trash">>;
+  tags: string[];
+  onTagClick: (tag: string) => void;
+  activeTag: string;
   isMobile?: boolean;
   onFilterChange?: () => void;
 };
 
-export function AppSidebar({ activeFilter, setActiveFilter, isMobile, onFilterChange }: AppSidebarProps) {
+export function AppSidebar({ activeFilter, setActiveFilter, tags, onTagClick, activeTag, isMobile, onFilterChange }: AppSidebarProps) {
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     setActiveFilter(filter);
     if (isMobile && onFilterChange) {
@@ -22,9 +25,16 @@ export function AppSidebar({ activeFilter, setActiveFilter, isMobile, onFilterCh
     }
   };
 
+  const handleTagClick = (tag: string) => {
+    onTagClick(tag);
+    if (isMobile && onFilterChange) {
+      onFilterChange();
+    }
+  }
+
   if (isMobile) {
     return (
-      <nav className="grid gap-6 text-lg font-medium p-6">
+      <nav className="grid gap-4 text-lg font-medium p-6">
         <div
           className="flex items-center gap-2 text-lg font-semibold"
         >
@@ -35,7 +45,7 @@ export function AppSidebar({ activeFilter, setActiveFilter, isMobile, onFilterCh
           onClick={() => handleFilterClick("all")}
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-            activeFilter === "all" && "bg-muted text-primary"
+            activeFilter === "all" && activeTag === '' && "bg-muted text-primary"
           )}
         >
           <NotepadText className="h-4 w-4" />
@@ -61,6 +71,28 @@ export function AppSidebar({ activeFilter, setActiveFilter, isMobile, onFilterCh
           <Trash2 className="h-4 w-4" />
           Trash
         </button>
+
+        {tags.length > 0 && (
+          <div className="space-y-2 pt-4">
+              <div className="border-t -mx-6"></div>
+              <h3 className="px-3 pt-4 text-sm font-semibold text-muted-foreground tracking-wider uppercase">Tags</h3>
+              <div className="flex flex-col gap-1">
+                  {tags.map((tag) => (
+                      <button
+                          key={tag}
+                          onClick={() => handleTagClick(tag)}
+                          className={cn(
+                              "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-base",
+                              activeTag === tag && "bg-muted text-primary"
+                          )}
+                      >
+                          <Tag className="h-4 w-4" />
+                          {tag}
+                      </button>
+                  ))}
+              </div>
+          </div>
+        )}
       </nav>
     );
   }
@@ -80,7 +112,7 @@ export function AppSidebar({ activeFilter, setActiveFilter, isMobile, onFilterCh
                 size="icon"
                 className={cn(
                   "rounded-lg",
-                  activeFilter === "all" && "bg-primary/10 text-primary"
+                  activeFilter === "all" && activeTag === '' && "bg-primary/10 text-primary"
                 )}
                 aria-label="All Notes"
                 onClick={() => setActiveFilter("all")}
@@ -130,6 +162,31 @@ export function AppSidebar({ activeFilter, setActiveFilter, isMobile, onFilterCh
           </Tooltip>
         </TooltipProvider>
       </nav>
+      {tags.length > 0 && (
+        <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-4 border-t">
+          {tags.map(tag => (
+            <TooltipProvider key={tag}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={activeTag === tag ? "secondary" : "ghost"}
+                    size="icon"
+                    className={cn(
+                      "rounded-lg",
+                      activeTag === tag && "bg-primary/10 text-primary"
+                    )}
+                    aria-label={tag}
+                    onClick={() => onTagClick(tag)}
+                  >
+                    <Tag className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{tag}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ))}
+        </nav>
+      )}
     </aside>
   );
 }

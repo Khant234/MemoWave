@@ -30,6 +30,9 @@ type AppHeaderProps = {
   onNewNote: () => void;
   activeFilter: "all" | "archived" | "trash";
   setActiveFilter: Dispatch<SetStateAction<"all" | "archived" | "trash">>;
+  tags: string[];
+  onTagClick: (tag: string) => void;
+  activeTag: string;
 };
 
 export function AppHeader({
@@ -40,6 +43,9 @@ export function AppHeader({
   onNewNote,
   activeFilter,
   setActiveFilter,
+  tags,
+  onTagClick,
+  activeTag,
 }: AppHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
@@ -61,6 +67,9 @@ export function AppHeader({
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
             onFilterChange={() => setIsMobileMenuOpen(false)}
+            tags={tags}
+            onTagClick={onTagClick}
+            activeTag={activeTag}
           />
         </SheetContent>
       </Sheet>

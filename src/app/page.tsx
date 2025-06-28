@@ -327,6 +327,16 @@ export default function Home() {
       });
   }, [notes, activeFilter, searchTerm]);
 
+  const allTags = React.useMemo(() => {
+    const tagsSet = new Set<string>();
+    notes.forEach((note) => {
+      if (!note.isTrashed) {
+        note.tags.forEach((tag) => tagsSet.add(tag));
+      }
+    });
+    return Array.from(tagsSet).sort();
+  }, [notes]);
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen w-full bg-muted/40 items-center justify-center">
@@ -343,6 +353,9 @@ export default function Home() {
       <AppSidebar
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
+        tags={allTags}
+        onTagClick={handleTagClick}
+        activeTag={searchTerm}
       />
       <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14 w-full">
         <AppHeader
@@ -353,6 +366,9 @@ export default function Home() {
           onNewNote={handleNewNote}
           activeFilter={activeFilter}
           setActiveFilter={setActiveFilter}
+          tags={allTags}
+          onTagClick={handleTagClick}
+          activeTag={searchTerm}
         />
         <main className="p-4 sm:px-6 sm:py-0 md:p-6 flex-1">
           <NoteList
