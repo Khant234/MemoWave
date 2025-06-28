@@ -14,6 +14,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
@@ -47,6 +49,9 @@ export function AppHeader({
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="sm:max-w-xs p-0">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Menu</SheetTitle>
+          </SheetHeader>
           <AppSidebar isMobile activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
         </SheetContent>
       </Sheet>
