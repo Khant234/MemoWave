@@ -57,7 +57,8 @@ export default function Home() {
     type: 'trash' | 'permanent';
   } | null>(null);
 
-  const [isSidebarHovered, setIsSidebarHovered] = React.useState(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true);
+  const toggleSidebar = () => setIsSidebarExpanded(prev => !prev);
 
 
   const notesCollectionRef = collection(db, "notes");
@@ -353,7 +354,7 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen w-full bg-muted/40 items-center justify-center">
+      <div className="flex min-h-screen w-full bg-background items-center justify-center">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span>Loading notes...</span>
@@ -363,11 +364,9 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-muted/40">
+    <div className="flex min-h-screen w-full bg-background">
       <AppSidebar
-        isExpanded={isSidebarHovered}
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
+        isExpanded={isSidebarExpanded}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
         setSearchTerm={setSearchTerm}
@@ -375,40 +374,36 @@ export default function Home() {
         onTagClick={handleTagClick}
         activeTag={searchTerm}
       />
-      <div
-        className={cn(
-          "flex h-screen w-full flex-col transition-[padding] duration-300 ease-in-out",
-          isSidebarHovered ? "sm:pl-64" : "sm:pl-14"
-        )}
-      >
-        <AppHeader
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          layout={layout}
-          setLayout={setLayout}
-          onNewNote={handleNewNote}
-          activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
-          tags={allTags}
-          onTagClick={handleTagClick}
-          activeTag={searchTerm}
-        />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <NoteList
-            notes={filteredNotes}
+       <div className="flex flex-1 flex-col">
+          <AppHeader
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
             layout={layout}
-            onViewNote={handleViewNote}
-            onTogglePin={handleTogglePin}
-            onToggleArchive={handleToggleArchive}
-            onDeleteNote={handleMoveToTrash}
-            onRestoreNote={handleRestoreNote}
-            onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
-            onCopyNote={handleCopyNote}
+            setLayout={setLayout}
+            onNewNote={handleNewNote}
             activeFilter={activeFilter}
+            setActiveFilter={setActiveFilter}
+            tags={allTags}
             onTagClick={handleTagClick}
-            onRemoveTagFromNote={handleRemoveTagFromNote}
+            activeTag={searchTerm}
+            onToggleSidebar={toggleSidebar}
           />
-        </main>
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-muted/40">
+            <NoteList
+              notes={filteredNotes}
+              layout={layout}
+              onViewNote={handleViewNote}
+              onTogglePin={handleTogglePin}
+              onToggleArchive={handleToggleArchive}
+              onDeleteNote={handleMoveToTrash}
+              onRestoreNote={handleRestoreNote}
+              onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
+              onCopyNote={handleCopyNote}
+              activeFilter={activeFilter}
+              onTagClick={handleTagClick}
+              onRemoveTagFromNote={handleRemoveTagFromNote}
+            />
+          </main>
       </div>
       <NoteViewer
         isOpen={isViewerOpen}

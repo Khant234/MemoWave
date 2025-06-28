@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, PenSquare, Trash2, Tag } from "lucide-react";
+import { NotepadText, Archive, PenSquare, Trash2, Tag, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type AppSidebarProps = {
@@ -16,8 +16,6 @@ type AppSidebarProps = {
   isMobile?: boolean;
   onFilterChange?: () => void;
   isExpanded: boolean;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
 };
 
 export function AppSidebar({
@@ -30,8 +28,6 @@ export function AppSidebar({
   isMobile,
   onFilterChange,
   isExpanded,
-  onMouseEnter,
-  onMouseLeave,
 }: AppSidebarProps) {
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     setActiveFilter(filter);
@@ -48,11 +44,34 @@ export function AppSidebar({
     }
   }
 
+  const Logo = () => (
+    <svg
+      width="40"
+      height="40"
+      viewBox="0 0 40 40"
+      className="h-8 w-8"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M25.8333 11.6667L11.6667 11.6667C10.2 11.6667 9 12.8667 9 14.3333V28.3333C9 29.8 10.2 31 11.6667 31H25.8333C27.3 31 28.5 29.8 28.5 28.3333V14.3333C28.5 12.8667 27.3 11.6667 25.8333 11.6667Z"
+        fill="#FBC02D"
+      />
+      <path
+        d="M18.75 22.5C20.5784 22.5 22.0833 21.0312 22.0833 19.1667C22.0833 17.3021 20.5784 15.8333 18.75 15.8333C16.9216 15.8333 15.4167 17.3021 15.4167 19.1667C15.4167 21.0312 16.9216 22.5 18.75 22.5Z"
+        fill="white"
+      />
+      <path
+        d="M15.4167 25H22.0833C22.4667 25 22.9167 24.5 22.9167 24.1667C22.9167 23.8333 22.4667 23.3333 22.0833 23.3333H15.4167C15.0333 23.3333 14.5833 23.8333 14.5833 24.1667C14.5833 24.5 15.0333 25 15.4167 25Z"
+        fill="white"
+      />
+    </svg>
+  );
+
   if (isMobile) {
     return (
       <nav className="grid gap-1 p-4 font-medium">
         <div className="flex items-center gap-2 px-1 pb-2 mb-2 text-lg font-semibold border-b">
-          <PenSquare className="h-6 w-6" />
+          <Logo />
           <span>MemoWeave</span>
         </div>
         <Button
@@ -110,65 +129,53 @@ export function AppSidebar({
 
   return (
     <aside
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
       className={cn(
-        "fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background sm:flex transition-[width] duration-300 ease-in-out",
-        isExpanded ? "w-64" : "w-14"
+        "z-20 fixed inset-y-0 left-0 hidden flex-col border-r bg-background sm:flex transition-[width] duration-300 ease-in-out",
+        isExpanded ? "w-72" : "w-20"
       )}
     >
-      <div className="flex flex-col h-full">
-        <nav className={cn("flex flex-col gap-4 px-2 py-4", isExpanded ? "items-stretch" : "items-center")}>
-          <div className={cn(
-              "group flex h-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:text-base",
-              isExpanded ? "w-auto self-start px-3" : "w-9"
-          )}>
-              <PenSquare className="h-5 w-5 transition-all group-hover:scale-110 shrink-0" />
-              {isExpanded && <span className="ml-1">MemoWeave</span>}
-              {!isExpanded && <span className="sr-only">MemoWeave</span>}
-          </div>
-          
+      <div className="flex flex-col h-full py-2">
+        <nav className={cn("flex flex-col gap-1 px-2.5")}>
           {mainNavItems.map(({ filter, label, icon: Icon, active }) => (
             <Button
               key={filter}
-              variant={active ? "secondary" : "ghost"}
-              size={isExpanded ? "default" : "icon"}
+              variant="ghost"
               className={cn(
-                  "w-full rounded-lg",
-                  isExpanded ? "justify-start" : "justify-center"
+                  "w-full h-12 justify-start",
+                  active ? "bg-secondary font-semibold" : "font-normal",
+                  isExpanded ? 'px-4 rounded-r-full rounded-l-none' : 'w-12 justify-center rounded-full'
               )}
               aria-label={label}
               onClick={() => handleFilterClick(filter as any)}
             >
               <Icon className="h-5 w-5 shrink-0" />
-              {isExpanded && <span className="ml-2">{label}</span>}
+              <span className={cn("ml-4", !isExpanded && "sr-only")}>{label}</span>
             </Button>
           ))}
         </nav>
 
         {tags.length > 0 && (
-          <nav className={cn("flex flex-col gap-4 px-2 py-4 border-t", isExpanded ? "items-stretch" : "items-center")}>
-            {isExpanded && (
-                 <h3 className="px-2 text-xs font-semibold text-muted-foreground tracking-wider uppercase">Tags</h3>
+           <div className="flex flex-col gap-1 mt-4 pt-4 border-t px-2.5">
+             {isExpanded && (
+                 <h3 className="px-4 pb-2 text-sm font-semibold text-muted-foreground tracking-tight">Tags</h3>
             )}
-            
             {tags.map(tag => (
                 <Button
                   key={tag}
-                  variant={activeTag === tag ? "secondary" : "ghost"}
-                  size={isExpanded ? "default" : "icon"}
+                  variant="ghost"
                   className={cn(
-                    "w-full rounded-lg",
-                    isExpanded ? "justify-start" : "justify-center"
+                    "w-full h-12 justify-start",
+                    activeTag === tag ? "bg-secondary font-semibold" : "font-normal",
+                    isExpanded ? 'px-4 rounded-r-full rounded-l-none' : 'w-12 justify-center rounded-full'
                   )}
                   aria-label={tag}
                   onClick={() => onTagClick(tag)}
                 >
                   <Tag className="h-5 w-5 shrink-0" />
-                  {isExpanded && <span className="ml-2 truncate">{tag}</span>}
+                  <span className={cn("ml-4 truncate", !isExpanded && "sr-only")}>{tag}</span>
                 </Button>
             ))}
-          </nav>
+          </div>
         )}
       </div>
     </aside>
