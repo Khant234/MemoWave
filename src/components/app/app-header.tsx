@@ -18,7 +18,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
   SheetDescription,
 } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
@@ -53,7 +52,7 @@ export function AppHeader({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-background/95 px-4 sm:px-6 shadow-md backdrop-blur-md">
+    <header className="sticky top-0 z-50 flex h-16 items-center gap-4 bg-background/95 px-4 sm:px-6 shadow-md backdrop-blur-md">
       <div className="flex items-center gap-2">
          {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
