@@ -63,16 +63,21 @@ export function NoteList({
     );
   }
 
-  return (
-    <div
-      className={cn(
-        "transition-all duration-300",
-        layout === "grid"
-          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-          : "flex flex-col gap-4"
-      )}
-    >
-      {notes.map((note) => (
+  const pinnedNotes = activeFilter === "all" ? notes.filter((note) => note.isPinned) : [];
+  const otherNotes = activeFilter === "all" ? notes.filter((note) => !note.isPinned) : notes;
+
+  const hasPinnedNotes = pinnedNotes.length > 0;
+
+  const noteGridClasses = cn(
+    "transition-all duration-300",
+    layout === "grid"
+      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+      : "flex flex-col gap-4"
+  );
+  
+  const renderNoteList = (notesToRender: Note[]) => (
+    <div className={noteGridClasses}>
+      {notesToRender.map((note) => (
         <NoteCard
           key={note.id}
           note={note}
@@ -85,6 +90,30 @@ export function NoteList({
           onCopyNote={onCopyNote}
         />
       ))}
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-8">
+      {hasPinnedNotes && (
+        <div className="space-y-4">
+          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            Pinned
+          </h2>
+          {renderNoteList(pinnedNotes)}
+        </div>
+      )}
+
+      {otherNotes.length > 0 && (
+        <div className="space-y-4">
+          {hasPinnedNotes && (
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Others
+            </h2>
+          )}
+          {renderNoteList(otherNotes)}
+        </div>
+      )}
     </div>
   );
 }
