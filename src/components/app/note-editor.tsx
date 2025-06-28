@@ -200,12 +200,12 @@ export function NoteEditor({
 
   const handleSave = () => {
     if (!title && !content) {
-        toast({
-            title: "Empty Note",
-            description: "Please add a title or some content to your note.",
-            variant: "destructive"
-        })
-        return;
+      toast({
+        title: 'Empty Note',
+        description: 'Please add a title or some content to your note.',
+        variant: 'destructive',
+      });
+      return;
     }
 
     isSavingRef.current = true;
@@ -221,10 +221,16 @@ export function NoteEditor({
       createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       checklist,
-      imageUrl,
-      audioUrl: generatedAudio || undefined,
       isDraft: false,
     };
+
+    if (imageUrl) {
+      newNote.imageUrl = imageUrl;
+    }
+    if (generatedAudio) {
+      newNote.audioUrl = generatedAudio;
+    }
+
     onSave(newNote);
     clearDraft();
   };
@@ -260,10 +266,15 @@ export function NoteEditor({
       createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       checklist,
-      imageUrl,
-      audioUrl: generatedAudio || undefined,
       isDraft: true,
     };
+
+    if (imageUrl) {
+      draftNote.imageUrl = imageUrl;
+    }
+    if (generatedAudio) {
+      draftNote.audioUrl = generatedAudio;
+    }
     
     onSave(draftNote);
     toast({
