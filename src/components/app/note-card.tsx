@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -59,7 +58,7 @@ export function NoteCard({
       onClick={() => onEditNote(note)}
       className={cn(
         "cursor-pointer hover:shadow-lg transition-shadow duration-200 flex flex-col h-full overflow-hidden",
-        note.isPinned && "border-primary/50"
+        note.isPinned && "border-primary/50 bg-primary/10"
       )}
       style={{ borderTop: `4px solid ${note.color}` }}
     >
@@ -75,7 +74,7 @@ export function NoteCard({
             onClick={handlePinClick}
           >
             {note.isPinned ? (
-              <Pin className="h-4 w-4 text-primary" />
+              <Pin className="h-4 w-4 text-primary fill-primary" />
             ) : (
               <Pin className="h-4 w-4" />
             )}
