@@ -362,6 +362,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen w-full bg-background">
+      <AppHeader
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        layout={layout}
+        setLayout={setLayout}
+        onNewNote={handleNewNote}
+        activeFilter={activeFilter}
+        setActiveFilter={setActiveFilter}
+        tags={allTags}
+        onTagClick={handleTagClick}
+        activeTag={searchTerm}
+        onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+      />
       <AppSidebar
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
@@ -373,24 +386,11 @@ export default function Home() {
       />
       <div
         className={cn(
-          "flex flex-col transition-all duration-300 ease-in-out",
+          "transition-all duration-300 ease-in-out pt-16",
           isSidebarOpen ? "sm:ml-72" : "sm:ml-20"
         )}
       >
-          <AppHeader
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            layout={layout}
-            setLayout={setLayout}
-            onNewNote={handleNewNote}
-            activeFilter={activeFilter}
-            setActiveFilter={setActiveFilter}
-            tags={allTags}
-            onTagClick={handleTagClick}
-            activeTag={searchTerm}
-            onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
-          />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-secondary">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
             <NoteList
               notes={filteredNotes}
               layout={layout}
