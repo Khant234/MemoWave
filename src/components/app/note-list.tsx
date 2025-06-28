@@ -67,11 +67,6 @@ export function NoteList({
     );
   }
 
-  const pinnedNotes = activeFilter === "all" ? notes.filter((note) => note.isPinned) : [];
-  const otherNotes = activeFilter === "all" ? notes.filter((note) => !note.isPinned) : notes;
-
-  const hasPinnedNotes = pinnedNotes.length > 0;
-
   const renderNoteCard = (note: Note) => (
     <NoteCard
       key={note.id}
@@ -87,43 +82,17 @@ export function NoteList({
       onRemoveTagFromNote={onRemoveTagFromNote}
     />
   );
-  
-  if (layout === 'list') {
-    return (
-        <div className="flex flex-col gap-4 max-w-3xl mx-auto w-full">
-            {notes.map(renderNoteCard)}
-        </div>
-    );
-  }
 
   return (
-    <div className="w-full">
-        {hasPinnedNotes && (
-            <div className="mb-8">
-                <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
-                    Pinned
-                </h2>
-                <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5 gap-4">
-                    {pinnedNotes.map(note => (
-                        <div key={note.id} className="break-inside-avoid mb-4">{renderNoteCard(note)}</div>
-                    ))}
-                </div>
-            </div>
-        )}
-        {otherNotes.length > 0 && (
-            <div>
-                {hasPinnedNotes && (
-                    <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
-                        Others
-                    </h2>
-                )}
-                <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5 gap-4">
-                    {otherNotes.map(note => (
-                        <div key={note.id} className="break-inside-avoid mb-4">{renderNoteCard(note)}</div>
-                    ))}
-                </div>
-            </div>
-        )}
+    <div
+      className={cn(
+        "grid gap-4",
+        layout === "grid"
+          ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          : "grid-cols-1"
+      )}
+    >
+      {notes.map(renderNoteCard)}
     </div>
   );
 }

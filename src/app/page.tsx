@@ -57,6 +57,8 @@ export default function Home() {
     type: 'trash' | 'permanent';
   } | null>(null);
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(true);
+
   const notesCollectionRef = collection(db, "notes");
 
   const fetchNotes = async () => {
@@ -360,7 +362,19 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-secondary/40" data-collapsed={isSidebarCollapsed}>
+      <AppHeader
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        layout={layout}
+        setLayout={setLayout}
+        onNewNote={handleNewNote}
+        activeFilter={activeFilter}
+        setActiveFilter={setActiveFilter}
+        tags={allTags}
+        onTagClick={handleTagClick}
+        activeTag={searchTerm}
+      />
       <AppSidebar
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
@@ -368,39 +382,25 @@ export default function Home() {
         tags={allTags}
         onTagClick={handleTagClick}
         activeTag={searchTerm}
+        isCollapsed={isSidebarCollapsed}
+        setIsCollapsed={setIsSidebarCollapsed}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <AppHeader
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
+      <main className="flex-1 overflow-y-auto p-6 pt-20 ml-20 data-[collapsed=false]:ml-60 transition-all duration-300 ease-in-out" data-collapsed={isSidebarCollapsed}>
+        <NoteList
+          notes={filteredNotes}
           layout={layout}
-          setLayout={setLayout}
-          onNewNote={handleNewNote}
+          onViewNote={handleViewNote}
+          onTogglePin={handleTogglePin}
+          onToggleArchive={handleToggleArchive}
+          onDeleteNote={handleMoveToTrash}
+          onRestoreNote={handleRestoreNote}
+          onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
+          onCopyNote={handleCopyNote}
           activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
-          tags={allTags}
           onTagClick={handleTagClick}
-          activeTag={searchTerm}
+          onRemoveTagFromNote={handleRemoveTagFromNote}
         />
-        <main className="flex-1 overflow-y-auto p-6 bg-secondary/40">
-          <div className="max-w-7xl mx-auto">
-            <NoteList
-              notes={filteredNotes}
-              layout={layout}
-              onViewNote={handleViewNote}
-              onTogglePin={handleTogglePin}
-              onToggleArchive={handleToggleArchive}
-              onDeleteNote={handleMoveToTrash}
-              onRestoreNote={handleRestoreNote}
-              onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
-              onCopyNote={handleCopyNote}
-              activeFilter={activeFilter}
-              onTagClick={handleTagClick}
-              onRemoveTagFromNote={handleRemoveTagFromNote}
-            />
-          </div>
-        </main>
-      </div>
+      </main>
       <NoteViewer
         isOpen={isViewerOpen}
         setIsOpen={setIsViewerOpen}
