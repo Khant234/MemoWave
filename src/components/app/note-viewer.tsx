@@ -24,9 +24,10 @@ type NoteViewerProps = {
   setIsOpen: (isOpen: boolean) => void;
   note: Note | null;
   onEdit: (note: Note) => void;
+  onChecklistItemToggle: (noteId: string, checklistItemId: string) => void;
 };
 
-export function NoteViewer({ isOpen, setIsOpen, note, onEdit }: NoteViewerProps) {
+export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemToggle }: NoteViewerProps) {
   if (!note) return null;
 
   const handleEditClick = () => {
@@ -77,10 +78,14 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit }: NoteViewerProps)
                   <h3 className="text-sm font-medium">Checklist</h3>
                   <div className="space-y-2">
                       {note.checklist.map(item => (
-                          <div key={item.id} className="flex items-center gap-3">
-                              {item.completed ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground" />}
-                              <span className={cn("flex-grow", item.completed && "line-through text-muted-foreground")}>{item.text}</span>
-                          </div>
+                          <button
+                            key={item.id}
+                            onClick={() => onChecklistItemToggle(note.id, item.id)}
+                            className="flex w-full items-center gap-3 rounded-md p-1 text-left transition-colors hover:bg-accent"
+                          >
+                            {item.completed ? <CheckSquare className="h-4 w-4 flex-shrink-0 text-primary" /> : <Square className="h-4 w-4 flex-shrink-0 text-muted-foreground" />}
+                            <span className={cn("flex-grow", item.completed && "line-through text-muted-foreground")}>{item.text}</span>
+                          </button>
                       ))}
                   </div>
               </div>

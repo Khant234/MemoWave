@@ -146,10 +146,13 @@ export default function Home() {
   };
   
   const updateNoteField = async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
-    // Optimistic UI update
+    // Optimistic UI update for both notes list and viewing note
     setNotes((prevNotes) =>
       prevNotes.map((n) => (n.id === noteId ? { ...n, ...updates } : n))
     );
+    if (viewingNote && viewingNote.id === noteId) {
+        setViewingNote(prev => prev ? { ...prev, ...updates } : null);
+    }
 
     try {
       const noteRef = doc(db, "notes", noteId);
@@ -162,6 +165,18 @@ export default function Home() {
         variant: "destructive",
       });
       fetchNotes(); // Revert and refetch
+    }
+  };
+
+  const handleChecklistItemToggle = (noteId: string, checklistItemId: string) => {
+    const note = notes.find((n) => n.id === noteId);
+    if (note) {
+      const updatedChecklist = note.checklist.map((item) =>
+        item.id === checklistItemId
+          ? { ...item, completed: !item.completed }
+          : item
+      );
+      updateNoteField(noteId, { checklist: updatedChecklist });
     }
   };
 
@@ -310,6 +325,7 @@ export default function Home() {
         setIsOpen={setIsViewerOpen}
         note={viewingNote}
         onEdit={handleStartEditing}
+        onChecklistItemToggle={handleChecklistItemToggle}
       />
       <NoteEditor
         isOpen={isEditorOpen}
