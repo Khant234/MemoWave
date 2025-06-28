@@ -28,6 +28,36 @@ type NoteViewerProps = {
   onChecklistItemToggle: (noteId: string, checklistItemId: string) => void;
 };
 
+// Helper component to render text with clickable links
+const LinkifiedText = ({ text }: { text: string }) => {
+  // Regex to find URLs. \S+ matches non-whitespace characters.
+  const urlRegex = /(https?:\/\/\S+)/g;
+  const parts = text.split(urlRegex);
+
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.match(urlRegex)) {
+          return (
+            <a
+              key={index}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline decoration-primary/50 underline-offset-4 transition-colors hover:text-primary/80 hover:decoration-primary/80"
+              onClick={(e) => e.stopPropagation()} // Prevent any parent onClick handlers from firing
+            >
+              {part}
+            </a>
+          );
+        }
+        return <React.Fragment key={index}>{part}</React.Fragment>;
+      })}
+    </>
+  );
+};
+
+
 export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemToggle }: NoteViewerProps) {
   if (!note) return null;
 
@@ -82,7 +112,9 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
               </div>
             )}
             
-            <p className="whitespace-pre-wrap text-base leading-relaxed">{note.content}</p>
+            <div className="whitespace-pre-wrap text-base leading-relaxed">
+              <LinkifiedText text={note.content} />
+            </div>
 
             {note.audioUrl && (
                 <div className="space-y-2 rounded-lg border p-4">
