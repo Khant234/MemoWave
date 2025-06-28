@@ -78,8 +78,8 @@ export function NoteCard({
     <Card
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
-        "cursor-pointer group hover:shadow-xl transition-transform duration-300 ease-in-out overflow-hidden shadow-md transform hover:-translate-y-1 flex flex-col",
-        note.isPinned && "border-primary/50 bg-primary/10",
+        "cursor-pointer group hover:shadow-xl transition-transform duration-300 ease-in-out overflow-hidden shadow-md transform hover:-translate-y-1 flex flex-col border-0",
+        note.isPinned && "ring-2 ring-primary bg-primary/10",
         note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}
       style={{ borderTop: `4px solid ${note.color}` }}
@@ -187,11 +187,11 @@ export function NoteCard({
             />
           </div>
         )}
-        <div className="relative max-h-[120px] overflow-hidden">
-          <p className="text-sm text-muted-foreground line-clamp-6">
+        <div className="relative max-h-[80px] overflow-hidden">
+          <p className="text-sm text-muted-foreground line-clamp-4">
             {note.content}
           </p>
-          <div className="absolute bottom-0 left-0 h-10 w-full bg-gradient-to-t from-card to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 h-8 w-full bg-gradient-to-t from-card to-transparent pointer-events-none" />
         </div>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 pt-0 px-6 pb-4">
