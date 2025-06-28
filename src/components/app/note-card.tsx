@@ -29,6 +29,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 type NoteCardProps = {
@@ -72,7 +77,7 @@ export function NoteCard({
     <Card
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
-        "cursor-pointer group hover:shadow-xl transition-[transform,box-shadow] duration-300 ease-in-out overflow-hidden shadow-md transform hover:-translate-y-1 flex flex-col",
+        "cursor-pointer group hover:shadow-xl transition-transform duration-300 ease-in-out overflow-hidden shadow-md transform hover:-translate-y-1 flex flex-col",
         note.isPinned && "border-primary/50 bg-primary/10",
         note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}
@@ -84,34 +89,48 @@ export function NoteCard({
         </CardTitle>
         <div className="absolute top-4 right-4 flex items-center gap-1">
           {!note.isTrashed && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              onClick={handlePinClick}
-            >
-              {note.isPinned ? (
-                <Pin className="h-4 w-4 text-primary fill-primary" />
-              ) : (
-                <Pin className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              )}
-              <span className="sr-only">
-                {note.isPinned ? "Unpin note" : "Pin note"}
-              </span>
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={handlePinClick}
+                    >
+                    {note.isPinned ? (
+                        <Pin className="h-4 w-4 text-primary fill-primary" />
+                    ) : (
+                        <Pin className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    )}
+                    <span className="sr-only">
+                        {note.isPinned ? "Unpin note" : "Pin note"}
+                    </span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{note.isPinned ? "Unpin note" : "Pin note"}</p>
+                </TooltipContent>
+            </Tooltip>
           )}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="h-4 w-4" />
-                <span className="sr-only">More options</span>
-              </Button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <MoreVertical className="h-4 w-4" />
+                        <span className="sr-only">More options</span>
+                    </Button>
+                    </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>More options</p>
+                </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent
               align="end"
               onClick={(e) => e.stopPropagation()}
@@ -166,7 +185,7 @@ export function NoteCard({
           </div>
         )}
         <div className="relative max-h-[120px] overflow-hidden">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground line-clamp-6">
             {note.content}
           </p>
           <div className="absolute bottom-0 left-0 h-10 w-full bg-gradient-to-t from-card to-transparent pointer-events-none" />
@@ -189,16 +208,23 @@ export function NoteCard({
                 {tag}
               </span>
               {!note.isTrashed && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemoveTagFromNote(note.id, tag);
-                  }}
-                  className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
-                  aria-label={`Remove tag ${tag}`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveTagFromNote(note.id, tag);
+                        }}
+                        className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
+                        aria-label={`Remove tag ${tag}`}
+                        >
+                        <X className="h-3 w-3" />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Remove Tag</p>
+                    </TooltipContent>
+                </Tooltip>
               )}
             </Badge>
           ))}

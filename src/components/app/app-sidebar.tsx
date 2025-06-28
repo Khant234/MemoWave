@@ -7,6 +7,11 @@ import { NotepadText, Archive, Trash2, Tag, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type AppSidebarProps = {
   activeFilter: "all" | "archived" | "trash";
@@ -46,26 +51,34 @@ export function AppSidebar({
         {navItems.map(({ filter, label, icon: Icon }) => {
           const isActive = activeFilter === filter && (filter === 'all' ? activeTag === '' : true);
           return (
-            <Button
-              key={filter}
-              variant={isActive ? "secondary" : "ghost"}
-              className={cn(
-                "w-full h-10 px-3 group",
-                !isMobile && isCollapsed ? "justify-center" : "justify-start"
+            <Tooltip key={filter} delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full h-10 px-3 group",
+                    !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                  )}
+                  aria-label={label}
+                  onClick={() => handleFilterClick(filter as any)}
+                >
+                  <Icon className={cn(
+                    "h-5 w-5 shrink-0 transition-all duration-200",
+                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
+                    "group-hover:-translate-y-0.5"
+                  )} />
+                  <span className={cn(
+                    "whitespace-nowrap transition-opacity",
+                    !isMobile && isCollapsed && "hidden"
+                  )}>{label}</span>
+                </Button>
+              </TooltipTrigger>
+              {isCollapsed && !isMobile && (
+                <TooltipContent side="right">
+                  <p>{label}</p>
+                </TooltipContent>
               )}
-              aria-label={label}
-              onClick={() => handleFilterClick(filter as any)}
-            >
-              <Icon className={cn(
-                "h-5 w-5 shrink-0 transition-all duration-200",
-                isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
-                "group-hover:-translate-y-0.5"
-              )} />
-              <span className={cn(
-                "whitespace-nowrap transition-opacity",
-                !isMobile && isCollapsed && "hidden"
-              )}>{label}</span>
-            </Button>
+            </Tooltip>
           );
         })}
       </nav>
@@ -84,26 +97,34 @@ export function AppSidebar({
               {tags.map(tag => {
                 const isActive = activeTag === tag;
                 return (
-                  <Button
-                    key={tag}
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={cn(
-                      "w-full h-10 px-3 group",
-                      !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                  <Tooltip key={tag} delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={isActive ? "secondary" : "ghost"}
+                        className={cn(
+                          "w-full h-10 px-3 group",
+                          !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                        )}
+                        aria-label={tag}
+                        onClick={() => onTagClick(tag)}
+                      >
+                        <Tag className={cn(
+                          "h-5 w-5 shrink-0 transition-all duration-200",
+                          isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
+                          "group-hover:-translate-y-0.5"
+                        )} />
+                        <span className={cn(
+                          "truncate whitespace-nowrap transition-opacity",
+                          !isMobile && isCollapsed && "hidden"
+                        )}>{tag}</span>
+                      </Button>
+                    </TooltipTrigger>
+                    {isCollapsed && !isMobile && (
+                      <TooltipContent side="right">
+                        <p>{tag}</p>
+                      </TooltipContent>
                     )}
-                    aria-label={tag}
-                    onClick={() => onTagClick(tag)}
-                  >
-                    <Tag className={cn(
-                      "h-5 w-5 shrink-0 transition-all duration-200",
-                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
-                      "group-hover:-translate-y-0.5"
-                    )} />
-                    <span className={cn(
-                      "truncate whitespace-nowrap transition-opacity",
-                      !isMobile && isCollapsed && "hidden"
-                    )}>{tag}</span>
-                  </Button>
+                  </Tooltip>
                 )
               })}
             </CollapsibleContent>

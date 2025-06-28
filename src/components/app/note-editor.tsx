@@ -45,6 +45,11 @@ import {
   Upload,
   ListTodo,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { suggestTags } from "@/ai/flows/suggest-tags";
 import { generateTitle } from "@/ai/flows/title-generation";
 import { summarizeNote } from "@/ai/flows/note-summarization";
@@ -468,9 +473,16 @@ export function NoteEditor({
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Note title"
                   />
-                  <Button variant="outline" size="icon" onClick={handleGenerateTitle} disabled={isAiLoading || !content}>
-                    <Sparkles className="h-4 w-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="icon" onClick={handleGenerateTitle} disabled={isAiLoading || !content}>
+                        <Sparkles className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Generate Title with AI</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
               <div className="space-y-2">
@@ -489,9 +501,16 @@ export function NoteEditor({
                     <Label>Attached Image</Label>
                     <div className="relative">
                         <Image width={600} height={400} src={imageUrl} alt="Note attachment" className="rounded-lg w-full h-auto" />
-                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={() => setImageUrl(undefined)}>
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={() => setImageUrl(undefined)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Remove Image</p>
+                            </TooltipContent>
+                        </Tooltip>
                     </div>
                 </div>
               )}
@@ -513,15 +532,29 @@ export function NoteEditor({
                           <div key={item.id} className="flex items-center gap-2">
                               <input type="checkbox" checked={item.completed} onChange={() => handleToggleChecklistItem(item.id)} className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
                               <span className={cn("flex-grow", item.completed && "line-through text-muted-foreground")}>{item.text}</span>
-                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveChecklistItem(item.id)}>
-                                  <Trash2 className="h-4 w-4 text-destructive"/>
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveChecklistItem(item.id)}>
+                                      <Trash2 className="h-4 w-4 text-destructive"/>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Remove Item</p>
+                                </TooltipContent>
+                              </Tooltip>
                           </div>
                       ))}
                   </div>
                   <div className="flex gap-2">
                       <Input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} placeholder="Add a checklist item" onKeyDown={e => e.key === 'Enter' && handleAddChecklistItem()} />
-                      <Button onClick={handleAddChecklistItem}><Plus className="h-4 w-4" /></Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button onClick={handleAddChecklistItem}><Plus className="h-4 w-4" /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Add Item</p>
+                        </TooltipContent>
+                      </Tooltip>
                   </div>
               </div>
 
@@ -536,20 +569,34 @@ export function NoteEditor({
                     placeholder="Add a tag and press Enter"
                   />
                   <Button onClick={handleTagAdd}>Add</Button>
-                  <Button variant="outline" size="icon" onClick={handleSuggestTags} disabled={isAiLoading || !content}>
-                    <Sparkles className="h-4 w-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="icon" onClick={handleSuggestTags} disabled={isAiLoading || !content}>
+                        <Sparkles className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Suggest Tags with AI</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                   {tags.map((tag) => (
                     <Badge key={tag} variant="secondary">
                       {tag}
-                      <button
-                        onClick={() => handleTagRemove(tag)}
-                        className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => handleTagRemove(tag)}
+                            className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Remove Tag</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </Badge>
                   ))}
                 </div>

@@ -20,6 +20,11 @@ import {
 } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 
 type AppHeaderProps = {
@@ -55,10 +60,17 @@ export function AppHeader({
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 sm:px-6">
       <div className="flex items-center gap-2">
          {/* Desktop Menu Toggle */}
-         <Button size="icon" variant="ghost" className="hidden sm:flex h-10 w-10" onClick={onToggleSidebar}>
-            <Menu className="h-6 w-6" />
-            <span className="sr-only">Toggle Menu</span>
-          </Button>
+         <Tooltip>
+            <TooltipTrigger asChild>
+                <Button size="icon" variant="ghost" className="hidden sm:flex h-10 w-10" onClick={onToggleSidebar}>
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Toggle Menu</span>
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>Toggle Menu</p>
+            </TooltipContent>
+        </Tooltip>
          {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
@@ -158,30 +170,44 @@ export function AppHeader({
 
       <div className="flex items-center gap-2">
         <div className="hidden items-center gap-1 rounded-lg bg-secondary p-0.5 sm:flex">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLayout("list")}
-              aria-label="List view"
-              className={cn(
-                "w-9 px-0",
-                layout === "list" && "bg-background text-foreground shadow-sm hover:bg-background"
-              )}
-            >
-              <List className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLayout("grid")}
-              aria-label="Grid view"
-              className={cn(
-                "w-9 px-0",
-                layout === "grid" && "bg-background text-foreground shadow-sm hover:bg-background"
-              )}
-            >
-              <LayoutGrid className="h-5 w-5" />
-            </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLayout("list")}
+                    aria-label="List view"
+                    className={cn(
+                        "w-9 px-0",
+                        layout === "list" && "bg-background text-foreground shadow-sm hover:bg-background"
+                    )}
+                    >
+                    <List className="h-5 w-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>List View</p>
+                </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLayout("grid")}
+                    aria-label="Grid view"
+                    className={cn(
+                        "w-9 px-0",
+                        layout === "grid" && "bg-background text-foreground shadow-sm hover:bg-background"
+                    )}
+                    >
+                    <LayoutGrid className="h-5 w-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Grid View</p>
+                </TooltipContent>
+            </Tooltip>
           </div>
         <ThemeToggle />
         <Button
