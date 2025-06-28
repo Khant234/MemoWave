@@ -16,6 +16,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -63,6 +64,12 @@ export function AppHeader({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs p-0">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Menu</SheetTitle>
+              <SheetDescription>
+                Main navigation for notes, archives, and tags.
+              </SheetDescription>
+            </SheetHeader>
             <AppSidebar
               isMobile
               isExpanded={true}
