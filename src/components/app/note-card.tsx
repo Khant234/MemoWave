@@ -79,12 +79,12 @@ export function NoteCard({
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
         "cursor-pointer group hover:shadow-xl transition-transform duration-300 ease-in-out overflow-hidden shadow-md transform hover:-translate-y-1 flex flex-col border-0",
-        note.isPinned && "ring-2 ring-primary bg-primary/10",
+        note.isPinned && "ring-2 ring-primary",
         note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}
       style={{ borderTop: `4px solid ${note.color}` }}
     >
-      <CardHeader className="relative pb-2">
+      <CardHeader className="relative px-4 pt-4 pb-2">
         <CardTitle className="pr-12 text-lg font-bold font-headline line-clamp-2">
           {note.title || "Untitled Note"}
         </CardTitle>
@@ -175,7 +175,7 @@ export function NoteCard({
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="pt-2 px-6 pb-4 flex-grow">
+      <CardContent className="px-4 pb-4 flex-grow">
         {note.imageUrl && (
           <div className="relative mb-4 aspect-video w-full rounded-md overflow-hidden">
             <Image
@@ -194,7 +194,7 @@ export function NoteCard({
           <div className="absolute bottom-0 left-0 h-8 w-full bg-gradient-to-t from-card to-transparent pointer-events-none" />
         </div>
       </CardContent>
-      <CardFooter className="flex-col items-start gap-2 pt-0 px-6 pb-4">
+      <CardFooter className="flex-col items-start gap-2 px-4 pb-4 pt-0">
         <div className="flex flex-wrap gap-2">
           {note.tags.map((tag) => (
             <Badge
