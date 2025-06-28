@@ -103,7 +103,7 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
                           <button
                             key={item.id}
                             onClick={() => onChecklistItemToggle(note.id, item.id)}
-                            className="flex w-full items-center gap-3 rounded-md p-1 text-left transition-colors hover:bg-accent"
+                            className="flex w-full items-center gap-3 rounded-md p-1 text-left transition-colors hover:bg-secondary"
                           >
                             {item.completed ? <CheckSquare className="h-4 w-4 flex-shrink-0 text-primary" /> : <Square className="h-4 w-4 flex-shrink-0 text-muted-foreground" />}
                             <span className={cn("flex-grow", item.completed && "line-through text-muted-foreground")}>{item.text}</span>
