@@ -187,10 +187,11 @@ export function NoteCard({
             />
           </div>
         )}
-        <div className="max-h-[80px] overflow-hidden">
-          <p className="text-sm text-muted-foreground line-clamp-3">
+        <div className="relative h-[60px] overflow-hidden">
+          <p className="text-sm text-muted-foreground">
             {note.content}
           </p>
+          <div className="absolute bottom-0 h-6 w-full bg-gradient-to-t from-card to-transparent pointer-events-none" />
         </div>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 px-4 pb-4 pt-0">
