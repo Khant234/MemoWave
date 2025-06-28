@@ -27,6 +27,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -141,8 +142,9 @@ export function NoteCard({
                     <Undo className="mr-2 h-4 w-4" />
                     <span>Restore</span>
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    className="text-destructive"
+                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
                     onClick={() => onPermanentlyDeleteNote(note.id)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -159,6 +161,7 @@ export function NoteCard({
                     <Archive className="mr-2 h-4 w-4" />
                     <span>{note.isArchived ? "Unarchive" : "Archive"}</span>
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
                     onClick={() => onDeleteNote(note.id)}
