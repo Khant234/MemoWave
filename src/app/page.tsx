@@ -9,9 +9,11 @@ import { NoteEditor } from "@/components/app/note-editor";
 import { type Note } from "@/lib/types";
 import { DUMMY_NOTES } from "@/lib/data";
 import { Toaster } from "@/components/ui/toaster";
+import { Loader2 } from "lucide-react";
 
 export default function Home() {
-  const [notes, setNotes] = React.useState<Note[]>(DUMMY_NOTES);
+  const [notes, setNotes] = React.useState<Note[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [activeFilter, setActiveFilter] = React.useState<"all" | "archived">(
     "all"
   );
@@ -19,6 +21,32 @@ export default function Home() {
   const [layout, setLayout] = React.useState<"grid" | "list">("grid");
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
+
+  // Load notes from localStorage on initial render
+  React.useEffect(() => {
+    try {
+      const savedNotesRaw = localStorage.getItem("notes");
+      if (savedNotesRaw) {
+        const savedNotes = JSON.parse(savedNotesRaw);
+        setNotes(savedNotes);
+      } else {
+        // If no notes in storage, initialize with DUMMY_NOTES
+        setNotes(DUMMY_NOTES);
+      }
+    } catch (error) {
+      console.error("Failed to load notes from localStorage", error);
+      // Fallback to dummy notes in case of error
+      setNotes(DUMMY_NOTES);
+    }
+    setIsLoading(false);
+  }, []);
+
+  // Save notes to localStorage whenever they change
+  React.useEffect(() => {
+    if (!isLoading) {
+      localStorage.setItem("notes", JSON.stringify(notes));
+    }
+  }, [notes, isLoading]);
 
   useHotkeys("n", () => handleNewNote(), { preventDefault: true });
 
@@ -86,6 +114,17 @@ export default function Home() {
         );
       });
   }, [notes, activeFilter, searchTerm]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen w-full bg-muted/40 items-center justify-center">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Loading notes...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-muted/40">
