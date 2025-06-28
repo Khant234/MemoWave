@@ -19,6 +19,7 @@ import {
   Pin,
   PinOff,
   Undo,
+  MoreVertical,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,7 +27,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type NoteCardProps = {
@@ -51,11 +51,12 @@ export function NoteCard({
   const [formattedDate, setFormattedDate] = React.useState("");
 
   React.useEffect(() => {
+    // Client-side effect to prevent hydration mismatch
     setFormattedDate(new Date(note.updatedAt).toLocaleDateString());
   }, [note.updatedAt]);
   
   const handlePinClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent card's onClick from firing
     onTogglePin(note.id);
   };
 
@@ -71,7 +72,7 @@ export function NoteCard({
     >
       <CardHeader className="relative pb-2">
         <CardTitle className="pr-12 text-lg font-headline">
-          {note.title}
+          {note.title || "Untitled Note"}
         </CardTitle>
         <div className="absolute top-4 right-4 flex items-center gap-1">
           {!note.isTrashed && (
@@ -128,10 +129,11 @@ export function NoteCard({
                     <span>{note.isArchived ? "Unarchive" : "Archive"}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
                     onClick={() => onDeleteNote(note.id)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    <span>Delete</span>
+                    <span>Move to Trash</span>
                   </DropdownMenuItem>
                 </>
               )}
@@ -165,7 +167,7 @@ export function NoteCard({
         </div>
         <div className="flex justify-between w-full items-center pt-2">
             <p className="text-xs text-muted-foreground">
-            {formattedDate}
+              {formattedDate}
             </p>
             {note.isDraft && (
                 <Badge variant="outline">Draft</Badge>
