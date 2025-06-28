@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -10,9 +11,17 @@ type AppSidebarProps = {
   activeFilter: "all" | "archived" | "trash";
   setActiveFilter: React.Dispatch<React.SetStateAction<"all" | "archived" | "trash">>;
   isMobile?: boolean;
+  onFilterChange?: () => void;
 };
 
-export function AppSidebar({ activeFilter, setActiveFilter, isMobile }: AppSidebarProps) {
+export function AppSidebar({ activeFilter, setActiveFilter, isMobile, onFilterChange }: AppSidebarProps) {
+  const handleFilterClick = (filter: "all" | "archived" | "trash") => {
+    setActiveFilter(filter);
+    if (isMobile && onFilterChange) {
+      onFilterChange();
+    }
+  };
+
   if (isMobile) {
     return (
       <nav className="grid gap-6 text-lg font-medium p-6">
@@ -23,7 +32,7 @@ export function AppSidebar({ activeFilter, setActiveFilter, isMobile }: AppSideb
           <span className="">MemoWeave</span>
         </div>
         <button
-          onClick={() => setActiveFilter("all")}
+          onClick={() => handleFilterClick("all")}
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
             activeFilter === "all" && "bg-muted text-primary"
@@ -33,7 +42,7 @@ export function AppSidebar({ activeFilter, setActiveFilter, isMobile }: AppSideb
           All Notes
         </button>
         <button
-          onClick={() => setActiveFilter("archived")}
+          onClick={() => handleFilterClick("archived")}
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
             activeFilter === "archived" && "bg-muted text-primary"
@@ -43,7 +52,7 @@ export function AppSidebar({ activeFilter, setActiveFilter, isMobile }: AppSideb
           Archived
         </button>
         <button
-          onClick={() => setActiveFilter("trash")}
+          onClick={() => handleFilterClick("trash")}
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
             activeFilter === "trash" && "bg-muted text-primary"
