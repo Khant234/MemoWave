@@ -70,7 +70,7 @@ export function NoteEditor({
   const [isRecorderOpen, setIsRecorderOpen] = React.useState(false);
   const [imageUrl, setImageUrl] = React.useState<string | undefined>();
   const [generatedAudio, setGeneratedAudio] = React.useState<string | null>(null);
-  const [hasDraft, setHasDraft] = React.useState(false);
+  const [isDirty, setIsDirty] = React.useState(false);
 
 
   const imageInputRef = React.useRef<HTMLInputElement>(null);
@@ -94,8 +94,7 @@ export function NoteEditor({
     const drafts = getDrafts();
     drafts[draftId] = draftData;
     localStorage.setItem('noteDrafts', JSON.stringify(drafts));
-    if (!hasDraft) setHasDraft(true);
-  }, [note, hasDraft]);
+  }, [note]);
 
   const clearDraft = React.useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -103,7 +102,6 @@ export function NoteEditor({
     const drafts = getDrafts();
     delete drafts[draftId];
     localStorage.setItem('noteDrafts', JSON.stringify(drafts));
-    setHasDraft(false);
   }, [note]);
 
   const loadStateFromData = (data: Note | NoteDraft) => {
@@ -124,10 +122,8 @@ export function NoteEditor({
 
       if (draft) {
         loadStateFromData(draft);
-        setHasDraft(true);
       } else if (note) {
         loadStateFromData(note);
-        setHasDraft(false);
       } else {
         // Reset for a truly new note
         setTitle('');
@@ -137,11 +133,11 @@ export function NoteEditor({
         setChecklist([]);
         setImageUrl(undefined);
         setGeneratedAudio(null);
-        setHasDraft(false);
       }
     }
   }, [note, isOpen]);
 
+  // Effect to save draft to local storage on any change
   React.useEffect(() => {
     if (isOpen) {
       const draftNote: NoteDraft = {
@@ -156,6 +152,40 @@ export function NoteEditor({
       saveDraft(draftNote);
     }
   }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, saveDraft]);
+
+  // Effect to check if the form is "dirty" (has unsaved changes)
+  React.useEffect(() => {
+    if (!isOpen) {
+      setIsDirty(false);
+      return;
+    }
+  
+    const currentState = {
+      title: title,
+      content: content,
+      tags: tags,
+      color: color,
+      checklist: checklist,
+      imageUrl: imageUrl,
+      audioUrl: generatedAudio || undefined,
+    };
+  
+    if (note) { // Editing an existing note
+      const noteState = {
+        title: note.title,
+        content: note.content,
+        tags: note.tags,
+        color: note.color,
+        checklist: note.checklist,
+        imageUrl: note.imageUrl,
+        audioUrl: note.audioUrl,
+      };
+      setIsDirty(JSON.stringify(currentState) !== JSON.stringify(noteState));
+    } else { // Creating a new note
+      const isEmpty = !title && !content && tags.length === 0 && checklist.length === 0 && !imageUrl && !generatedAudio;
+      setIsDirty(!isEmpty);
+    }
+  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio]);
 
   const handleSave = () => {
     if (!title && !content) {
@@ -186,11 +216,11 @@ export function NoteEditor({
     clearDraft();
   };
   
-  const handleDiscardDraft = () => {
+  const handleDiscardChanges = () => {
     if (note) {
       loadStateFromData(note);
       clearDraft();
-      toast({ title: "Draft discarded", description: "Your changes have been discarded." });
+      toast({ title: "Changes discarded", description: "Your changes have been discarded." });
     }
   }
 
@@ -338,7 +368,6 @@ export function NoteEditor({
         <SheetHeader className="p-6">
           <SheetTitle className="font-headline">
             {note ? "Edit Note" : "New Note"}
-            {hasDraft && <span className="text-sm ml-2 text-muted-foreground font-normal">(Draft)</span>}
           </SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex-grow px-6">
@@ -467,20 +496,30 @@ export function NoteEditor({
             </div>
           </div>
         </ScrollArea>
-        <SheetFooter className="p-6 bg-background border-t">
-          {hasDraft && note && (
-            <Button variant="ghost" className="mr-auto text-destructive hover:text-destructive" onClick={handleDiscardDraft}>Discard Draft</Button>
-          )}
+        <SheetFooter className="p-6 bg-background border-t flex items-center gap-2">
+          <div className="mr-auto">
+            {isDirty && note && (
+              <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>
+                Discard Changes
+              </Button>
+            )}
+          </div>
+          
+          <span className="text-sm text-muted-foreground">
+            {isAiLoading
+              ? "AI is working..."
+              : isDirty
+              ? "Unsaved changes"
+              : note
+              ? "All changes saved"
+              : ""}
+          </span>
+  
           <SheetClose asChild>
             <Button variant="outline">Cancel</Button>
           </SheetClose>
-          <Button onClick={handleSave} disabled={isAiLoading}>
-            {isAiLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                AI is working...
-              </>
-              ) : 'Save Note'}
+          <Button onClick={handleSave} disabled={isAiLoading || !isDirty}>
+            Save Note
           </Button>
         </SheetFooter>
       </SheetContent>
