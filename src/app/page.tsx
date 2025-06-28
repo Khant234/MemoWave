@@ -361,7 +361,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-secondary/40">
+    <div className="flex h-screen flex-col bg-background">
       <AppHeader
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -385,7 +385,7 @@ export default function Home() {
           onTagClick={handleTagClick}
           activeTag={searchTerm}
         />
-        <main className="flex-1 overflow-y-auto p-6 transition-all duration-300 ease-in-out">
+        <main className="flex-1 overflow-y-auto p-8 transition-all duration-300 ease-in-out">
           <div className="mx-auto max-w-7xl">
             <NoteList
               notes={filteredNotes}

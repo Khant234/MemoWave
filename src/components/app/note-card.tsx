@@ -72,14 +72,14 @@ export function NoteCard({
     <Card
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
-        "cursor-pointer hover:shadow-xl transition-shadow duration-200 overflow-hidden shadow-lg",
+        "cursor-pointer hover:shadow-xl transition-shadow duration-200 overflow-hidden shadow-md",
         note.isPinned && "border-primary/50 bg-primary/10",
         note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}
       style={{ borderTop: `4px solid ${note.color}` }}
     >
       <CardHeader className="relative pb-2">
-        <CardTitle className="pr-12 text-lg font-headline">
+        <CardTitle className="pr-12 text-lg font-bold font-headline">
           {note.title || "Untitled Note"}
         </CardTitle>
         <div className="absolute top-4 right-4 flex items-center gap-1">
@@ -165,7 +165,7 @@ export function NoteCard({
             />
           </div>
         )}
-        <p className="text-sm text-muted-foreground line-clamp-4">
+        <p className="text-sm text-muted-foreground line-clamp-6">
           {note.content}
         </p>
       </CardContent>
