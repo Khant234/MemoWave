@@ -17,11 +17,11 @@ import {
   Archive,
   Trash2,
   Pin,
-  PinOff,
   Undo,
   MoreVertical,
   Copy,
   X,
+  CheckSquare,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -188,7 +188,7 @@ export function NoteCard({
           </div>
         )}
         <div className="max-h-[80px] overflow-hidden">
-          <p className="text-sm text-muted-foreground line-clamp-4">
+          <p className="text-sm text-muted-foreground line-clamp-3">
             {note.content}
           </p>
         </div>
@@ -235,9 +235,27 @@ export function NoteCard({
             <p className="text-xs text-muted-foreground">
               {formattedDate}
             </p>
-            {note.isDraft && (
-                <Badge variant="outline">Draft</Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {note.checklist && note.checklist.length > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <CheckSquare className="h-4 w-4" />
+                      <span>
+                        {note.checklist.filter((item) => item.completed).length}/
+                        {note.checklist.length}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Checklist progress</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {note.isDraft && (
+                  <Badge variant="outline">Draft</Badge>
+              )}
+            </div>
         </div>
       </CardFooter>
     </Card>
