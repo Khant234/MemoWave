@@ -360,7 +360,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-secondary/50">
+    <div className="min-h-screen w-full bg-background">
       <AppHeader
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -382,7 +382,7 @@ export default function Home() {
           onTagClick={handleTagClick}
           activeTag={searchTerm}
         />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-card transition-all duration-300 ease-in-out">
           <NoteList
             notes={filteredNotes}
             layout={layout}

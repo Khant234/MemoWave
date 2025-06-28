@@ -95,7 +95,7 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "group hidden sm:flex flex-col bg-card shadow-lg fixed top-0 pt-16 h-screen z-40",
+        "group hidden sm:flex flex-col bg-card shadow-lg",
         "transition-all duration-300 ease-in-out overflow-y-auto overflow-x-hidden",
         "w-20 hover:w-72"
       )}
