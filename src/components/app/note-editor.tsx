@@ -223,6 +223,7 @@ export function NoteEditor({
       checklist,
       imageUrl,
       audioUrl: generatedAudio || undefined,
+      isDraft: false,
     };
     onSave(newNote);
     clearDraft();
@@ -245,8 +246,32 @@ export function NoteEditor({
     }
   };
 
-  const handleSaveDraftAndClose = () => {
-    // Draft is already saved by useEffect, so just close the dialog and editor
+  const handleSaveAsDraftAndClose = () => {
+    isSavingRef.current = true;
+    const draftNote: Note = {
+      id: note?.id || new Date().toISOString(),
+      title,
+      content,
+      tags,
+      color,
+      isPinned: note?.isPinned || false,
+      isArchived: note?.isArchived || false,
+      isTrashed: note?.isTrashed || false,
+      createdAt: note?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      checklist,
+      imageUrl,
+      audioUrl: generatedAudio || undefined,
+      isDraft: true,
+    };
+    
+    onSave(draftNote);
+    toast({
+        title: "Draft Saved",
+        description: "Your note has been saved as a draft.",
+    });
+
+    clearDraft();
     setIsCloseConfirmOpen(false);
     setIsOpen(false);
   };
@@ -553,7 +578,7 @@ export function NoteEditor({
           <AlertDialogHeader>
             <AlertDialogTitle>You have unsaved changes</AlertDialogTitle>
             <AlertDialogDescription>
-              Do you want to save your changes as a draft, or discard them?
+              Would you like to save your work as a draft, or discard the changes?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -561,8 +586,8 @@ export function NoteEditor({
             <Button variant="destructive" onClick={handleDiscardAndClose}>
               Discard Changes
             </Button>
-            <Button onClick={handleSaveDraftAndClose}>
-              Save Draft
+            <Button onClick={handleSaveAsDraftAndClose}>
+              Save as Draft
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

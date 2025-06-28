@@ -162,9 +162,14 @@ export function NoteCard({
             </Badge>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground pt-2">
-          {formattedDate}
-        </p>
+        <div className="flex justify-between w-full items-center pt-2">
+            <p className="text-xs text-muted-foreground">
+            {formattedDate}
+            </p>
+            {note.isDraft && (
+                <Badge variant="outline">Draft</Badge>
+            )}
+        </div>
       </CardFooter>
     </Card>
   );

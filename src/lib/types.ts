@@ -12,4 +12,5 @@ export type Note = {
   imageUrl?: string;
   audioUrl?: string;
   checklist: { id: string; text: string; completed: boolean }[];
+  isDraft?: boolean;
 };
