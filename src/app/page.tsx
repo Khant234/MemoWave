@@ -365,6 +365,7 @@ export default function Home() {
       <AppSidebar
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
+        setSearchTerm={setSearchTerm}
         tags={allTags}
         onTagClick={handleTagClick}
         activeTag={searchTerm}

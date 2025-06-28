@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 type AppSidebarProps = {
   activeFilter: "all" | "archived" | "trash";
   setActiveFilter: React.Dispatch<React.SetStateAction<"all" | "archived" | "trash">>;
+  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   tags: string[];
   onTagClick: (tag: string) => void;
   activeTag: string;
@@ -17,9 +18,10 @@ type AppSidebarProps = {
   onFilterChange?: () => void;
 };
 
-export function AppSidebar({ activeFilter, setActiveFilter, tags, onTagClick, activeTag, isMobile, onFilterChange }: AppSidebarProps) {
+export function AppSidebar({ activeFilter, setActiveFilter, setSearchTerm, tags, onTagClick, activeTag, isMobile, onFilterChange }: AppSidebarProps) {
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     setActiveFilter(filter);
+    setSearchTerm("");
     if (isMobile && onFilterChange) {
       onFilterChange();
     }
@@ -115,7 +117,7 @@ export function AppSidebar({ activeFilter, setActiveFilter, tags, onTagClick, ac
                   activeFilter === "all" && activeTag === '' && "bg-primary/10 text-primary"
                 )}
                 aria-label="All Notes"
-                onClick={() => setActiveFilter("all")}
+                onClick={() => handleFilterClick("all")}
               >
                 <NotepadText className="h-5 w-5" />
               </Button>
@@ -134,7 +136,7 @@ export function AppSidebar({ activeFilter, setActiveFilter, tags, onTagClick, ac
                   activeFilter === "archived" && "bg-primary/10 text-primary"
                 )}
                 aria-label="Archived"
-                onClick={() => setActiveFilter("archived")}
+                onClick={() => handleFilterClick("archived")}
               >
                 <Archive className="h-5 w-5" />
               </Button>
@@ -153,7 +155,7 @@ export function AppSidebar({ activeFilter, setActiveFilter, tags, onTagClick, ac
                   activeFilter === "trash" && "bg-primary/10 text-primary"
                 )}
                 aria-label="Trash"
-                onClick={() => setActiveFilter("trash")}
+                onClick={() => handleFilterClick("trash")}
               >
                 <Trash2 className="h-5 w-5" />
               </Button>

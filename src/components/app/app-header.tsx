@@ -66,6 +66,7 @@ export function AppHeader({
             isMobile
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
+            setSearchTerm={setSearchTerm}
             onFilterChange={() => setIsMobileMenuOpen(false)}
             tags={tags}
             onTagClick={onTagClick}
