@@ -1,8 +1,6 @@
-
 "use client";
 
 import * as React from "react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { NotepadText, Archive, PenSquare, Trash2, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -127,62 +125,48 @@ export function AppSidebar({
             {isExpanded && <span className="ml-1">MemoWeave</span>}
             {!isExpanded && <span className="sr-only">MemoWeave</span>}
         </div>
-        <TooltipProvider>
-          {mainNavItems.map(({ filter, label, icon: Icon, active }) => (
-            <Tooltip key={filter} delayDuration={0}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={active ? "secondary" : "ghost"}
-                  size={isExpanded ? "default" : "icon"}
-                  className={cn(
-                      "w-full rounded-lg",
-                      active && "bg-primary/10 text-primary",
-                      isExpanded ? "justify-start" : "justify-center"
-                  )}
-                  aria-label={label}
-                  onClick={() => handleFilterClick(filter as any)}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  {isExpanded && <span className="ml-2">{label}</span>}
-                </Button>
-              </TooltipTrigger>
-              {!isExpanded && (
-                  <TooltipContent side="right">{label}</TooltipContent>
-              )}
-            </Tooltip>
-          ))}
-        </TooltipProvider>
+        
+        {mainNavItems.map(({ filter, label, icon: Icon, active }) => (
+          <Button
+            key={filter}
+            variant={active ? "secondary" : "ghost"}
+            size={isExpanded ? "default" : "icon"}
+            className={cn(
+                "w-full rounded-lg",
+                active && "bg-primary/10 text-primary",
+                isExpanded ? "justify-start" : "justify-center"
+            )}
+            aria-label={label}
+            onClick={() => handleFilterClick(filter as any)}
+          >
+            <Icon className="h-5 w-5 shrink-0" />
+            {isExpanded && <span className="ml-2">{label}</span>}
+          </Button>
+        ))}
       </nav>
       {tags.length > 0 && (
         <nav className={cn("mt-auto flex flex-col gap-4 px-2 py-4 border-t", isExpanded ? "items-stretch" : "items-center")}>
           {isExpanded && (
                <h3 className="px-2 text-xs font-semibold text-muted-foreground tracking-wider uppercase">Tags</h3>
           )}
-          <TooltipProvider>
-            {tags.map(tag => (
-              <Tooltip key={tag} delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={activeTag === tag ? "secondary" : "ghost"}
-                    size={isExpanded ? "default" : "icon"}
-                    className={cn(
-                      "w-full rounded-lg",
-                      activeTag === tag && "bg-primary/10 text-primary",
-                      isExpanded ? "justify-start" : "justify-center"
-                    )}
-                    aria-label={tag}
-                    onClick={() => onTagClick(tag)}
-                  >
-                    <Tag className="h-5 w-5 shrink-0" />
-                    {isExpanded && <span className="ml-2 truncate">{tag}</span>}
-                  </Button>
-                </TooltipTrigger>
-                {!isExpanded && (
-                    <TooltipContent side="right">{tag}</TooltipContent>
+          
+          {tags.map(tag => (
+              <Button
+                key={tag}
+                variant={activeTag === tag ? "secondary" : "ghost"}
+                size={isExpanded ? "default" : "icon"}
+                className={cn(
+                  "w-full rounded-lg",
+                  activeTag === tag && "bg-primary/10 text-primary",
+                  isExpanded ? "justify-start" : "justify-center"
                 )}
-              </Tooltip>
-            ))}
-          </TooltipProvider>
+                aria-label={tag}
+                onClick={() => onTagClick(tag)}
+              >
+                <Tag className="h-5 w-5 shrink-0" />
+                {isExpanded && <span className="ml-2 truncate">{tag}</span>}
+              </Button>
+          ))}
         </nav>
       )}
     </aside>
