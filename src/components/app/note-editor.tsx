@@ -53,13 +53,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { suggestTags } from "@/ai/flows/suggest-tags";
 import { generateTitle } from "@/ai/flows/title-generation";
 import { summarizeNote } from "@/ai/flows/note-summarization";
@@ -80,8 +73,6 @@ type NoteEditorProps = {
 
 // Define a type for our draft for clarity
 type NoteDraft = Partial<Omit<Note, 'id' | 'isPinned' | 'isArchived' | 'isTrashed' | 'createdAt' | 'updatedAt'>>;
-
-const LANGUAGES = ["Spanish", "French", "German", "Japanese", "Korean", "Burmese", "English"];
 
 export function NoteEditor({
   isOpen,
@@ -107,8 +98,6 @@ export function NoteEditor({
   const [isDirty, setIsDirty] = React.useState(false);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
   const [ignoredChecklistItems, setIgnoredChecklistItems] = React.useState(new Set<string>());
-  const [targetLanguage, setTargetLanguage] = React.useState("Spanish");
-
 
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
@@ -450,12 +439,29 @@ export function NoteEditor({
   }, { loading: "Generating audio...", success: "Audio Generated!", error: "Could not generate audio." });
 
   const handleTranslate = () => runAiAction(async () => {
-    if(!content) throw new Error("Please write some content to translate.");
-    const result = await translateNote({ noteContent: content, targetLanguage });
-    if (result.translatedContent) {
-        setContent(prev => `${prev}\n\n--- Translated to ${targetLanguage} ---\n${result.translatedContent}`);
+    if (!content && checklist.length === 0) {
+      throw new Error("Please add content or checklist items to translate.");
     }
-  }, { loading: "Translating...", success: "Translation Appended!", error: "Could not translate note." });
+    const result = await translateNote({
+      noteContent: content,
+      checklistItems: checklist.map(item => ({ id: item.id, text: item.text })),
+      targetLanguage: "Burmese",
+    });
+
+    if (result.translatedContent) {
+      setContent(result.translatedContent);
+    }
+    
+    if (result.translatedChecklistItems && result.translatedChecklistItems.length > 0) {
+      const translatedMap = new Map(result.translatedChecklistItems.map(item => [item.id, item.translatedText]));
+      setChecklist(prevChecklist => 
+        prevChecklist.map(item => ({
+          ...item,
+          text: translatedMap.get(item.id) || item.text
+        }))
+      );
+    }
+  }, { loading: "Translating...", success: "Note translated to Burmese!", error: "Could not translate note." });
 
   const handleTranscriptionComplete = (text: string) => {
     setContent(prev => `${prev}\n\n${text}`.trim());
@@ -735,25 +741,12 @@ export function NoteEditor({
                   <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>
                   <Button variant="outline" onClick={() => setIsTranscriberOpen(true)}><BookText className="mr-2 h-4 w-4" />Transcribe Voice</Button>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateAudio}><Volume2 className="mr-2 h-4 w-4"/>Listen (BU)</Button>
-                  <div className="col-span-full flex gap-2">
-                    <Select value={targetLanguage} onValueChange={setTargetLanguage}>
-                        <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select language" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {LANGUAGES.map(lang => (
-                                <SelectItem key={lang} value={lang}>{lang}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Button 
-                        variant="outline" 
-                        className="flex-shrink-0"
-                        disabled={isAiLoading || !content} 
-                        onClick={handleTranslate}>
-                        <Languages className="mr-2 h-4 w-4"/>Translate
-                    </Button>
-                </div>
+                  <Button 
+                      variant="outline" 
+                      disabled={isAiLoading || (!content && checklist.length === 0)} 
+                      onClick={handleTranslate}>
+                      <Languages className="mr-2 h-4 w-4"/>Translate to Burmese
+                  </Button>
               </div>
             </div>
           </ScrollArea>
