@@ -40,6 +40,7 @@ import { useSidebar } from "@/hooks/use-sidebar";
 export default function Home() {
   const [notes, setNotes] = React.useState<Note[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isSaving, setIsSaving] = React.useState(false);
   const [activeFilter, setActiveFilter] = React.useState<"all" | "archived" | "trash">(
     "all"
   );
@@ -136,7 +137,7 @@ export default function Home() {
 
 
   const handleSaveNote = async (noteToSave: Note) => {
-    setIsEditorOpen(false);
+    setIsSaving(true);
     
     const isExisting = notes.some((n) => n.id === noteToSave.id);
 
@@ -172,6 +173,10 @@ export default function Home() {
         const docRef = await addDoc(notesCollectionRef, finalNoteData);
         setNotes((prevNotes) => [{ ...noteToSave, id: docRef.id, history: [] }, ...prevNotes]);
       }
+
+      setIsEditorOpen(false);
+      setEditingNote(null);
+      
       if (noteToSave.isDraft) {
         toast({
           title: "Draft Saved",
@@ -192,7 +197,7 @@ export default function Home() {
       });
       fetchNotes(); // Refetch to sync state with db
     } finally {
-        setEditingNote(null);
+        setIsSaving(false);
     }
   };
   
@@ -459,6 +464,7 @@ export default function Home() {
         setIsOpen={setIsEditorOpen}
         note={editingNote}
         onSave={handleSaveNote}
+        isSaving={isSaving}
       />
       <AlertDialog open={!!deleteConfirmation} onOpenChange={(open) => !open && handleCancelDelete()}>
         <AlertDialogContent>

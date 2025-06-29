@@ -65,6 +65,7 @@ type NoteEditorProps = {
   setIsOpen: (isOpen: boolean) => void;
   note: Note | null;
   onSave: (note: Note) => void;
+  isSaving?: boolean;
 };
 
 // Define a type for our draft for clarity
@@ -76,6 +77,7 @@ export function NoteEditor({
   setIsOpen,
   note,
   onSave,
+  isSaving = false,
 }: NoteEditorProps) {
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
@@ -93,7 +95,6 @@ export function NoteEditor({
   const [isDirty, setIsDirty] = React.useState(false);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
 
-  const isSavingRef = React.useRef(false);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
   const autoChecklistRunning = React.useRef(false);
@@ -262,7 +263,6 @@ export function NoteEditor({
       return;
     }
 
-    isSavingRef.current = true;
     const newNote: Note = {
       id: note?.id || new Date().toISOString(),
       title,
@@ -287,7 +287,7 @@ export function NoteEditor({
     }
 
     onSave(newNote);
-    clearDraft();
+    // Don't clear draft here. The draft being identical to the saved note is fine.
   };
   
   const handleDiscardChanges = () => {
@@ -299,16 +299,14 @@ export function NoteEditor({
   }
 
   const handleOpenChange = (open: boolean) => {
-    if (!open && isDirty && !isSavingRef.current) {
+    if (!open && isDirty && !isSaving) {
         setIsCloseConfirmOpen(true);
     } else {
-        isSavingRef.current = false; // Reset ref
         setIsOpen(open);
     }
   };
 
   const handleSaveAsDraftAndClose = () => {
-    isSavingRef.current = true;
     const draftNote: Note = {
       id: note?.id || new Date().toISOString(),
       title,
@@ -334,9 +332,9 @@ export function NoteEditor({
     
     onSave(draftNote);
     
-    clearDraft();
+    // clearDraft is not called here, as the parent component will close the editor
+    // and the draft is effectively "saved"
     setIsCloseConfirmOpen(false);
-    setIsOpen(false);
   };
 
   const handleDiscardAndClose = () => {
@@ -672,7 +670,9 @@ export function NoteEditor({
             </div>
             
             <span className="text-sm text-muted-foreground">
-              {isAiLoading
+              {isSaving
+                ? "Saving..."
+                : isAiLoading
                 ? "AI is working..."
                 : isDirty
                 ? "Unsaved changes"
@@ -684,8 +684,9 @@ export function NoteEditor({
             <SheetClose asChild>
               <Button variant="outline">Cancel</Button>
             </SheetClose>
-            <Button onClick={handleSave} disabled={isAiLoading || !isDirty}>
-              Save Note
+            <Button onClick={handleSave} disabled={isAiLoading || !isDirty || isSaving}>
+              {isSaving ? <Loader2 className="animate-spin" /> : null}
+              {isSaving ? "Saving..." : "Save Note"}
             </Button>
           </SheetFooter>
         </SheetContent>
