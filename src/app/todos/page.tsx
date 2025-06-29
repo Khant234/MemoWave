@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { TodoSkeleton } from "@/components/app/todo-skeleton";
 import { useNotes } from "@/contexts/notes-context";
 import { ChecklistCompleteMessage } from "@/components/app/checklist-complete";
+import { useGamification } from "@/contexts/gamification-context";
 
 type ChecklistItem = {
   id: string;
@@ -39,10 +40,13 @@ export default function TodosPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const { toast } = useToast();
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
+  const { recordTaskCompletion } = useGamification();
   
   const handleChecklistItemToggle = async (noteId: string, checklistItemId: string) => {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
+      recordTaskCompletion(note, checklistItemId);
+
       const updatedChecklist = note.checklist.map((item) =>
         item.id === checklistItemId
           ? { ...item, completed: !item.completed }

@@ -34,6 +34,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useNotes } from "@/contexts/notes-context";
+import { useGamification } from "@/contexts/gamification-context";
 
 export default function Home() {
   const { notes, isLoading, allTags } = useNotes();
@@ -59,6 +60,7 @@ export default function Home() {
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { recordTaskCompletion } = useGamification();
 
 
   const notesCollectionRef = collection(db, "notes");
@@ -192,6 +194,8 @@ export default function Home() {
   const handleChecklistItemToggle = (noteId: string, checklistItemId: string) => {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
+      recordTaskCompletion(note, checklistItemId);
+      
       const updatedChecklist = note.checklist.map((item) =>
         item.id === checklistItemId
           ? { ...item, completed: !item.completed }
