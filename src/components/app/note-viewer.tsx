@@ -19,6 +19,7 @@ import { type Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Edit, CheckSquare, Square, Music, Download } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { ChecklistCompleteMessage } from "./checklist-complete";
 
 type NoteViewerProps = {
   isOpen: boolean;
@@ -89,6 +90,8 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
     : 0;
   const totalItems = checklistExists ? note.checklist.length : 0;
   const checklistProgress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+  const allItemsComplete = checklistExists && totalItems > 0 && completedItems === totalItems;
+
 
   const audioFileExtension = React.useMemo(() => {
     if (!note.audioUrl) return 'wav';
@@ -155,6 +158,7 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
                           </button>
                       ))}
                   </div>
+                  {allItemsComplete && <ChecklistCompleteMessage />}
               </div>
             )}
 

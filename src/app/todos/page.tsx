@@ -19,6 +19,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { cn } from "@/lib/utils";
 import { TodoSkeleton } from "@/components/app/todo-skeleton";
 import { useNotes } from "@/contexts/notes-context";
+import { ChecklistCompleteMessage } from "@/components/app/checklist-complete";
 
 type ChecklistItem = {
   id: string;
@@ -112,35 +113,39 @@ export default function TodosPage() {
                 <TodoSkeleton />
             ) : groupedChecklists.length > 0 ? (
                 <Accordion type="multiple" defaultValue={groupedChecklists.map(g => g.noteId)} className="w-full space-y-4">
-                {groupedChecklists.map(group => (
-                  <AccordionItem value={group.noteId} key={group.noteId} className="border-none">
-                    <Card style={{ borderLeft: `4px solid ${group.noteColor}` }}>
-                      <CardHeader className="p-4">
-                        <AccordionTrigger className="p-0 hover:no-underline">
-                          <Link href={`/?note=${group.noteId}`} className="hover:underline">
-                            <CardTitle className="text-lg">{group.noteTitle}</CardTitle>
-                          </Link>
-                        </AccordionTrigger>
-                      </CardHeader>
-                      <AccordionContent>
-                        <CardContent className="p-4 pt-0">
-                          <div className="space-y-2">
-                            {group.items.map(item => (
-                              <button
-                                key={item.id}
-                                onClick={() => handleChecklistItemToggle(group.noteId, item.id)}
-                                className="flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-secondary"
-                              >
-                                {item.completed ? <CheckSquare className="h-4 w-4 flex-shrink-0 text-primary" /> : <Square className="h-4 w-4 flex-shrink-0 text-muted-foreground" />}
-                                <span className={cn("flex-grow", item.completed && "line-through text-muted-foreground")}>{item.text}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </AccordionContent>
-                    </Card>
-                  </AccordionItem>
-                ))}
+                {groupedChecklists.map(group => {
+                  const allComplete = group.items.length > 0 && group.items.every(item => item.completed);
+                  return (
+                    <AccordionItem value={group.noteId} key={group.noteId} className="border-none">
+                      <Card style={{ borderLeft: `4px solid ${group.noteColor}` }}>
+                        <CardHeader className="p-4">
+                          <AccordionTrigger className="p-0 hover:no-underline">
+                            <Link href={`/?note=${group.noteId}`} className="hover:underline">
+                              <CardTitle className="text-lg">{group.noteTitle}</CardTitle>
+                            </Link>
+                          </AccordionTrigger>
+                        </CardHeader>
+                        <AccordionContent>
+                          <CardContent className="p-4 pt-0">
+                            <div className="space-y-2">
+                              {group.items.map(item => (
+                                <button
+                                  key={item.id}
+                                  onClick={() => handleChecklistItemToggle(group.noteId, item.id)}
+                                  className="flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-secondary"
+                                >
+                                  {item.completed ? <CheckSquare className="h-4 w-4 flex-shrink-0 text-primary" /> : <Square className="h-4 w-4 flex-shrink-0 text-muted-foreground" />}
+                                  <span className={cn("flex-grow", item.completed && "line-through text-muted-foreground")}>{item.text}</span>
+                                </button>
+                              ))}
+                            </div>
+                            {allComplete && <ChecklistCompleteMessage />}
+                          </CardContent>
+                        </AccordionContent>
+                      </Card>
+                    </AccordionItem>
+                  )
+                })}
               </Accordion>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center p-8 rounded-lg bg-background border-2 border-dashed">
