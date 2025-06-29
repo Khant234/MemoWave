@@ -96,6 +96,7 @@ export function NoteEditor({
   const isSavingRef = React.useRef(false);
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
+  const autoChecklistRunning = React.useRef(false);
 
   const { toast } = useToast();
 
@@ -207,6 +208,49 @@ export function NoteEditor({
       setIsDirty(!isEmpty);
     }
   }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio]);
+
+  // Auto-generate checklist from content after user stops typing
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const handler = setTimeout(async () => {
+      if (!content.trim() || autoChecklistRunning.current || isAiLoading) {
+        return;
+      }
+      
+      autoChecklistRunning.current = true;
+      try {
+        const result = await extractChecklistItems({ noteContent: content });
+        if (result.items && result.items.length > 0) {
+          const newItems = result.items.map(item => ({...item, id: new Date().toISOString() + Math.random()}));
+          
+          let addedCount = 0;
+          setChecklist(prev => {
+            const existingTexts = new Set(prev.map(p => p.text.trim().toLowerCase()));
+            const filteredNewItems = newItems.filter(newItem => !existingTexts.has(newItem.text.trim().toLowerCase()));
+            addedCount = filteredNewItems.length;
+            if (filteredNewItems.length === 0) return prev;
+            return [...prev, ...filteredNewItems];
+          });
+          
+          if (addedCount > 0) {
+            toast({
+              title: "Checklist Items Added",
+              description: `AI automatically found ${addedCount} new checklist item(s).`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Auto checklist generation failed", error);
+      } finally {
+        autoChecklistRunning.current = false;
+      }
+    }, 2000); // 2-second debounce
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [content, isOpen, toast, isAiLoading]);
 
   const handleSave = () => {
     if (!title && !content) {
@@ -365,33 +409,6 @@ export function NoteEditor({
     const result = await summarizeNote({ noteContent: content });
     if (result.summary) setContent(prev => `${prev}\n\n**Summary:**\n${result.summary}`);
   }, { loading: "Summarizing note...", success: "Note Summarized!", error: "Could not summarize note." });
-
-  const handleAutoChecklist = () => runAiAction(async () => {
-    if(!content) throw new Error("Please write some content to generate a checklist.");
-    const result = await extractChecklistItems({ noteContent: content });
-    if (result.items && result.items.length > 0) {
-        const newItems = result.items.map(item => ({...item, id: new Date().toISOString() + Math.random()}));
-        
-        let addedCount = 0;
-        setChecklist(prev => {
-            const existingTexts = new Set(prev.map(p => p.text.trim().toLowerCase()));
-            const filteredNewItems = newItems.filter(newItem => !existingTexts.has(newItem.text.trim().toLowerCase()));
-            addedCount = filteredNewItems.length;
-            return [...prev, ...filteredNewItems];
-        });
-        
-        if (addedCount > 0) {
-             toast({ title: "Checklist items added!", description: `${addedCount} new item(s) were added.` });
-        } else {
-             toast({ title: "No new items found", description: "Your checklist is already up to date." });
-        }
-
-    } else {
-        toast({ title: "No actionable items found", description: "The AI couldn't find any tasks in your note." });
-    }
-    return false;
-  }, { loading: "Analyzing note...", success: "Analysis complete!", error: "Could not generate checklist." });
-
 
   const handleGenerateAudio = () => runAiAction(async () => {
     if(!content) throw new Error("Please write some content to generate audio.");
@@ -636,7 +653,6 @@ export function NoteEditor({
               
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
-                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleAutoChecklist}><ListTodo className="mr-2 h-4 w-4"/>Auto Checklist</Button>
                   <Button variant="outline" disabled={!note} onClick={() => setIsHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>History</Button>
                   <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
                   <Button variant="outline" onClick={() => setIsRecorderOpen(true)}><Mic className="mr-2 h-4 w-4"/>Record Audio</Button>
