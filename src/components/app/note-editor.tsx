@@ -94,6 +94,7 @@ export function NoteEditor({
   const [generatedAudio, setGeneratedAudio] = React.useState<string | null>(null);
   const [isDirty, setIsDirty] = React.useState(false);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
+  const [ignoredChecklistItems, setIgnoredChecklistItems] = React.useState(new Set<string>());
 
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
@@ -142,6 +143,8 @@ export function NoteEditor({
       const drafts = getDrafts();
       const draftId = note ? note.id : 'new';
       const draft = drafts[draftId];
+      
+      setIgnoredChecklistItems(new Set()); // Reset ignored items for the new session
 
       if (draft) {
         loadStateFromData(draft);
@@ -228,7 +231,10 @@ export function NoteEditor({
           let addedCount = 0;
           setChecklist(prev => {
             const existingTexts = new Set(prev.map(p => p.text.trim().toLowerCase()));
-            const filteredNewItems = newItems.filter(newItem => !existingTexts.has(newItem.text.trim().toLowerCase()));
+            const filteredNewItems = newItems.filter(newItem => 
+                !existingTexts.has(newItem.text.trim().toLowerCase()) &&
+                !ignoredChecklistItems.has(newItem.text.trim().toLowerCase())
+            );
             addedCount = filteredNewItems.length;
             if (filteredNewItems.length === 0) return prev;
             return [...prev, ...filteredNewItems];
@@ -251,7 +257,7 @@ export function NoteEditor({
     return () => {
       clearTimeout(handler);
     };
-  }, [content, isOpen, toast, isAiLoading]);
+  }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems]);
 
   const handleSave = () => {
     if (!title && !content) {
@@ -373,6 +379,10 @@ export function NoteEditor({
   };
 
   const handleRemoveChecklistItem = (id: string) => {
+    const itemToRemove = checklist.find((item) => item.id === id);
+    if (itemToRemove) {
+      setIgnoredChecklistItems(prev => new Set(prev).add(itemToRemove.text.trim().toLowerCase()));
+    }
     setChecklist(checklist.filter((item) => item.id !== id));
   };
 
