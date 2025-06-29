@@ -90,13 +90,27 @@ export default function Home() {
   }, []);
 
   React.useEffect(() => {
+    const filter = searchParams.get('filter');
+    if (filter === 'archived' || filter === 'trash') {
+      setActiveFilter(filter);
+    } else {
+      setActiveFilter('all');
+    }
+
+    const q = searchParams.get('q');
+    setSearchTerm(q || '');
+  }, [searchParams]);
+
+  React.useEffect(() => {
     const noteIdToOpen = searchParams.get('note');
     if (noteIdToOpen && notes.length > 0) {
       const note = notes.find(n => n.id === noteIdToOpen);
       if (note) {
         handleViewNote(note);
         // Clean up URL
-        router.replace('/', { scroll: false });
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('note');
+        router.replace(newUrl.pathname + newUrl.search, { scroll: false });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -285,8 +299,7 @@ export default function Home() {
   };
 
   const handleTagClick = (tag: string) => {
-    setActiveFilter("all");
-    setSearchTerm(tag);
+    router.push(`/?q=${tag}`);
   };
   
   const handleRemoveTagFromNote = async (noteId: string, tagToRemove: string) => {

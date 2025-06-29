@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { NotepadText, Archive, Trash2, Tag, ChevronDown, ListTodo } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,11 +37,20 @@ export function AppSidebar({
   isCollapsed,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
-    setActiveFilter?.(filter);
-    setSearchTerm("");
+    const href = filter === 'all' ? '/' : `/?filter=${filter}`;
+    router.push(href);
   };
+
+  const handleTagClick = (tag: string) => {
+    if (pathname === '/') {
+      onTagClick?.(tag);
+    } else {
+      router.push(`/?q=${tag}`);
+    }
+  }
 
   const navItems = [
     { filter: "all", label: "All Notes", icon: NotepadText },
@@ -49,15 +58,11 @@ export function AppSidebar({
     { filter: "trash", label: "Trash", icon: Trash2 },
   ];
 
-  const handleTagClick = (tag: string) => {
-    onTagClick?.(tag);
-  }
-
   const NavContent = () => (
     <div className="flex flex-col h-full">
       <nav className="flex flex-col gap-1 p-2 pt-4">
         {navItems.map(({ filter, label, icon: Icon }) => {
-          const isActive = pathname === '/' && activeFilter === filter && (filter === 'all' ? activeTag === '' : true);
+          const isActive = pathname === '/' && activeFilter === filter && !activeTag;
           return (
             <Tooltip key={filter} delayDuration={0}>
               <TooltipTrigger asChild>
@@ -69,7 +74,6 @@ export function AppSidebar({
                   )}
                   aria-label={label}
                   onClick={() => handleFilterClick(filter as any)}
-                  disabled={pathname !== '/'}
                 >
                   <Icon className={cn(
                     "h-5 w-5 shrink-0 transition-all duration-200",
@@ -145,7 +149,6 @@ export function AppSidebar({
                         )}
                         aria-label={tag}
                         onClick={() => handleTagClick(tag)}
-                        disabled={pathname !== '/'}
                       >
                         <Tag className={cn(
                           "h-5 w-5 shrink-0 transition-all duration-200",
