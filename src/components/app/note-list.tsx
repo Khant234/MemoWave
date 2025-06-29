@@ -5,10 +5,12 @@ import { type Note } from "@/lib/types";
 import { NoteCard } from "./note-card";
 import { cn } from "@/lib/utils";
 import { NotepadText, Archive, Trash2 } from "lucide-react";
+import { NoteCardSkeleton } from "./note-card-skeleton";
 
 type NoteListProps = {
   notes: Note[];
   layout: "grid" | "list";
+  isLoading: boolean;
   onViewNote: (note: Note) => void;
   onTogglePin: (noteId: string) => void;
   onToggleArchive: (noteId: string) => void;
@@ -24,6 +26,7 @@ type NoteListProps = {
 export function NoteList({
   notes,
   layout,
+  isLoading,
   onViewNote,
   onTogglePin,
   onToggleArchive,
@@ -35,6 +38,24 @@ export function NoteList({
   onRemoveTagFromNote,
   activeFilter,
 }: NoteListProps) {
+
+  const gridClasses = cn(
+    "grid gap-4",
+    layout === "grid"
+      ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+      : "grid-cols-1"
+  );
+  
+  if (isLoading) {
+    return (
+      <div className={gridClasses}>
+        {Array.from({ length: 10 }).map((_, index) => (
+          <NoteCardSkeleton key={index} />
+        ))}
+      </div>
+    )
+  }
+
   if (notes.length === 0) {
     const messages = {
       all: {
@@ -85,12 +106,7 @@ export function NoteList({
 
   return (
     <div
-      className={cn(
-        "grid gap-4",
-        layout === "grid"
-          ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-          : "grid-cols-1"
-      )}
+      className={gridClasses}
     >
       {notes.map(renderNoteCard)}
     </div>

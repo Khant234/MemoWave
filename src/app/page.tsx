@@ -22,7 +22,7 @@ import { NoteViewer } from "@/components/app/note-viewer";
 import { NoteEditor } from "@/components/app/note-editor";
 import { type Note, type NoteVersion } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -401,17 +401,6 @@ export default function Home() {
     return Array.from(tagsSet).sort();
   }, [notes]);
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen w-full bg-background items-center justify-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Loading notes...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen w-full flex-col bg-secondary">
       <AppHeader
@@ -441,6 +430,7 @@ export default function Home() {
           <div className="mx-auto max-w-7xl">
             <NoteList
               notes={filteredNotes}
+              isLoading={isLoading}
               layout={layout}
               onViewNote={handleViewNote}
               onTogglePin={handleTogglePin}

@@ -16,11 +16,12 @@ import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppHeader } from "@/components/app/app-header";
 import { type Note } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckSquare, Square, ListTodo } from "lucide-react";
+import { CheckSquare, Square, ListTodo } from "lucide-react";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import { TodoSkeleton } from "@/components/app/todo-skeleton";
 
 type ChecklistItem = {
   id: string;
@@ -135,17 +136,6 @@ export default function TodosPage() {
     return Array.from(tagsSet).sort();
   }, [notes]);
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen w-full bg-background items-center justify-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Loading to-dos...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen w-full flex-col bg-secondary">
       <AppHeader
@@ -163,7 +153,9 @@ export default function TodosPage() {
         <main className="flex-1 overflow-y-auto bg-background p-8 transition-all duration-300 ease-in-out">
           <div className="mx-auto max-w-4xl">
             <h1 className="text-3xl font-bold font-headline mb-6">To-do List</h1>
-            {groupedChecklists.length > 0 ? (
+            {isLoading ? (
+                <TodoSkeleton />
+            ) : groupedChecklists.length > 0 ? (
                 <Accordion type="multiple" defaultValue={groupedChecklists.map(g => g.noteId)} className="w-full space-y-4">
                 {groupedChecklists.map(group => (
                   <AccordionItem value={group.noteId} key={group.noteId} className="border-none">
