@@ -5,11 +5,11 @@ import * as React from "react";
 import Link from "next/link";
 import {
   collection,
-  getDocs,
   updateDoc,
   doc,
   query,
   orderBy,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
@@ -45,27 +45,28 @@ export default function TodosPage() {
   
   const notesCollectionRef = collection(db, "notes");
 
-  const fetchNotes = async () => {
-    setIsLoading(true);
-    try {
-      const data = await getDocs(query(notesCollectionRef, orderBy("updatedAt", "desc")));
-      const fetchedNotes = data.docs.map((doc) => {
-        return { ...doc.data(), id: doc.id } as Note;
-      });
-      setNotes(fetchedNotes);
-    } catch (error) {
-      console.error("Failed to fetch notes from Firestore", error);
-      toast({
-        title: "Error fetching data",
-        description: "Could not load notes data. Please try again.",
-        variant: "destructive",
-      });
-    }
-    setIsLoading(false);
-  };
-
   React.useEffect(() => {
-    fetchNotes();
+    setIsLoading(true);
+    const q = query(notesCollectionRef, orderBy("updatedAt", "desc"));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const fetchedNotes = querySnapshot.docs.map((doc) => {
+            return { ...doc.data(), id: doc.id } as Note;
+        });
+        setNotes(fetchedNotes);
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Failed to fetch notes from Firestore", error);
+        toast({
+            title: "Error fetching data",
+            description: "Could not load notes data in real-time. Please try again.",
+            variant: "destructive",
+        });
+        setIsLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -93,7 +94,7 @@ export default function TodosPage() {
           description: "Could not sync changes. Please try again.",
           variant: "destructive",
         });
-        fetchNotes(); // Revert and refetch
+        // Real-time listener will revert on failure
       }
     }
   };

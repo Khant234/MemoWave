@@ -6,13 +6,13 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useHotkeys } from "react-hotkeys-hook";
 import {
   collection,
-  getDocs,
   addDoc,
   updateDoc,
   deleteDoc,
   doc,
   query,
   orderBy,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
@@ -66,27 +66,28 @@ export default function Home() {
 
   const notesCollectionRef = collection(db, "notes");
 
-  const fetchNotes = async () => {
+  React.useEffect(() => {
     setIsLoading(true);
-    try {
-      const data = await getDocs(query(notesCollectionRef, orderBy("updatedAt", "desc")));
-      const fetchedNotes = data.docs.map((doc) => {
+    const q = query(notesCollectionRef, orderBy("updatedAt", "desc"));
+    
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const fetchedNotes = querySnapshot.docs.map((doc) => {
         return { ...doc.data(), id: doc.id } as Note;
       });
       setNotes(fetchedNotes);
-    } catch (error) {
-      console.error("Failed to fetch notes from Firestore", error);
+      setIsLoading(false); // Set loading to false after first data arrives
+    }, (error) => {
+      console.error("Failed to subscribe to notes from Firestore", error);
       toast({
         title: "Error fetching notes",
-        description: "Could not load notes. Please check your Firebase configuration and internet connection.",
+        description: "Could not load notes in real-time. Please check your Firebase configuration and internet connection.",
         variant: "destructive",
       });
-    }
-    setIsLoading(false);
-  };
+      setIsLoading(false);
+    });
 
-  React.useEffect(() => {
-    fetchNotes();
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -163,15 +164,11 @@ export default function Home() {
         const finalNoteData = { ...noteData, history: newHistory };
         await updateDoc(noteRef, finalNoteData);
 
-        const updatedNoteInState = { ...noteToSave, history: newHistory };
-        setNotes((prevNotes) =>
-          prevNotes.map((n) => (n.id === updatedNoteInState.id ? updatedNoteInState : n))
-        );
       } else {
         const { id, ...noteData } = noteToSave;
         const finalNoteData = { ...noteData, history: [] }; // New notes start with empty history
         const docRef = await addDoc(notesCollectionRef, finalNoteData);
-        setNotes((prevNotes) => [{ ...noteToSave, id: docRef.id, history: [] }, ...prevNotes]);
+        // No need to update state here, onSnapshot will do it
       }
 
       setIsEditorOpen(false);
@@ -195,7 +192,6 @@ export default function Home() {
         description: "There was a problem saving your note.",
         variant: "destructive",
       });
-      fetchNotes(); // Refetch to sync state with db
     } finally {
         setIsSaving(false);
     }
@@ -220,7 +216,7 @@ export default function Home() {
         description: "Could not sync changes. Please try again.",
         variant: "destructive",
       });
-      fetchNotes(); // Revert and refetch
+      // The real-time listener will automatically revert the state on failure.
     }
   };
 
@@ -287,8 +283,7 @@ export default function Home() {
 
     try {
       const docRef = await addDoc(notesCollectionRef, newNoteData);
-      const newNote = { ...newNoteData, id: docRef.id } as Note;
-      setNotes((prevNotes) => [newNote, ...prevNotes]);
+      // No need to update state, onSnapshot will handle it.
       toast({
         title: "Note Copied",
         description: `A copy of "${noteToCopy.title || 'Untitled'}" has been created.`,
@@ -330,6 +325,7 @@ export default function Home() {
         description: "You can restore it from the trash folder.",
       });
     } else if (type === 'permanent') {
+      // Optimistic deletion
       const originalNotes = [...notes];
       setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
       if (viewingNote?.id === noteId) {
@@ -347,7 +343,7 @@ export default function Home() {
           title: "Error Deleting Note",
           variant: "destructive",
         });
-        setNotes(originalNotes);
+        setNotes(originalNotes); // Revert on failure
       }
     }
     setDeleteConfirmation(null);
