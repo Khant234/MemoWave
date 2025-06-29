@@ -44,7 +44,8 @@ import {
   Volume2,
   Upload,
   ListTodo,
-  History
+  History,
+  Pencil,
 } from "lucide-react";
 import {
   Tooltip,
@@ -86,6 +87,7 @@ export function NoteEditor({
   const [color, setColor] = React.useState(NOTE_COLORS[0]);
   const [checklist, setChecklist] = React.useState<{ id: string; text: string; completed: boolean }[]>([]);
   const [newChecklistItem, setNewChecklistItem] = React.useState("");
+  const [editingChecklistItemId, setEditingChecklistItemId] = React.useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = React.useState(false);
   const [isTranscriberOpen, setIsTranscriberOpen] = React.useState(false);
   const [isRecorderOpen, setIsRecorderOpen] = React.useState(false);
@@ -378,6 +380,17 @@ export function NoteEditor({
     );
   };
 
+  const handleUpdateChecklistItemText = (id: string, newText: string) => {
+    if (newText.trim()) {
+      setChecklist(
+        checklist.map((item) =>
+          item.id === id ? { ...item, text: newText.trim() } : item
+        )
+      );
+    }
+    setEditingChecklistItemId(null);
+  };
+
   const handleRemoveChecklistItem = (id: string) => {
     const itemToRemove = checklist.find((item) => item.id === id);
     if (itemToRemove) {
@@ -567,22 +580,57 @@ export function NoteEditor({
               <div className="space-y-4 rounded-lg border p-4">
                   <Label>Checklist</Label>
                   <div className="space-y-2">
-                      {checklist.map(item => (
-                          <div key={item.id} className="flex items-center gap-2">
-                              <input type="checkbox" checked={item.completed} onChange={() => handleToggleChecklistItem(item.id)} className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
-                              <span className={cn("flex-grow", item.completed && "line-through text-muted-foreground")}>{item.text}</span>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveChecklistItem(item.id)}>
-                                      <Trash2 className="h-4 w-4 text-destructive"/>
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Remove Item</p>
-                                </TooltipContent>
-                              </Tooltip>
-                          </div>
-                      ))}
+                    {checklist.map((item) => (
+                      <div key={item.id} className="flex items-center gap-2 group">
+                        <input
+                          type="checkbox"
+                          checked={item.completed}
+                          onChange={() => handleToggleChecklistItem(item.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        {editingChecklistItemId === item.id ? (
+                          <Input
+                            defaultValue={item.text}
+                            autoFocus
+                            onBlur={(e) => handleUpdateChecklistItemText(item.id, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleUpdateChecklistItemText(item.id, e.currentTarget.value);
+                              if (e.key === 'Escape') setEditingChecklistItemId(null);
+                            }}
+                            className="h-8 flex-grow"
+                          />
+                        ) : (
+                          <span
+                            className={cn("flex-grow cursor-pointer", item.completed && "line-through text-muted-foreground")}
+                            onDoubleClick={() => setEditingChecklistItemId(item.id)}
+                          >
+                            {item.text}
+                          </span>
+                        )}
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingChecklistItemId(item.id)}>
+                                <Pencil className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Edit Item</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveChecklistItem(item.id)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Remove Item</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   <div className="flex gap-2">
                       <Input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} placeholder="Add a checklist item" onKeyDown={e => e.key === 'Enter' && handleAddChecklistItem()} />
