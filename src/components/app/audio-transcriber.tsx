@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { burmeseVoiceToText } from "@/ai/flows/burmese-voice-to-text";
+import { voiceToText } from "@/ai/flows/burmese-voice-to-text";
 import { Mic, Square, Trash2, Loader2, BookText } from "lucide-react";
 
 type AudioTranscriberProps = {
@@ -99,7 +99,7 @@ export function AudioTranscriber({
       reader.onloadend = async () => {
         const base64data = reader.result as string;
         try {
-          const result = await burmeseVoiceToText({ audioDataUri: base64data });
+          const result = await voiceToText({ audioDataUri: base64data });
           onTranscriptionComplete(result.transcription);
           toast({
             title: "Transcription Successful",
@@ -137,9 +137,9 @@ export function AudioTranscriber({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Transcribe Burmese Speech</DialogTitle>
+          <DialogTitle>Transcribe Voice to Note</DialogTitle>
           <DialogDescription>
-            Record audio in Burmese and our AI will transcribe it into text for your note.
+            Record your voice and our AI will transcribe it into text for your note.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center gap-4 py-8">

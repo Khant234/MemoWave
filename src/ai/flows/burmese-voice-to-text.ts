@@ -1,45 +1,45 @@
 'use server';
 /**
- * @fileOverview Converts Burmese speech to text.
+ * @fileOverview Converts speech to text.
  * 
- * - burmeseVoiceToText - A function that converts Burmese speech to text.
- * - BurmeseVoiceToTextInput - The input type for the burmeseVoiceToText function.
- * - BurmeseVoiceToTextOutput - The return type for the burmeseVoiceToText function.
+ * - voiceToText - A function that converts speech to text.
+ * - VoiceToTextInput - The input type for the voiceToText function.
+ * - VoiceToTextOutput - The return type for the voiceToText function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const BurmeseVoiceToTextInputSchema = z.object({
+const VoiceToTextInputSchema = z.object({
   audioDataUri: z
     .string()
     .describe(
-      "The audio data URI of the Burmese speech recording.  It must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "The audio data URI of the speech recording. It must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
-export type BurmeseVoiceToTextInput = z.infer<typeof BurmeseVoiceToTextInputSchema>;
+export type VoiceToTextInput = z.infer<typeof VoiceToTextInputSchema>;
 
-const BurmeseVoiceToTextOutputSchema = z.object({
-  transcription: z.string().describe('The transcribed text from the Burmese speech audio.'),
+const VoiceToTextOutputSchema = z.object({
+  transcription: z.string().describe('The transcribed text from the speech audio.'),
 });
-export type BurmeseVoiceToTextOutput = z.infer<typeof BurmeseVoiceToTextOutputSchema>;
+export type VoiceToTextOutput = z.infer<typeof VoiceToTextOutputSchema>;
 
-export async function burmeseVoiceToText(input: BurmeseVoiceToTextInput): Promise<BurmeseVoiceToTextOutput> {
-  return burmeseVoiceToTextFlow(input);
+export async function voiceToText(input: VoiceToTextInput): Promise<VoiceToTextOutput> {
+  return voiceToTextFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'burmeseVoiceToTextPrompt',
-  input: {schema: BurmeseVoiceToTextInputSchema},
-  output: {schema: BurmeseVoiceToTextOutputSchema},
-  prompt: `You are a transcription expert specializing in the Burmese language. Transcribe the following Burmese audio recording into Burmese text. The output should be only the transcribed text in the Burmese script.\n\nAudio: {{media url=audioDataUri}}`,
+  name: 'voiceToTextPrompt',
+  input: {schema: VoiceToTextInputSchema},
+  output: {schema: VoiceToTextOutputSchema},
+  prompt: `Transcribe the following audio recording into text. The output should be only the transcribed text.\n\nAudio: {{media url=audioDataUri}}`,
 });
 
-const burmeseVoiceToTextFlow = ai.defineFlow(
+const voiceToTextFlow = ai.defineFlow(
   {
-    name: 'burmeseVoiceToTextFlow',
-    inputSchema: BurmeseVoiceToTextInputSchema,
-    outputSchema: BurmeseVoiceToTextOutputSchema,
+    name: 'voiceToTextFlow',
+    inputSchema: VoiceToTextInputSchema,
+    outputSchema: VoiceToTextOutputSchema,
   },
   async input => {
     const {output} = await prompt(input);
