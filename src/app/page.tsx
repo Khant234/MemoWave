@@ -10,9 +10,6 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  query,
-  orderBy,
-  onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
@@ -36,10 +33,10 @@ import {
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/hooks/use-sidebar";
+import { useNotes } from "@/contexts/notes-context";
 
 export default function Home() {
-  const [notes, setNotes] = React.useState<Note[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const { notes, isLoading, allTags } = useNotes();
   const [isSaving, setIsSaving] = React.useState(false);
   const [activeFilter, setActiveFilter] = React.useState<"all" | "archived" | "trash">(
     "all"
@@ -65,31 +62,6 @@ export default function Home() {
 
 
   const notesCollectionRef = collection(db, "notes");
-
-  React.useEffect(() => {
-    setIsLoading(true);
-    const q = query(notesCollectionRef, orderBy("updatedAt", "desc"));
-    
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedNotes = querySnapshot.docs.map((doc) => {
-        return { ...doc.data(), id: doc.id } as Note;
-      });
-      setNotes(fetchedNotes);
-      setIsLoading(false); // Set loading to false after first data arrives
-    }, (error) => {
-      console.error("Failed to subscribe to notes from Firestore", error);
-      toast({
-        title: "Error fetching notes",
-        description: "Could not load notes in real-time. Please check your Firebase configuration and internet connection.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   React.useEffect(() => {
     const filter = searchParams.get('filter');
@@ -198,10 +170,7 @@ export default function Home() {
   };
   
   const updateNoteField = async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
-    // Optimistic UI update for both notes list and viewing note
-    setNotes((prevNotes) =>
-      prevNotes.map((n) => (n.id === noteId ? { ...n, ...updates } : n))
-    );
+    // Optimistic UI update for viewing note, main list is updated by real-time listener
     if (viewingNote && viewingNote.id === noteId) {
         setViewingNote(prev => prev ? { ...prev, ...updates } : null);
     }
@@ -325,9 +294,6 @@ export default function Home() {
         description: "You can restore it from the trash folder.",
       });
     } else if (type === 'permanent') {
-      // Optimistic deletion
-      const originalNotes = [...notes];
-      setNotes((prevNotes) => prevNotes.filter((n) => n.id !== noteId));
       if (viewingNote?.id === noteId) {
         setIsViewerOpen(false);
         setViewingNote(null);
@@ -343,7 +309,6 @@ export default function Home() {
           title: "Error Deleting Note",
           variant: "destructive",
         });
-        setNotes(originalNotes); // Revert on failure
       }
     }
     setDeleteConfirmation(null);
@@ -391,16 +356,6 @@ export default function Home() {
         );
       });
   }, [notes, activeFilter, searchTerm]);
-
-  const allTags = React.useMemo(() => {
-    const tagsSet = new Set<string>();
-    notes.forEach((note) => {
-      if (!note.isTrashed) {
-        note.tags.forEach((tag) => tagsSet.add(tag));
-      }
-    });
-    return Array.from(tagsSet).sort();
-  }, [notes]);
 
   return (
     <div className="flex h-screen w-full flex-col bg-secondary">

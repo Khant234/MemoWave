@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from "@/components/ui/toaster"
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { NotesProvider } from '@/contexts/notes-context';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
 
@@ -35,10 +36,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
-          <Toaster />
+          <NotesProvider>
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
+            <Toaster />
+          </NotesProvider>
         </ThemeProvider>
       </body>
     </html>

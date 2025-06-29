@@ -4,12 +4,8 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  collection,
   updateDoc,
   doc,
-  query,
-  orderBy,
-  onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
@@ -22,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 import { TodoSkeleton } from "@/components/app/todo-skeleton";
+import { useNotes } from "@/contexts/notes-context";
 
 type ChecklistItem = {
   id: string;
@@ -37,39 +34,11 @@ type GroupedChecklist = {
 };
 
 export default function TodosPage() {
-  const [notes, setNotes] = React.useState<Note[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const { notes, isLoading, allTags } = useNotes();
   const [searchTerm, setSearchTerm] = React.useState("");
   const { toast } = useToast();
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
   
-  const notesCollectionRef = collection(db, "notes");
-
-  React.useEffect(() => {
-    setIsLoading(true);
-    const q = query(notesCollectionRef, orderBy("updatedAt", "desc"));
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const fetchedNotes = querySnapshot.docs.map((doc) => {
-            return { ...doc.data(), id: doc.id } as Note;
-        });
-        setNotes(fetchedNotes);
-        setIsLoading(false);
-    }, (error) => {
-        console.error("Failed to fetch notes from Firestore", error);
-        toast({
-            title: "Error fetching data",
-            description: "Could not load notes data in real-time. Please try again.",
-            variant: "destructive",
-        });
-        setIsLoading(false);
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleChecklistItemToggle = async (noteId: string, checklistItemId: string) => {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
@@ -79,11 +48,6 @@ export default function TodosPage() {
           : item
       );
       
-      // Optimistic UI update
-      setNotes((prevNotes) =>
-        prevNotes.map((n) => (n.id === noteId ? { ...n, checklist: updatedChecklist } : n))
-      );
-
       try {
         const noteRef = doc(db, "notes", noteId);
         await updateDoc(noteRef, { checklist: updatedChecklist });
@@ -126,16 +90,6 @@ export default function TodosPage() {
         .filter(group => group.items.length > 0);
 
   }, [notes, searchTerm]);
-  
-  const allTags = React.useMemo(() => {
-    const tagsSet = new Set<string>();
-    notes.forEach((note) => {
-      if (!note.isTrashed) {
-        note.tags.forEach((tag) => tagsSet.add(tag));
-      }
-    });
-    return Array.from(tagsSet).sort();
-  }, [notes]);
 
   return (
     <div className="flex h-screen w-full flex-col bg-secondary">
