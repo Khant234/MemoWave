@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   List,
   Menu,
+  Mic,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ type AppHeaderProps = {
   layout?: "grid" | "list";
   setLayout?: Dispatch<SetStateAction<"grid" | "list">>;
   onNewNote?: () => void;
+  onNewVoiceNote?: () => void;
   onToggleSidebar: () => void;
   activeFilter?: "all" | "archived" | "trash";
   setActiveFilter?: Dispatch<SetStateAction<"all" | "archived" | "trash">>;
@@ -47,6 +49,7 @@ export function AppHeader({
   layout,
   setLayout,
   onNewNote,
+  onNewVoiceNote,
   onToggleSidebar,
   activeFilter,
   setActiveFilter,
@@ -212,6 +215,24 @@ export function AppHeader({
             </div>
         )}
         <ThemeToggle />
+        {onNewVoiceNote && (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hidden sm:inline-flex"
+                        onClick={onNewVoiceNote}
+                    >
+                        <Mic className="h-5 w-5" />
+                        <span className="sr-only">New Voice Note</span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>New Voice Note</p>
+                </TooltipContent>
+            </Tooltip>
+        )}
         {onNewNote && (
             <Button
             size="sm"

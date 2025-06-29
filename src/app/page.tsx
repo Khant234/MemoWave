@@ -35,6 +35,9 @@ import { cn } from "@/lib/utils";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useNotes } from "@/contexts/notes-context";
 import { useGamification } from "@/contexts/gamification-context";
+import { AudioTranscriber } from "@/components/app/audio-transcriber";
+import { generateTitle } from "@/ai/flows/title-generation";
+import { NOTE_COLORS } from "@/lib/data";
 
 export default function Home() {
   const { notes, isLoading, allTags } = useNotes();
@@ -51,6 +54,8 @@ export default function Home() {
   const [viewingNote, setViewingNote] = React.useState<Note | null>(null);
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
+  const [isTranscriberOpen, setIsTranscriberOpen] = React.useState(false);
+
 
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
     noteId: string;
@@ -98,6 +103,10 @@ export default function Home() {
     setEditingNote(null);
     setIsEditorOpen(true);
   };
+
+  const handleNewVoiceNote = () => {
+    setIsTranscriberOpen(true);
+  };
   
   const handleViewNote = (note: Note) => {
     setViewingNote(note);
@@ -108,6 +117,58 @@ export default function Home() {
     setIsViewerOpen(false); // Close viewer
     setEditingNote(note);   // Set note to edit
     setIsEditorOpen(true);  // Open editor
+  };
+
+  const handleTranscriptionToNewNote = async (transcription: string) => {
+    if (!transcription.trim()) {
+      toast({
+        title: "Empty Transcription",
+        description: "The audio didn't produce any text.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const titleResult = await generateTitle({ noteContent: transcription });
+      const newTitle = titleResult.title || "Voice Note";
+
+      const newNoteData = {
+        title: newTitle,
+        content: transcription,
+        tags: ["voice-note"],
+        color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
+        isPinned: false,
+        isArchived: false,
+        isTrashed: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        checklist: [],
+        history: [],
+        isDraft: false,
+      };
+
+      const docRef = await addDoc(notesCollectionRef, newNoteData);
+      
+      toast({
+        title: "Voice Note Created",
+        description: `Your new note "${newTitle}" has been created.`,
+      });
+      
+      const newNote = { ...newNoteData, id: docRef.id } as Note;
+      handleViewNote(newNote);
+
+    } catch (error) {
+      console.error("Error creating voice note:", error);
+      toast({
+        title: "Error Creating Voice Note",
+        description: "There was a problem saving your transcribed note.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
 
@@ -369,6 +430,7 @@ export default function Home() {
         layout={layout}
         setLayout={setLayout}
         onNewNote={handleNewNote}
+        onNewVoiceNote={handleNewVoiceNote}
         onToggleSidebar={toggleSidebar}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
@@ -420,6 +482,11 @@ export default function Home() {
         note={editingNote}
         onSave={handleSaveNote}
         isSaving={isSaving}
+      />
+      <AudioTranscriber
+        open={isTranscriberOpen}
+        setOpen={setIsTranscriberOpen}
+        onTranscriptionComplete={handleTranscriptionToNewNote}
       />
       <AlertDialog open={!!deleteConfirmation} onOpenChange={(open) => !open && handleCancelDelete()}>
         <AlertDialogContent>
