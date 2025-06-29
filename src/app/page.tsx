@@ -2,6 +2,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useHotkeys } from "react-hotkeys-hook";
 import {
   collection,
@@ -58,6 +59,9 @@ export default function Home() {
   } | null>(null);
 
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
 
   const notesCollectionRef = collection(db, "notes");
 
@@ -84,6 +88,19 @@ export default function Home() {
     fetchNotes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  React.useEffect(() => {
+    const noteIdToOpen = searchParams.get('note');
+    if (noteIdToOpen && notes.length > 0) {
+      const note = notes.find(n => n.id === noteIdToOpen);
+      if (note) {
+        handleViewNote(note);
+        // Clean up URL
+        router.replace('/', { scroll: false });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, notes]);
   
   useHotkeys("n", () => handleNewNote(), { preventDefault: true });
 

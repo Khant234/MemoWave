@@ -30,15 +30,15 @@ import {
 type AppHeaderProps = {
   searchTerm: string;
   setSearchTerm: Dispatch<SetStateAction<string>>;
-  layout: "grid" | "list";
-  setLayout: Dispatch<SetStateAction<"grid" | "list">>;
-  onNewNote: () => void;
+  layout?: "grid" | "list";
+  setLayout?: Dispatch<SetStateAction<"grid" | "list">>;
+  onNewNote?: () => void;
   onToggleSidebar: () => void;
-  activeFilter: "all" | "archived" | "trash";
-  setActiveFilter: Dispatch<SetStateAction<"all" | "archived" | "trash">>;
+  activeFilter?: "all" | "archived" | "trash";
+  setActiveFilter?: Dispatch<SetStateAction<"all" | "archived" | "trash">>;
   tags: string[];
-  onTagClick: (tag: string) => void;
-  activeTag: string;
+  onTagClick?: (tag: string) => void;
+  activeTag?: string;
 };
 
 export function AppHeader({
@@ -84,7 +84,7 @@ export function AppHeader({
               isMobile
               activeFilter={activeFilter}
               setActiveFilter={(filter) => {
-                setActiveFilter(filter);
+                setActiveFilter?.(filter);
                 setIsMobileMenuOpen(false);
               }}
               setSearchTerm={(term) => {
@@ -93,7 +93,7 @@ export function AppHeader({
               }}
               tags={tags}
               onTagClick={(tag) => {
-                onTagClick(tag);
+                onTagClick?.(tag);
                 setIsMobileMenuOpen(false);
               }}
               activeTag={activeTag}
@@ -157,7 +157,7 @@ export function AppHeader({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search notes..."
+              placeholder="Search..."
               className={cn(
                 "w-full rounded-lg bg-secondary pl-10 h-12 border-none",
                 "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:bg-card focus-visible:border focus-visible:border-input",
@@ -169,55 +169,59 @@ export function AppHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="hidden items-center gap-1 rounded-lg bg-secondary p-0.5 sm:flex">
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setLayout("list")}
-                    aria-label="List view"
-                    className={cn(
-                        "w-9 px-0",
-                        layout === "list" && "bg-background text-foreground shadow-sm hover:bg-background"
-                    )}
-                    >
-                    <List className="h-5 w-5" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>List View</p>
-                </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setLayout("grid")}
-                    aria-label="Grid view"
-                    className={cn(
-                        "w-9 px-0",
-                        layout === "grid" && "bg-background text-foreground shadow-sm hover:bg-background"
-                    )}
-                    >
-                    <LayoutGrid className="h-5 w-5" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Grid View</p>
-                </TooltipContent>
-            </Tooltip>
-          </div>
+        {layout && setLayout && (
+          <div className="hidden items-center gap-1 rounded-lg bg-secondary p-0.5 sm:flex">
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                      <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setLayout("list")}
+                      aria-label="List view"
+                      className={cn(
+                          "w-9 px-0",
+                          layout === "list" && "bg-background text-foreground shadow-sm hover:bg-background"
+                      )}
+                      >
+                      <List className="h-5 w-5" />
+                      </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                      <p>List View</p>
+                  </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                      <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setLayout("grid")}
+                      aria-label="Grid view"
+                      className={cn(
+                          "w-9 px-0",
+                          layout === "grid" && "bg-background text-foreground shadow-sm hover:bg-background"
+                      )}
+                      >
+                      <LayoutGrid className="h-5 w-5" />
+                      </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                      <p>Grid View</p>
+                  </TooltipContent>
+              </Tooltip>
+            </div>
+        )}
         <ThemeToggle />
-        <Button
-          size="sm"
-          className="gap-1 hidden sm:inline-flex"
-          onClick={onNewNote}
-        >
-          <Plus className="h-4 w-4" />
-          <span>New Note</span>
-        </Button>
+        {onNewNote && (
+            <Button
+            size="sm"
+            className="gap-1 hidden sm:inline-flex"
+            onClick={onNewNote}
+            >
+            <Plus className="h-4 w-4" />
+            <span>New Note</span>
+            </Button>
+        )}
       </div>
     </header>
   );

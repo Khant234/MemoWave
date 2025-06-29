@@ -2,8 +2,10 @@
 "use client";
 
 import * as React from "react";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, Trash2, Tag, ChevronDown } from "lucide-react";
+import { NotepadText, Archive, Trash2, Tag, ChevronDown, ListTodo } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -14,12 +16,12 @@ import {
 } from "@/components/ui/tooltip";
 
 type AppSidebarProps = {
-  activeFilter: "all" | "archived" | "trash";
-  setActiveFilter: React.Dispatch<React.SetStateAction<"all" | "archived" | "trash">>;
+  activeFilter?: "all" | "archived" | "trash";
+  setActiveFilter?: React.Dispatch<React.SetStateAction<"all" | "archived" | "trash">>;
   setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   tags: string[];
-  onTagClick: (tag: string) => void;
-  activeTag: string;
+  onTagClick?: (tag: string) => void;
+  activeTag?: string;
   isMobile?: boolean;
   isCollapsed?: boolean;
 };
@@ -34,8 +36,10 @@ export function AppSidebar({
   isMobile,
   isCollapsed,
 }: AppSidebarProps) {
+  const pathname = usePathname();
+
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
-    setActiveFilter(filter);
+    setActiveFilter?.(filter);
     setSearchTerm("");
   };
 
@@ -45,11 +49,15 @@ export function AppSidebar({
     { filter: "trash", label: "Trash", icon: Trash2 },
   ];
 
+  const handleTagClick = (tag: string) => {
+    onTagClick?.(tag);
+  }
+
   const NavContent = () => (
     <div className="flex flex-col h-full">
       <nav className="flex flex-col gap-1 p-2 pt-4">
         {navItems.map(({ filter, label, icon: Icon }) => {
-          const isActive = activeFilter === filter && (filter === 'all' ? activeTag === '' : true);
+          const isActive = pathname === '/' && activeFilter === filter && (filter === 'all' ? activeTag === '' : true);
           return (
             <Tooltip key={filter} delayDuration={0}>
               <TooltipTrigger asChild>
@@ -61,6 +69,7 @@ export function AppSidebar({
                   )}
                   aria-label={label}
                   onClick={() => handleFilterClick(filter as any)}
+                  disabled={pathname !== '/'}
                 >
                   <Icon className={cn(
                     "h-5 w-5 shrink-0 transition-all duration-200",
@@ -81,6 +90,35 @@ export function AppSidebar({
             </Tooltip>
           );
         })}
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <Link href="/todos" passHref>
+              <Button
+                variant={pathname.startsWith('/todos') ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full h-10 px-3 group",
+                  !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                )}
+                aria-label="To-do List"
+              >
+                <ListTodo className={cn(
+                  "h-5 w-5 shrink-0 transition-all duration-200",
+                  pathname.startsWith('/todos') ? "text-primary" : "text-muted-foreground group-hover:text-primary",
+                  "group-hover:-translate-y-0.5"
+                )} />
+                <span className={cn(
+                  "whitespace-nowrap transition-opacity",
+                  !isMobile && isCollapsed && "hidden"
+                )}>To-do List</span>
+              </Button>
+            </Link>
+          </TooltipTrigger>
+          {isCollapsed && !isMobile && (
+            <TooltipContent side="right">
+              <p>To-do List</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
       </nav>
 
       {tags.length > 0 && (
@@ -95,7 +133,7 @@ export function AppSidebar({
             </CollapsibleTrigger>
             <CollapsibleContent className="flex flex-col gap-1 pt-2">
               {tags.map(tag => {
-                const isActive = activeTag === tag;
+                const isActive = pathname === '/' && activeTag === tag;
                 return (
                   <Tooltip key={tag} delayDuration={0}>
                     <TooltipTrigger asChild>
@@ -106,7 +144,8 @@ export function AppSidebar({
                           !isMobile && isCollapsed ? "justify-center" : "justify-start"
                         )}
                         aria-label={tag}
-                        onClick={() => onTagClick(tag)}
+                        onClick={() => handleTagClick(tag)}
+                        disabled={pathname !== '/'}
                       >
                         <Tag className={cn(
                           "h-5 w-5 shrink-0 transition-all duration-200",
