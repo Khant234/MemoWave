@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Converts speech to text.
+ * @fileOverview Converts speech in English or Burmese to text.
  * 
  * - voiceToText - A function that converts speech to text.
  * - VoiceToTextInput - The input type for the voiceToText function.
@@ -32,7 +32,7 @@ const prompt = ai.definePrompt({
   name: 'voiceToTextPrompt',
   input: {schema: VoiceToTextInputSchema},
   output: {schema: VoiceToTextOutputSchema},
-  prompt: `Transcribe the following audio recording into text. The output should be only the transcribed text.\n\nAudio: {{media url=audioDataUri}}`,
+  prompt: `Transcribe the following audio recording into text. The audio may be in English or Burmese. The output should be only the transcribed text.\n\nAudio: {{media url=audioDataUri}}`,
 });
 
 const voiceToTextFlow = ai.defineFlow(
