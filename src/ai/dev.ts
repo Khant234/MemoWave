@@ -7,3 +7,4 @@ import '@/ai/flows/note-summarization.ts';
 import '@/ai/flows/suggest-tags.ts';
 import '@/ai/flows/title-generation.ts';
 import '@/ai/flows/extract-checklist-items.ts';
+import '@/ai/flows/translate-note.ts';

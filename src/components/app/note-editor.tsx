@@ -46,16 +46,25 @@ import {
   ListTodo,
   History,
   Pencil,
+  Languages,
 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { suggestTags } from "@/ai/flows/suggest-tags";
 import { generateTitle } from "@/ai/flows/title-generation";
 import { summarizeNote } from "@/ai/flows/note-summarization";
 import { burmeseTextToVoice } from "@/ai/flows/burmese-text-to-voice";
+import { translateNote } from "@/ai/flows/translate-note";
 import { AudioTranscriber } from "./audio-transcriber";
 import { AudioRecorder } from "./audio-recorder";
 import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
@@ -72,6 +81,7 @@ type NoteEditorProps = {
 // Define a type for our draft for clarity
 type NoteDraft = Partial<Omit<Note, 'id' | 'isPinned' | 'isArchived' | 'isTrashed' | 'createdAt' | 'updatedAt'>>;
 
+const LANGUAGES = ["Spanish", "French", "German", "Japanese", "Korean", "Burmese", "English"];
 
 export function NoteEditor({
   isOpen,
@@ -97,6 +107,8 @@ export function NoteEditor({
   const [isDirty, setIsDirty] = React.useState(false);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
   const [ignoredChecklistItems, setIgnoredChecklistItems] = React.useState(new Set<string>());
+  const [targetLanguage, setTargetLanguage] = React.useState("Spanish");
+
 
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
@@ -437,6 +449,14 @@ export function NoteEditor({
     if(result.media) setGeneratedAudio(result.media);
   }, { loading: "Generating audio...", success: "Audio Generated!", error: "Could not generate audio." });
 
+  const handleTranslate = () => runAiAction(async () => {
+    if(!content) throw new Error("Please write some content to translate.");
+    const result = await translateNote({ noteContent: content, targetLanguage });
+    if (result.translatedContent) {
+        setContent(prev => `${prev}\n\n--- Translated to ${targetLanguage} ---\n${result.translatedContent}`);
+    }
+  }, { loading: "Translating...", success: "Translation Appended!", error: "Could not translate note." });
+
   const handleTranscriptionComplete = (text: string) => {
     setContent(prev => `${prev}\n\n${text}`.trim());
   };
@@ -715,6 +735,25 @@ export function NoteEditor({
                   <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>
                   <Button variant="outline" onClick={() => setIsTranscriberOpen(true)}><BookText className="mr-2 h-4 w-4" />Transcribe Voice</Button>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateAudio}><Volume2 className="mr-2 h-4 w-4"/>Listen (BU)</Button>
+                  <div className="col-span-full flex gap-2">
+                    <Select value={targetLanguage} onValueChange={setTargetLanguage}>
+                        <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {LANGUAGES.map(lang => (
+                                <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button 
+                        variant="outline" 
+                        className="flex-shrink-0"
+                        disabled={isAiLoading || !content} 
+                        onClick={handleTranslate}>
+                        <Languages className="mr-2 h-4 w-4"/>Translate
+                    </Button>
+                </div>
               </div>
             </div>
           </ScrollArea>
