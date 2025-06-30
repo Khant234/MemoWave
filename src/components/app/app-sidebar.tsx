@@ -4,7 +4,7 @@
 import * as React from "react";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { NotepadText, Archive, Trash2, Tag, ChevronDown, ListTodo, LayoutGrid, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
