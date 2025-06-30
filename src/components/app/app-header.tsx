@@ -17,6 +17,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
@@ -76,6 +79,10 @@ export function AppHeader({
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs p-0 bg-card">
+            <SheetHeader className="p-0">
+                <SheetTitle className="sr-only">Menu</SheetTitle>
+                <SheetDescription className="sr-only">Main menu for mobile navigation</SheetDescription>
+            </SheetHeader>
             <AppSidebar
               isMobile
               activeFilter={activeFilter}
