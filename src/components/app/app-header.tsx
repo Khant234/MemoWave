@@ -29,6 +29,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useClickSound } from "@/hooks/use-click-sound";
 
 
 type AppHeaderProps = {
@@ -61,6 +62,7 @@ export function AppHeader({
   activeTag,
 }: AppHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const playClickSound = useClickSound();
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 sm:px-6">
@@ -73,7 +75,7 @@ export function AppHeader({
          {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
-            <Button size="icon" variant="ghost" className="sm:hidden h-10 w-10">
+            <Button size="icon" variant="ghost" className="sm:hidden h-10 w-10" onClick={playClickSound}>
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle Menu</span>
             </Button>

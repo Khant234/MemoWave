@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Edit, CheckSquare, Square, Music, Download } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { ChecklistCompleteMessage } from "./checklist-complete";
+import { useClickSound } from "@/hooks/use-click-sound";
 
 type NoteViewerProps = {
   isOpen: boolean;
@@ -61,11 +62,19 @@ const LinkifiedText = ({ text }: { text: string }) => {
 
 export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemToggle }: NoteViewerProps) {
   if (!note) return null;
+  
+  const playClickSound = useClickSound();
 
   const handleEditClick = () => {
+    playClickSound();
     onEdit(note);
   };
   
+  const handleChecklistToggle = (itemId: string) => {
+    playClickSound();
+    onChecklistItemToggle(note.id, itemId);
+  };
+
   const formattedDate = (dateString: string) => {
     return new Date(dateString).toLocaleString(undefined, {
       year: 'numeric',
@@ -150,7 +159,7 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
                       {sortedChecklist.map(item => (
                           <button
                             key={item.id}
-                            onClick={() => onChecklistItemToggle(note.id, item.id)}
+                            onClick={() => handleChecklistToggle(item.id)}
                             className="flex w-full items-center gap-3 rounded-md p-1 text-left transition-colors hover:bg-secondary"
                           >
                             {item.completed ? <CheckSquare className="h-4 w-4 flex-shrink-0 text-primary" /> : <Square className="h-4 w-4 flex-shrink-0 text-muted-foreground" />}
@@ -181,7 +190,7 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
             </div>
             <div className="flex gap-2">
                 <SheetClose asChild>
-                    <Button variant="outline">Close</Button>
+                    <Button variant="outline" onClick={playClickSound}>Close</Button>
                 </SheetClose>
                 <Button onClick={handleEditClick}>
                     <Edit className="mr-2 h-4 w-4"/>

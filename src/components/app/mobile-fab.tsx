@@ -5,6 +5,7 @@ import * as React from 'react';
 import { Plus, Mic, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useClickSound } from '@/hooks/use-click-sound';
 
 type MobileFabProps = {
   onNewNote: () => void;
@@ -13,6 +14,7 @@ type MobileFabProps = {
 
 export function MobileFab({ onNewNote, onNewVoiceNote }: MobileFabProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const playClickSound = useClickSound();
 
   // Close menu if user clicks outside of it
   React.useEffect(() => {
@@ -28,6 +30,24 @@ export function MobileFab({ onNewNote, onNewVoiceNote }: MobileFabProps) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen]);
+
+  const handleFabClick = () => {
+    playClickSound();
+    setIsOpen(!isOpen);
+  };
+
+  const handleNewNoteClick = () => {
+    playClickSound();
+    onNewNote();
+    setIsOpen(false);
+  };
+
+  const handleNewVoiceNoteClick = () => {
+    playClickSound();
+    onNewVoiceNote();
+    setIsOpen(false);
+  };
+
 
   return (
     <div className="fixed bottom-6 right-6 z-40 sm:hidden" data-fab-menu>
@@ -46,10 +66,7 @@ export function MobileFab({ onNewNote, onNewVoiceNote }: MobileFabProps) {
             variant="secondary"
             className="rounded-full w-14 h-14 shadow-md"
             aria-label="New Voice Note"
-            onClick={() => {
-              onNewVoiceNote();
-              setIsOpen(false);
-            }}
+            onClick={handleNewVoiceNoteClick}
           >
             <Mic className="h-6 w-6" />
           </Button>
@@ -58,10 +75,7 @@ export function MobileFab({ onNewNote, onNewVoiceNote }: MobileFabProps) {
             variant="secondary"
             className="rounded-full w-14 h-14 shadow-md"
             aria-label="New Note"
-            onClick={() => {
-              onNewNote();
-              setIsOpen(false);
-            }}
+            onClick={handleNewNoteClick}
           >
             <Pencil className="h-6 w-6" />
           </Button>
@@ -74,7 +88,7 @@ export function MobileFab({ onNewNote, onNewVoiceNote }: MobileFabProps) {
             'rounded-full w-16 h-16 shadow-lg transition-transform duration-200 ease-in-out',
             isOpen && 'rotate-45'
           )}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={handleFabClick}
           aria-expanded={isOpen}
         >
           <Plus className="h-8 w-8" />

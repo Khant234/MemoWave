@@ -23,6 +23,7 @@ import { useNotes } from "@/contexts/notes-context";
 import { ChecklistCompleteMessage } from "@/components/app/checklist-complete";
 import { useGamification } from "@/contexts/gamification-context";
 import { Separator } from "@/components/ui/separator";
+import { useClickSound } from "@/hooks/use-click-sound";
 
 type ChecklistItem = {
   id: string;
@@ -43,8 +44,10 @@ export default function TodosPage() {
   const { toast } = useToast();
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
   const { recordTaskCompletion } = useGamification();
+  const playClickSound = useClickSound();
   
   const handleChecklistItemToggle = async (noteId: string, checklistItemId: string) => {
+    playClickSound();
     const note = notes.find((n) => n.id === noteId);
     if (note) {
       recordTaskCompletion(note, checklistItemId);
