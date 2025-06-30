@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { type Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { GripVertical, Flag, CheckSquare, CalendarClock } from "lucide-react";
+import { Flag, CheckSquare, CalendarClock } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
@@ -15,7 +15,6 @@ import {
 
 type KanbanCardContentProps = {
   note: Note;
-  listeners?: any;
   isOverlay?: boolean;
 };
 
@@ -33,7 +32,7 @@ const priorityTooltips: Record<Note['priority'], string> = {
     none: "No Priority",
 };
 
-export function KanbanCardContent({ note, listeners, isOverlay }: KanbanCardContentProps) {
+export function KanbanCardContent({ note, isOverlay }: KanbanCardContentProps) {
   const [formattedDueDate, setFormattedDueDate] = React.useState('');
 
   React.useEffect(() => {
@@ -55,21 +54,12 @@ export function KanbanCardContent({ note, listeners, isOverlay }: KanbanCardCont
     <Card
       className={cn(
           "bg-card hover:shadow-lg transition-shadow duration-200",
-          isOverlay ? "shadow-2xl ring-2 ring-primary cursor-grabbing" : "cursor-pointer"
+          isOverlay ? "shadow-2xl ring-2 ring-primary cursor-grabbing" : "cursor-grab"
       )}
       style={{ borderLeft: `4px solid ${note.color}` }}
     >
       <CardHeader className="flex flex-row items-start justify-between p-3">
         <CardTitle className="text-sm font-medium line-clamp-3 pr-2">{note.title || "Untitled"}</CardTitle>
-        <div
-          className={cn(
-            "p-1 touch-none -mr-2 -mt-1",
-            isOverlay ? "cursor-grabbing" : "cursor-grab"
-          )}
-          {...listeners}
-        >
-          <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-        </div>
       </CardHeader>
       <CardContent className="p-3 pt-1">
         {note.tags.length > 0 && (
