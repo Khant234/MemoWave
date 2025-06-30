@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -114,7 +115,7 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
 
       if (isListNowComplete) {
         triggerAchievement('PERFECT_LIST');
-        // We already trigger confetti inside triggerAchievement, so no need to call it again
+        setIsCelebrating(true);
       }
 
   }, [completedTasksCount, completedItemIds, triggerAchievement]);
