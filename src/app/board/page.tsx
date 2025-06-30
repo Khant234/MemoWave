@@ -132,6 +132,7 @@ export default function BoardPage() {
   
         newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length + 1;
       }
+      
       const [movedItem] = activeItems.splice(activeIndex, 1);
       if (!movedItem) return prev;
       movedItem.status = overContainer; // Update status locally
@@ -172,7 +173,6 @@ export default function BoardPage() {
       }
     } else {
       // State is updated optimistically in handleDragOver.
-      // We just need to commit the final state.
       finalContainers = { ...containers };
     }
 
@@ -234,19 +234,22 @@ export default function BoardPage() {
             tags={allTags}
             setSearchTerm={setSearchTerm}
           />
-          <main className="flex flex-1 flex-col overflow-y-hidden bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
-            <div className="mx-auto max-w-7xl w-full flex flex-col flex-1">
+          <main className="flex-1 flex flex-col overflow-hidden bg-background p-4 sm:p-6 transition-all duration-300 ease-in-out">
+            <div className="flex-shrink-0">
                 <h1 className="text-3xl font-bold font-headline mb-6">Kanban Board</h1>
-                {isLoading ? (
-                    <KanbanBoardSkeleton />
-                ) : (notes.length > 0 || searchTerm) ? (
+            </div>
+            
+            {isLoading ? (
+                <KanbanBoardSkeleton />
+            ) : (notes.length > 0 || searchTerm) ? (
+                <div className="flex-1 min-h-0">
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCorners}
                         onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                     >
-                        <div className="flex flex-1 min-h-0 gap-4 sm:gap-6 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+                        <div className="h-full flex gap-4 sm:gap-6 overflow-x-auto pb-2">
                         {KANBAN_COLUMNS.map(columnId => (
                             <KanbanColumn
                             key={columnId}
@@ -258,18 +261,18 @@ export default function BoardPage() {
                         ))}
                         </div>
                     </DndContext>
-                ) : (
-                    <div className="flex flex-col items-center justify-center flex-1 text-center p-6 rounded-lg bg-background border-2 border-dashed">
-                        <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
-                            <LayoutGrid className="h-12 w-12" />
-                        </div>
-                        <h2 className="text-2xl font-semibold mb-2 font-headline">Your Board is Empty</h2>
-                        <p className="text-muted-foreground max-w-sm">
-                        Create a note to see it here. Tasks will appear in the 'To Do' column by default.
-                        </p>
+                </div>
+            ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 rounded-lg bg-background border-2 border-dashed">
+                    <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
+                        <LayoutGrid className="h-12 w-12" />
                     </div>
-                )}
-            </div>
+                    <h2 className="text-2xl font-semibold mb-2 font-headline">Your Board is Empty</h2>
+                    <p className="text-muted-foreground max-w-sm">
+                    Create a note to see it here. Tasks will appear in the 'To Do' column by default.
+                    </p>
+                </div>
+            )}
           </main>
         </div>
       </div>
