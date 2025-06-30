@@ -13,20 +13,21 @@ import {
   KeyboardSensor,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { doc, writeBatch } from "firebase/firestore";
+import { doc, writeBatch, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useNotes } from "@/contexts/notes-context";
 import { AppHeader } from "@/components/app/app-header";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { KanbanColumn } from "@/components/app/kanban-column";
-import { type Note, type NoteStatus } from "@/lib/types";
+import { type Note, type NoteStatus, type NoteVersion } from "@/lib/types";
 import { KANBAN_COLUMNS, KANBAN_COLUMN_TITLES } from "@/lib/constants";
 import { NoteViewer } from "@/components/app/note-viewer";
 import { NoteEditor } from "@/components/app/note-editor";
 import { useToast } from "@/hooks/use-toast";
 import { KanbanBoardSkeleton } from "@/components/app/kanban-board-skeleton";
 import { LayoutGrid } from "lucide-react";
+import { useGamification } from "@/contexts/gamification-context";
 
 type NoteContainers = Record<NoteStatus, Note[]>;
 
@@ -37,16 +38,17 @@ export default function BoardPage() {
     inprogress: [],
     done: [],
   });
-  const [activeNote, setActiveNote] = React.useState<Note | null>(null);
 
   const { toast } = useToast();
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
+  const { recordTaskCompletion } = useGamification();
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
   const [viewingNote, setViewingNote] = React.useState<Note | null>(null);
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
+  const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
     const filteredNotes = notes.filter(note => 
@@ -215,9 +217,80 @@ export default function BoardPage() {
     setIsEditorOpen(true);
   };
   
-  // Dummy handlers - Board page is view-only for checklists and save
-  const handleChecklistItemToggle = () => {};
-  const handleSaveNote = () => {};
+  const updateNoteField = async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
+    if (viewingNote && viewingNote.id === noteId) {
+        setViewingNote(prev => prev ? { ...prev, ...updates } : null);
+    }
+
+    try {
+      const noteRef = doc(db, "notes", noteId);
+      await updateDoc(noteRef, updates);
+    } catch (error) {
+      console.error("Error updating note:", error);
+      toast({
+        title: "Error Updating Note",
+        description: "Could not sync changes. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleChecklistItemToggle = (noteId: string, checklistItemId: string) => {
+    const note = notes.find((n) => n.id === noteId);
+    if (note) {
+      recordTaskCompletion(note, checklistItemId);
+      
+      const updatedChecklist = note.checklist.map((item) =>
+        item.id === checklistItemId
+          ? { ...item, completed: !item.completed }
+          : item
+      );
+      updateNoteField(noteId, { checklist: updatedChecklist });
+    }
+  };
+
+  const handleSaveNote = async (noteToSave: Note) => {
+    setIsSaving(true);
+    
+    try {
+        const originalNote = notes.find((n) => n.id === noteToSave.id);
+        
+        let newHistory: Note['history'] = originalNote?.history ? [...originalNote.history] : [];
+        if (originalNote && (originalNote.content !== noteToSave.content || originalNote.title !== noteToSave.title)) {
+            const version: NoteVersion = {
+                title: originalNote.title,
+                content: originalNote.content,
+                updatedAt: originalNote.updatedAt,
+            };
+            newHistory.unshift(version);
+        }
+        if (newHistory.length > 20) {
+            newHistory = newHistory.slice(0, 20);
+        }
+
+        const noteRef = doc(db, "notes", noteToSave.id);
+        const {id, ...noteData} = noteToSave;
+        const finalNoteData = { ...noteData, history: newHistory };
+        await updateDoc(noteRef, finalNoteData as any);
+
+        setIsEditorOpen(false);
+        setEditingNote(null);
+        
+        toast({
+            title: "Note Saved",
+            description: `Your note "${noteToSave.title || 'Untitled'}" has been saved.`,
+        });
+    } catch (error) {
+      console.error("Error saving note:", error);
+      toast({
+        title: "Error Saving Note",
+        description: "There was a problem saving your note.",
+        variant: "destructive",
+      });
+    } finally {
+        setIsSaving(false);
+    }
+  };
 
   return (
     <>
@@ -288,6 +361,7 @@ export default function BoardPage() {
         setIsOpen={setIsEditorOpen}
         note={editingNote}
         onSave={handleSaveNote}
+        isSaving={isSaving}
       />
     </>
   );
