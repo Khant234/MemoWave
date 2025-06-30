@@ -62,7 +62,10 @@ export function KanbanCardContent({ note, listeners, isOverlay }: KanbanCardCont
       <CardHeader className="flex flex-row items-start justify-between p-3">
         <CardTitle className="text-sm font-medium line-clamp-3 pr-2">{note.title || "Untitled"}</CardTitle>
         <div
-          className="p-1 cursor-grab touch-none -mr-2 -mt-1"
+          className={cn(
+            "p-1 touch-none -mr-2 -mt-1",
+            isOverlay ? "cursor-grabbing" : "cursor-grab"
+          )}
           {...listeners}
         >
           <GripVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />

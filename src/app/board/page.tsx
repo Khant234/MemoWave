@@ -32,7 +32,6 @@ import { LayoutGrid } from "lucide-react";
 import { useGamification } from "@/contexts/gamification-context";
 import { KanbanCardContent } from "@/components/app/kanban-card-content";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 
 type NoteContainers = Record<string, Note[]>; // e.g. { 'work-todo': [note1], 'personal-inprogress': [note2] }
@@ -188,6 +187,7 @@ export default function BoardPage() {
     if (note) {
       setActiveNote(note);
     }
+    document.body.style.cursor = "grabbing";
   };
   
   const handleDragOver = (event: DragOverEvent) => {
@@ -250,6 +250,7 @@ export default function BoardPage() {
   };
   
   const handleDragEnd = async (event: DragEndEvent) => {
+    document.body.style.cursor = "";
     const { active, over } = event;
     setActiveNote(null);
 
@@ -438,39 +439,43 @@ export default function BoardPage() {
     }
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver}
-        >
-            <div className="flex-1 overflow-x-auto pb-4">
-                <div className="inline-flex flex-col gap-8 h-full">
-                    {groupedRenderData.map(({ groupKey, groupTitle, columns }) => (
-                        <div key={groupKey} className="flex flex-col">
-                            {groupBy !== 'none' && (
-                                <h2 className="text-xl font-bold mb-4 px-1 capitalize">{groupTitle}</h2>
-                            )}
-                            <div className="flex gap-4 sm:gap-6">
-                                {KANBAN_COLUMNS.map(columnId => (
-                                    <KanbanColumn
-                                        key={`${groupKey}-${columnId}`}
-                                        id={`${groupKey}-${columnId}`}
-                                        title={KANBAN_COLUMN_TITLES[columnId]}
-                                        notes={columns[columnId]}
-                                        onCardClick={handleCardClick}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    ))}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
+      >
+        <div className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 flex gap-4 sm:gap-6 overflow-x-auto pb-4">
+            {groupedRenderData.map(({ groupKey, groupTitle, columns }) => (
+              <div key={groupKey} className="flex flex-col h-full">
+                {groupBy !== "none" && (
+                  <h2 className="text-xl font-bold mb-4 px-1 capitalize sticky top-0 bg-background z-10 py-2">
+                    {groupTitle}
+                  </h2>
+                )}
+                <div className="flex gap-4 sm:gap-6">
+                  {KANBAN_COLUMNS.map((columnId) => (
+                    <KanbanColumn
+                      key={`${groupKey}-${columnId}`}
+                      id={`${groupKey}-${columnId}`}
+                      title={KANBAN_COLUMN_TITLES[columnId]}
+                      notes={columns[columnId]}
+                      onCardClick={handleCardClick}
+                    />
+                  ))}
                 </div>
-            </div>
-            <DragOverlay>
-                {activeNote ? <KanbanCardContent note={activeNote} isOverlay /> : null}
-            </DragOverlay>
-        </DndContext>
+              </div>
+            ))}
+          </div>
+        </div>
+        <DragOverlay>
+          {activeNote ? (
+            <KanbanCardContent note={activeNote} isOverlay />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     );
   }
 
