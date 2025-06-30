@@ -155,8 +155,8 @@ export function AppHeader({
               type="search"
               placeholder="Search..."
               className={cn(
-                "w-full rounded-lg bg-secondary pl-10 h-12 border-none",
-                "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:bg-card focus-visible:border focus-visible:border-input",
+                "w-full rounded-full bg-secondary pl-10 h-10 border-transparent transition-all duration-200 ease-in-out",
+                "focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               )}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
