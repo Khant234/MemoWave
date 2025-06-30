@@ -10,6 +10,7 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
@@ -61,6 +62,7 @@ export default function Home() {
     noteId: string;
     type: 'trash' | 'permanent';
   } | null>(null);
+  const [isEmptryTrashConfirmOpen, setIsEmptyTrashConfirmOpen] = React.useState(false);
 
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
   const searchParams = useSearchParams();
@@ -292,6 +294,41 @@ export default function Home() {
     setDeleteConfirmation({ noteId, type: 'permanent' });
   };
 
+  const handleEmptyTrash = () => {
+    setIsEmptyTrashConfirmOpen(true);
+  };
+
+  const handleConfirmEmptyTrash = async () => {
+    const trashedNotes = notes.filter(note => note.isTrashed);
+    if (trashedNotes.length === 0) {
+      setIsEmptyTrashConfirmOpen(false);
+      return;
+    }
+
+    const batch = writeBatch(db);
+    trashedNotes.forEach(note => {
+      const noteRef = doc(db, "notes", note.id);
+      batch.delete(noteRef);
+    });
+
+    try {
+      await batch.commit();
+      toast({
+        title: "Trash Emptied",
+        description: "All notes in the trash have been permanently deleted.",
+      });
+    } catch (error) {
+      console.error("Error emptying trash:", error);
+      toast({
+        title: "Error Emptying Trash",
+        description: "Could not empty trash. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEmptyTrashConfirmOpen(false);
+    }
+  };
+
   const handleCopyNote = async (noteId: string) => {
     const noteToCopy = notes.find((n) => n.id === noteId);
     if (!noteToCopy) {
@@ -464,6 +501,7 @@ export default function Home() {
               activeFilter={activeFilter}
               onTagClick={handleTagClick}
               onRemoveTagFromNote={handleRemoveTagFromNote}
+              onEmptyTrash={handleEmptyTrash}
             />
           </div>
         </main>
@@ -513,6 +551,26 @@ export default function Home() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog open={isEmptryTrashConfirmOpen} onOpenChange={setIsEmptyTrashConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all notes in the trash. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={handleConfirmEmptyTrash}
+            >
+              Empty Trash
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Button
         onClick={handleNewNote}
         size="icon"

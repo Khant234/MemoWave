@@ -6,6 +6,7 @@ import { NoteCard } from "./note-card";
 import { cn } from "@/lib/utils";
 import { NotepadText, Archive, Trash2 } from "lucide-react";
 import { NoteCardSkeleton } from "./note-card-skeleton";
+import { Button } from "../ui/button";
 
 type NoteListProps = {
   notes: Note[];
@@ -20,6 +21,7 @@ type NoteListProps = {
   onCopyNote: (noteId: string) => void;
   onTagClick: (tag: string) => void;
   onRemoveTagFromNote: (noteId: string, tag: string) => void;
+  onEmptyTrash: () => void;
   activeFilter: "all" | "archived" | "trash";
 };
 
@@ -36,6 +38,7 @@ export function NoteList({
   onCopyNote,
   onTagClick,
   onRemoveTagFromNote,
+  onEmptyTrash,
   activeFilter,
 }: NoteListProps) {
 
@@ -105,10 +108,27 @@ export function NoteList({
   );
 
   return (
-    <div
-      className={gridClasses}
-    >
-      {notes.map(renderNoteCard)}
-    </div>
+    <>
+      {activeFilter === 'trash' && notes.length > 0 && (
+        <div className="mb-6 flex flex-col items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive sm:flex-row sm:items-center sm:justify-between">
+            <p>
+                Notes in the trash are not recoverable after permanent deletion.
+            </p>
+            <Button
+                variant="destructive"
+                size="sm"
+                onClick={onEmptyTrash}
+                className="flex-shrink-0"
+            >
+                Empty Trash Now
+            </Button>
+        </div>
+      )}
+      <div
+        className={gridClasses}
+      >
+        {notes.map(renderNoteCard)}
+      </div>
+    </>
   );
 }
