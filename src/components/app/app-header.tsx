@@ -63,17 +63,10 @@ export function AppHeader({
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 sm:px-6">
       <div className="flex items-center gap-2">
          {/* Desktop Menu Toggle */}
-         <Tooltip>
-            <TooltipTrigger asChild>
-                <Button size="icon" variant="ghost" className="hidden sm:flex h-10 w-10" onClick={onToggleSidebar}>
-                    <Menu className="h-6 w-6" />
-                    <span className="sr-only">Toggle Menu</span>
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>Toggle Menu</p>
-            </TooltipContent>
-        </Tooltip>
+        <Button size="icon" variant="ghost" className="hidden sm:flex h-10 w-10" onClick={onToggleSidebar}>
+            <Menu className="h-6 w-6" />
+            <span className="sr-only">Toggle Menu</span>
+        </Button>
          {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
