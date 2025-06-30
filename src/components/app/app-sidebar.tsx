@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -92,26 +91,25 @@ export function AppSidebar({
           return (
             <Tooltip key={name} delayDuration={0}>
               <TooltipTrigger asChild>
-                <Link href={path} passHref legacyBehavior>
-                    <a
-                        onClick={handleClick}
-                        className={cn(
-                            buttonVariants({ variant: isActive ? "secondary" : "ghost", size: 'default' }),
-                            "w-full h-10 px-3 group",
-                            !isMobile && isCollapsed ? "justify-center" : "justify-start"
-                          )}
-                        aria-label={name}
-                    >
-                    <Icon className={cn(
-                        "h-5 w-5 shrink-0 transition-all duration-200",
-                        isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
-                        "group-hover:-translate-y-0.5"
-                    )} />
-                    <span className={cn(
-                        "whitespace-nowrap transition-opacity",
-                        !isMobile && isCollapsed && "hidden"
-                    )}>{name}</span>
-                    </a>
+                <Link
+                  href={path}
+                  onClick={handleClick}
+                  className={cn(
+                    buttonVariants({ variant: isActive ? "secondary" : "ghost", size: 'default' }),
+                    "w-full h-10 px-3 group",
+                    !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                  )}
+                  aria-label={name}
+                >
+                  <Icon className={cn(
+                      "h-5 w-5 shrink-0 transition-all duration-200",
+                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
+                      "group-hover:-translate-y-0.5"
+                  )} />
+                  <span className={cn(
+                      "whitespace-nowrap transition-opacity",
+                      !isMobile && isCollapsed && "hidden"
+                  )}>{name}</span>
                 </Link>
               </TooltipTrigger>
               {isCollapsed && !isMobile && (
