@@ -39,6 +39,7 @@ import { useGamification } from "@/contexts/gamification-context";
 import { AudioTranscriber } from "@/components/app/audio-transcriber";
 import { generateTitle } from "@/ai/flows/title-generation";
 import { NOTE_COLORS } from "@/lib/data";
+import { MobileFab } from "@/components/app/mobile-fab";
 
 export default function Home() {
   const { notes, isLoading, allTags } = useNotes();
@@ -506,6 +507,10 @@ export default function Home() {
           </div>
         </main>
       </div>
+
+      {activeFilter !== 'trash' && activeFilter !== 'archived' && (
+        <MobileFab onNewNote={handleNewNote} onNewVoiceNote={handleNewVoiceNote} />
+      )}
 
       <NoteViewer
         isOpen={isViewerOpen}

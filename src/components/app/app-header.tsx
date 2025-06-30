@@ -17,10 +17,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { AppSidebar } from "./app-sidebar";
 import { cn } from "@/lib/utils";
@@ -215,30 +215,6 @@ export function AppHeader({
             </div>
         )}
         <ThemeToggle />
-
-        {/* Mobile Buttons */}
-        {onNewVoiceNote && (
-            <Button
-                variant="ghost"
-                size="icon"
-                className="sm:hidden"
-                onClick={onNewVoiceNote}
-            >
-                <Mic className="h-5 w-5" />
-                <span className="sr-only">New Voice Note</span>
-            </Button>
-        )}
-        {onNewNote && (
-            <Button
-                variant="ghost"
-                size="icon"
-                className="sm:hidden"
-                onClick={onNewNote}
-            >
-                <Plus className="h-5 w-5" />
-                <span className="sr-only">New Note</span>
-            </Button>
-        )}
 
         {/* Desktop Buttons */}
         {onNewVoiceNote && (
