@@ -7,10 +7,12 @@ import {
   closestCorners,
   type DragEndEvent,
   type DragOverEvent,
+  type DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
   KeyboardSensor,
+  DragOverlay,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
 import { doc, writeBatch, updateDoc } from "firebase/firestore";
@@ -28,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { KanbanBoardSkeleton } from "@/components/app/kanban-board-skeleton";
 import { LayoutGrid } from "lucide-react";
 import { useGamification } from "@/contexts/gamification-context";
+import { KanbanCard } from "@/components/app/kanban-card";
 
 type NoteContainers = Record<NoteStatus, Note[]>;
 
@@ -49,6 +52,8 @@ export default function BoardPage() {
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [activeNote, setActiveNote] = React.useState<Note | null>(null);
+
 
   React.useEffect(() => {
     const filteredNotes = notes.filter(note => 
@@ -95,6 +100,14 @@ export default function BoardPage() {
       }
     }
     return null;
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const note = notes.find((n) => n.id === active.id);
+    if (note) {
+      setActiveNote(note);
+    }
   };
   
   const handleDragOver = (event: DragOverEvent) => {
@@ -152,44 +165,50 @@ export default function BoardPage() {
   };
   
   const handleDragEnd = async (event: DragEndEvent) => {
+    setActiveNote(null);
     const { active, over } = event;
-    const { id } = active;
+
     if (!over) return;
-    const { id: overId } = over;
 
-    const activeContainer = findContainer(id as string);
-    const overContainer = findContainer(overId as string);
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
-    if (!activeContainer || !overContainer) return;
+    const activeContainer = findContainer(activeId);
+    const overContainer = findContainer(overId);
+
+    if (!activeContainer || !overContainer) {
+      return;
+    }
 
     let finalContainers = containers;
+
     if (activeContainer === overContainer) {
-      const items = containers[activeContainer];
-      const activeIndex = items.findIndex((i) => i.id === id);
-      const overIndex = items.findIndex((i) => i.id === overId);
-      
-      if (id !== overId && activeIndex !== -1 && overIndex !== -1) {
-        finalContainers = { ...containers, [activeContainer]: arrayMove(items, activeIndex, overIndex) };
-        setContainers(finalContainers);
+      if (activeId !== overId) {
+        const items = containers[activeContainer];
+        const oldIndex = items.findIndex((i) => i.id === activeId);
+        const newIndex = items.findIndex((i) => i.id === overId);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const reorderedItems = arrayMove(items, oldIndex, newIndex);
+          finalContainers = {
+            ...containers,
+            [activeContainer]: reorderedItems,
+          };
+          setContainers(finalContainers);
+        }
       }
     } else {
-      // State is updated optimistically in handleDragOver.
-      finalContainers = { ...containers };
+      finalContainers = containers;
     }
 
     const batch = writeBatch(db);
 
-    // Update orders in both source and destination columns
-    if (activeContainer !== overContainer) {
-      finalContainers[activeContainer].forEach((note, index) => {
-        const noteRef = doc(db, "notes", note.id);
-        batch.update(noteRef, { order: index });
-      });
-    }
-
-    finalContainers[overContainer].forEach((note, index) => {
-      const noteRef = doc(db, "notes", note.id);
-      batch.update(noteRef, { status: overContainer, order: index });
+    const columnsToUpdate = new Set([activeContainer, overContainer]);
+    columnsToUpdate.forEach(columnId => {
+        finalContainers[columnId].forEach((note, index) => {
+            const noteRef = doc(db, "notes", note.id);
+            batch.update(noteRef, { status: columnId, order: index });
+        });
     });
 
     try {
@@ -201,7 +220,7 @@ export default function BoardPage() {
         description: "Could not save board changes. Please try again.",
         variant: "destructive",
       });
-      // Here you might want to revert the state to the original notes state
+      // Here you might want to revert the state to the original notes state from the context
     }
   };
 
@@ -318,6 +337,7 @@ export default function BoardPage() {
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCorners}
+                        onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                     >
@@ -332,6 +352,9 @@ export default function BoardPage() {
                             />
                         ))}
                         </div>
+                        <DragOverlay>
+                          {activeNote ? <KanbanCard note={activeNote} onClick={() => {}} /> : null}
+                        </DragOverlay>
                     </DndContext>
                 </div>
             ) : (
