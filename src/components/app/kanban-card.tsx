@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { type Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { GripVertical, ArrowDown, Minus, ArrowUp, Flag } from "lucide-react";
+import { GripVertical, Flag } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
