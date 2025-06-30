@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { KanbanBoardSkeleton } from "@/components/app/kanban-board-skeleton";
 import { LayoutGrid } from "lucide-react";
 import { useGamification } from "@/contexts/gamification-context";
-import { KanbanCard } from "@/components/app/kanban-card";
+import { KanbanCardContent } from "@/components/app/kanban-card-content";
 
 type NoteContainers = Record<NoteStatus, Note[]>;
 
@@ -353,7 +353,7 @@ export default function BoardPage() {
                         ))}
                         </div>
                         <DragOverlay>
-                          {activeNote ? <KanbanCard note={activeNote} onClick={() => {}} /> : null}
+                          {activeNote ? <KanbanCardContent note={activeNote} onClick={() => {}} isOverlay /> : null}
                         </DragOverlay>
                     </DndContext>
                 </div>
