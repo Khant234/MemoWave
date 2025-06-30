@@ -467,51 +467,53 @@ export default function Home() {
   }, [notes, activeFilter, searchTerm]);
 
   return (
-    <div className="flex h-screen w-full flex-col bg-secondary">
-      <AppHeader
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        layout={layout}
-        setLayout={setLayout}
-        onNewNote={handleNewNote}
-        onNewVoiceNote={handleNewVoiceNote}
-        onToggleSidebar={toggleSidebar}
-        activeFilter={activeFilter}
-        setActiveFilter={setActiveFilter}
-        tags={allTags}
-        onTagClick={handleTagClick}
-        activeTag={searchTerm}
-      />
-      <div className="flex flex-1 overflow-hidden">
-        <AppSidebar
-          isCollapsed={isSidebarCollapsed}
+    <>
+      <div className="flex h-screen w-full flex-col bg-secondary">
+        <AppHeader
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          layout={layout}
+          setLayout={setLayout}
+          onNewNote={handleNewNote}
+          onNewVoiceNote={handleNewVoiceNote}
+          onToggleSidebar={toggleSidebar}
           activeFilter={activeFilter}
           setActiveFilter={setActiveFilter}
-          setSearchTerm={setSearchTerm}
           tags={allTags}
           onTagClick={handleTagClick}
           activeTag={searchTerm}
         />
-        <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
-          <div className="mx-auto max-w-7xl">
-            <NoteList
-              notes={filteredNotes}
-              isLoading={isLoading}
-              layout={layout}
-              onViewNote={handleViewNote}
-              onTogglePin={handleTogglePin}
-              onToggleArchive={handleToggleArchive}
-              onDeleteNote={handleMoveToTrash}
-              onRestoreNote={handleRestoreNote}
-              onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
-              onCopyNote={handleCopyNote}
-              activeFilter={activeFilter}
-              onTagClick={handleTagClick}
-              onRemoveTagFromNote={handleRemoveTagFromNote}
-              onEmptyTrash={handleEmptyTrash}
-            />
-          </div>
-        </main>
+        <div className="flex flex-1 overflow-hidden">
+          <AppSidebar
+            isCollapsed={isSidebarCollapsed}
+            activeFilter={activeFilter}
+            setActiveFilter={setActiveFilter}
+            setSearchTerm={setSearchTerm}
+            tags={allTags}
+            onTagClick={handleTagClick}
+            activeTag={searchTerm}
+          />
+          <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
+            <div className="mx-auto max-w-7xl">
+              <NoteList
+                notes={filteredNotes}
+                isLoading={isLoading}
+                layout={layout}
+                onViewNote={handleViewNote}
+                onTogglePin={handleTogglePin}
+                onToggleArchive={handleToggleArchive}
+                onDeleteNote={handleMoveToTrash}
+                onRestoreNote={handleRestoreNote}
+                onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
+                onCopyNote={handleCopyNote}
+                activeFilter={activeFilter}
+                onTagClick={handleTagClick}
+                onRemoveTagFromNote={handleRemoveTagFromNote}
+                onEmptyTrash={handleEmptyTrash}
+              />
+            </div>
+          </main>
+        </div>
       </div>
 
       {activeFilter !== 'trash' && activeFilter !== 'archived' && (
@@ -581,6 +583,6 @@ export default function Home() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
