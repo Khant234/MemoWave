@@ -158,7 +158,7 @@ export default function TodosPage() {
           tags={allTags}
           setSearchTerm={setSearchTerm}
         />
-        <main className="flex-1 overflow-y-auto bg-background p-8 transition-all duration-300 ease-in-out">
+        <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
           <div className="mx-auto max-w-4xl">
             <h1 className="text-3xl font-bold font-headline mb-6">To-do List</h1>
             {isLoading ? (
@@ -189,7 +189,7 @@ export default function TodosPage() {
                   )}
                 </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center p-8 rounded-lg bg-background border-2 border-dashed">
+              <div className="flex flex-col items-center justify-center h-full text-center p-6 rounded-lg bg-background border-2 border-dashed">
                 <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
                     <ListTodo className="h-12 w-12" />
                 </div>

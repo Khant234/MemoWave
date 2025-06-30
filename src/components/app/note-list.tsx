@@ -79,7 +79,7 @@ export function NoteList({
     };
     const { icon: Icon, title, description } = messages[activeFilter];
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center p-8 rounded-lg bg-background border-2 border-dashed">
+      <div className="flex flex-col items-center justify-center h-full text-center p-6 rounded-lg bg-background border-2 border-dashed">
         <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
             <Icon className="h-12 w-12" />
         </div>

@@ -486,7 +486,7 @@ export default function Home() {
           onTagClick={handleTagClick}
           activeTag={searchTerm}
         />
-        <main className="flex-1 overflow-y-auto bg-background p-8 transition-all duration-300 ease-in-out">
+        <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
           <div className="mx-auto max-w-7xl">
             <NoteList
               notes={filteredNotes}
