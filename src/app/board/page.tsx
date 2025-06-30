@@ -32,6 +32,7 @@ import { LayoutGrid } from "lucide-react";
 import { useGamification } from "@/contexts/gamification-context";
 import { KanbanCardContent } from "@/components/app/kanban-card-content";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChecklistViewer } from "@/components/app/checklist-viewer";
 
 
 type NoteContainers = Record<string, Note[]>; // e.g. { 'work-todo': [note1], 'personal-inprogress': [note2] }
@@ -63,6 +64,9 @@ export default function BoardPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [activeNote, setActiveNote] = React.useState<Note | null>(null);
   const [groupBy, setGroupBy] = React.useState<'none' | 'tag' | 'priority'>('none');
+  const [isChecklistViewerOpen, setIsChecklistViewerOpen] = React.useState(false);
+  const [viewingChecklistNote, setViewingChecklistNote] = React.useState<Note | null>(null);
+
 
   React.useEffect(() => {
     const filteredNotes = notes.filter(note => 
@@ -329,12 +333,18 @@ export default function BoardPage() {
   };
 
   const handleCardClick = (note: Note) => {
-    setViewingNote(note);
-    setIsViewerOpen(true);
+    setViewingChecklistNote(note);
+    setIsChecklistViewerOpen(true);
   };
   
+  const handleViewFullNote = (note: Note) => {
+    setViewingNote(note);
+    setIsViewerOpen(true);
+  }
+
   const handleStartEditing = (note: Note) => {
     setIsViewerOpen(false);
+    setIsChecklistViewerOpen(false);
     setEditingNote(note);
     setIsEditorOpen(true);
   };
@@ -342,6 +352,9 @@ export default function BoardPage() {
   const updateNoteField = async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
     if (viewingNote && viewingNote.id === noteId) {
         setViewingNote(prev => prev ? { ...prev, ...updates } : null);
+    }
+    if (viewingChecklistNote && viewingChecklistNote.id === noteId) {
+        setViewingChecklistNote(prev => prev ? { ...prev, ...updates } : null);
     }
 
     try {
@@ -521,6 +534,14 @@ export default function BoardPage() {
         note={viewingNote}
         onEdit={handleStartEditing}
         onChecklistItemToggle={handleChecklistItemToggle}
+      />
+      <ChecklistViewer
+        isOpen={isChecklistViewerOpen}
+        setIsOpen={setIsChecklistViewerOpen}
+        note={viewingChecklistNote}
+        onChecklistItemToggle={handleChecklistItemToggle}
+        onEditNote={handleStartEditing}
+        onViewFullNote={handleViewFullNote}
       />
       <NoteEditor
         isOpen={isEditorOpen}
