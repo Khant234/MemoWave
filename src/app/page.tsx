@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -18,7 +19,7 @@ import { AppHeader } from "@/components/app/app-header";
 import { NoteList } from "@/components/app/note-list";
 import { NoteViewer } from "@/components/app/note-viewer";
 import { NoteEditor } from "@/components/app/note-editor";
-import { type Note, type NoteVersion } from "@/lib/types";
+import { type Note, type NoteVersion, type NoteStatus, type NotePriority } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import {
@@ -137,7 +138,7 @@ export default function Home() {
       const titleResult = await generateTitle({ noteContent: transcription });
       const newTitle = titleResult.title || "Voice Note";
 
-      const newNoteData = {
+      const newNoteData: Omit<Note, 'id'> = {
         title: newTitle,
         content: transcription,
         tags: ["voice-note"],
@@ -150,6 +151,10 @@ export default function Home() {
         checklist: [],
         history: [],
         isDraft: false,
+        status: 'todo',
+        priority: 'none',
+        dueDate: null,
+        order: Date.now(),
       };
 
       const docRef = await addDoc(notesCollectionRef, newNoteData);
@@ -200,12 +205,12 @@ export default function Home() {
         const noteRef = doc(db, "notes", noteToSave.id);
         const {id, ...noteData} = noteToSave;
         const finalNoteData = { ...noteData, history: newHistory };
-        await updateDoc(noteRef, finalNoteData);
+        await updateDoc(noteRef, finalNoteData as any);
 
       } else {
         const { id, ...noteData } = noteToSave;
         const finalNoteData = { ...noteData, history: [] }; // New notes start with empty history
-        const docRef = await addDoc(notesCollectionRef, finalNoteData);
+        const docRef = await addDoc(notesCollectionRef, finalNoteData as any);
         // No need to update state here, onSnapshot will do it
       }
 
@@ -351,6 +356,7 @@ export default function Home() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       history: [],
+      order: Date.now(),
     };
 
     try {

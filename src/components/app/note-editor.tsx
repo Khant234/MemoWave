@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -28,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { type Note, type NoteVersion } from "@/lib/types";
+import { type Note, type NoteVersion, type NoteStatus, type NotePriority } from "@/lib/types";
 import { NOTE_COLORS } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import {
@@ -62,6 +63,10 @@ import { AudioTranscriber } from "./audio-transcriber";
 import { AudioRecorder } from "./audio-recorder";
 import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
 import { NoteVersionHistory } from "./note-version-history";
+import { DatePicker } from "../ui/date-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
+
 
 type NoteEditorProps = {
   isOpen: boolean;
@@ -98,6 +103,11 @@ export function NoteEditor({
   const [isDirty, setIsDirty] = React.useState(false);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
   const [ignoredChecklistItems, setIgnoredChecklistItems] = React.useState(new Set<string>());
+
+  // Project management fields
+  const [status, setStatus] = React.useState<NoteStatus>('todo');
+  const [priority, setPriority] = React.useState<NotePriority>('none');
+  const [dueDate, setDueDate] = React.useState<Date | null | undefined>(null);
 
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
@@ -139,6 +149,9 @@ export function NoteEditor({
     setChecklist(data.checklist || []);
     setImageUrl(data.imageUrl);
     setGeneratedAudio('audioUrl' in data ? data.audioUrl || null : null);
+    setStatus(data.status || 'todo');
+    setPriority(data.priority || 'none');
+    setDueDate(data.dueDate ? new Date(data.dueDate) : null);
   };
 
   React.useEffect(() => {
@@ -162,6 +175,9 @@ export function NoteEditor({
         setChecklist([]);
         setImageUrl(undefined);
         setGeneratedAudio(null);
+        setStatus('todo');
+        setPriority('none');
+        setDueDate(null);
       }
     }
   }, [note, isOpen]);
@@ -177,10 +193,13 @@ export function NoteEditor({
         checklist,
         imageUrl,
         audioUrl: generatedAudio,
+        status,
+        priority,
+        dueDate: dueDate ? dueDate.toISOString() : null,
       };
       saveDraft(draftNote);
     }
-  }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, saveDraft]);
+  }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, saveDraft]);
 
   // Effect to check if the form is "dirty" (has unsaved changes)
   React.useEffect(() => {
@@ -190,13 +209,16 @@ export function NoteEditor({
     }
   
     const currentState = {
-      title: title,
-      content: content,
-      tags: tags,
-      color: color,
-      checklist: checklist,
-      imageUrl: imageUrl,
+      title,
+      content,
+      tags,
+      color,
+      checklist,
+      imageUrl,
       audioUrl: generatedAudio || undefined,
+      status,
+      priority,
+      dueDate: dueDate ? dueDate.toISOString() : undefined,
     };
   
     if (note) { // Editing an existing note
@@ -208,13 +230,16 @@ export function NoteEditor({
         checklist: note.checklist,
         imageUrl: note.imageUrl,
         audioUrl: note.audioUrl,
+        status: note.status,
+        priority: note.priority,
+        dueDate: note.dueDate || undefined,
       };
       setIsDirty(JSON.stringify(currentState) !== JSON.stringify(noteState));
     } else { // Creating a new note
       const isEmpty = !title && !content && tags.length === 0 && checklist.length === 0 && !imageUrl && !generatedAudio;
       setIsDirty(!isEmpty);
     }
-  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio]);
+  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate]);
 
   // Auto-generate checklist from content after user stops typing
   React.useEffect(() => {
@@ -286,6 +311,10 @@ export function NoteEditor({
       checklist,
       history: note?.history || [],
       isDraft: false,
+      status,
+      priority,
+      dueDate: dueDate ? dueDate.toISOString() : null,
+      order: note?.order || Date.now(),
     };
 
     if (imageUrl) {
@@ -330,6 +359,10 @@ export function NoteEditor({
       checklist,
       history: note?.history || [],
       isDraft: true,
+      status,
+      priority,
+      dueDate: dueDate ? dueDate.toISOString() : null,
+      order: note?.order || Date.now(),
     };
 
     if (imageUrl) {
@@ -572,6 +605,39 @@ export function NoteEditor({
                   placeholder="Start weaving your thoughts..."
                   className="min-h-[200px]"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select value={status} onValueChange={(value: NoteStatus) => setStatus(value)}>
+                          <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {Object.entries(KANBAN_COLUMN_TITLES).map(([key, title]) => (
+                                  <SelectItem key={key} value={key}>{title}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="space-y-2">
+                      <Label>Priority</Label>
+                      <Select value={priority} onValueChange={(value: NotePriority) => setPriority(value)}>
+                          <SelectTrigger>
+                              <SelectValue placeholder="Select priority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {Object.entries(NOTE_PRIORITY_TITLES).map(([key, title]) => (
+                                  <SelectItem key={key} value={key}>{title}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="space-y-2">
+                      <Label>Due Date</Label>
+                      <DatePicker date={dueDate} setDate={(d) => setDueDate(d)} />
+                  </div>
               </div>
               
               {imageUrl && (

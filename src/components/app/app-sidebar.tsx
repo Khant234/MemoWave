@@ -5,7 +5,7 @@ import * as React from "react";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, Trash2, Tag, ChevronDown, ListTodo } from "lucide-react";
+import { NotepadText, Archive, Trash2, Tag, ChevronDown, ListTodo, LayoutGrid, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -63,76 +63,65 @@ export function AppSidebar({
   }
 
   const navItems = [
-    { filter: "all", label: "All Notes", icon: NotepadText },
-    { filter: "archived", label: "Archived", icon: Archive },
-    { filter: "trash", label: "Trash", icon: Trash2 },
+    { name: "All Notes", path: "/", icon: NotepadText, filter: "all" },
+    { name: "To-do List", path: "/todos", icon: ListTodo },
+    { name: "Kanban Board", path: "/board", icon: LayoutGrid },
+    { name: "Calendar", path: "/calendar", icon: CalendarDays },
+    { name: "Archived", path: "/?filter=archived", icon: Archive, filter: "archived" },
+    { name: "Trash", path: "/?filter=trash", icon: Trash2, filter: "trash" },
   ];
 
   const NavContent = () => (
     <div className="flex flex-col h-full">
       <nav className="flex flex-col gap-1 p-2 pt-4">
-        {navItems.map(({ filter, label, icon: Icon }) => {
-          const isActive = pathname === '/' && activeFilter === filter && !activeTag;
+        {navItems.map(({ name, path, icon: Icon, filter }) => {
+          const isActive = filter
+            ? pathname === '/' && activeFilter === filter && !activeTag
+            : pathname.startsWith(path);
+          
+          const handleClick = (e: React.MouseEvent) => {
+            e.preventDefault();
+            if (isMobile) {
+                if (filter) setActiveFilter?.(filter as any);
+                router.push(path);
+            } else {
+                router.push(path);
+            }
+          };
+
           return (
-            <Tooltip key={filter} delayDuration={0}>
+            <Tooltip key={name} delayDuration={0}>
               <TooltipTrigger asChild>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  className={cn(
-                    "w-full h-10 px-3 group",
-                    !isMobile && isCollapsed ? "justify-center" : "justify-start"
-                  )}
-                  aria-label={label}
-                  onClick={() => handleFilterClick(filter as any)}
-                >
-                  <Icon className={cn(
-                    "h-5 w-5 shrink-0 transition-all duration-200",
-                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
-                    "group-hover:-translate-y-0.5"
-                  )} />
-                  <span className={cn(
-                    "whitespace-nowrap transition-opacity",
-                    !isMobile && isCollapsed && "hidden"
-                  )}>{label}</span>
-                </Button>
+                <Link href={path} passHref legacyBehavior>
+                    <a
+                        onClick={handleClick}
+                        className={cn(
+                            buttonVariants({ variant: isActive ? "secondary" : "ghost", size: 'default' }),
+                            "w-full h-10 px-3 group",
+                            !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                          )}
+                        aria-label={name}
+                    >
+                    <Icon className={cn(
+                        "h-5 w-5 shrink-0 transition-all duration-200",
+                        isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
+                        "group-hover:-translate-y-0.5"
+                    )} />
+                    <span className={cn(
+                        "whitespace-nowrap transition-opacity",
+                        !isMobile && isCollapsed && "hidden"
+                    )}>{name}</span>
+                    </a>
+                </Link>
               </TooltipTrigger>
               {isCollapsed && !isMobile && (
                 <TooltipContent side="right">
-                  <p>{label}</p>
+                  <p>{name}</p>
                 </TooltipContent>
               )}
             </Tooltip>
           );
         })}
-        <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>
-            <Link href="/todos" passHref>
-              <Button
-                variant={pathname.startsWith('/todos') ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full h-10 px-3 group",
-                  !isMobile && isCollapsed ? "justify-center" : "justify-start"
-                )}
-                aria-label="To-do List"
-              >
-                <ListTodo className={cn(
-                  "h-5 w-5 shrink-0 transition-all duration-200",
-                  pathname.startsWith('/todos') ? "text-primary" : "text-muted-foreground group-hover:text-primary",
-                  "group-hover:-translate-y-0.5"
-                )} />
-                <span className={cn(
-                  "whitespace-nowrap transition-opacity",
-                  !isMobile && isCollapsed && "hidden"
-                )}>To-do List</span>
-              </Button>
-            </Link>
-          </TooltipTrigger>
-          {isCollapsed && !isMobile && (
-            <TooltipContent side="right">
-              <p>To-do List</p>
-            </TooltipContent>
-          )}
-        </Tooltip>
       </nav>
 
       {tags.length > 0 && (

@@ -22,6 +22,7 @@ import {
   Copy,
   X,
   CheckSquare,
+  Flag,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -48,6 +49,19 @@ type NoteCardProps = {
   onCopyNote: (noteId: string) => void;
   onTagClick: (tag: string) => void;
   onRemoveTagFromNote: (noteId: string, tag: string) => void;
+};
+
+const priorityIcons: Record<Note['priority'], React.ReactNode> = {
+    high: <Flag className="h-4 w-4 text-red-500 fill-red-500/20" />,
+    medium: <Flag className="h-4 w-4 text-yellow-500 fill-yellow-500/20" />,
+    low: <Flag className="h-4 w-4 text-green-500 fill-green-500/20" />,
+    none: null,
+};
+const priorityTooltips: Record<Note['priority'], string> = {
+    high: "High Priority",
+    medium: "Medium Priority",
+    low: "Low Priority",
+    none: "No Priority",
 };
 
 export function NoteCard({
@@ -255,29 +269,35 @@ export function NoteCard({
               {formattedDate}
             </p>
             
-            {(note.checklist?.length > 0 || note.isDraft) && (
-                 <div className="flex items-center gap-2">
-                 {note.checklist && note.checklist.length > 0 && (
-                   <Tooltip>
-                     <TooltipTrigger asChild>
-                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                         <CheckSquare className="h-4 w-4" />
-                         <span>
-                           {note.checklist.filter((item) => item.completed).length}/
-                           {note.checklist.length}
-                         </span>
-                       </div>
-                     </TooltipTrigger>
-                     <TooltipContent>
-                       <p>Checklist progress</p>
-                     </TooltipContent>
-                   </Tooltip>
-                 )}
-                 {note.isDraft && (
-                     <Badge variant="outline">Draft</Badge>
-                 )}
-               </div>
-            )}
+            <div className="flex items-center gap-2">
+                {note.priority && note.priority !== 'none' && (
+                    <Tooltip>
+                        <TooltipTrigger>{priorityIcons[note.priority]}</TooltipTrigger>
+                        <TooltipContent>
+                            <p>{priorityTooltips[note.priority]}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+                {note.checklist?.length > 0 && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CheckSquare className="h-4 w-4" />
+                        <span>
+                        {note.checklist.filter((item) => item.completed).length}/
+                        {note.checklist.length}
+                        </span>
+                    </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                    <p>Checklist progress</p>
+                    </TooltipContent>
+                </Tooltip>
+                )}
+                {note.isDraft && (
+                    <Badge variant="outline">Draft</Badge>
+                )}
+            </div>
         </div>
       </CardFooter>
     </Card>
