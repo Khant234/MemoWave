@@ -12,7 +12,7 @@ import {
   useSensors,
   KeyboardSensor,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
 import { doc, writeBatch, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useNotes } from "@/contexts/notes-context";
@@ -86,6 +86,9 @@ export default function BoardPage() {
   );
 
   const findContainer = (id: string | number) => {
+    if (id in containers) {
+      return id as NoteStatus;
+    }
     for (const key in containers) {
       if (containers[key as NoteStatus].some(note => note.id === id)) {
         return key as NoteStatus;
@@ -101,7 +104,7 @@ export default function BoardPage() {
     const { id: overId } = over;
   
     const activeContainer = findContainer(id as string);
-    const overContainer = findContainer(overId as string) || (over.id as NoteStatus);
+    const overContainer = findContainer(overId as string);
   
     if (
       !activeContainer ||
@@ -125,14 +128,14 @@ export default function BoardPage() {
   
       let newIndex;
       if (overId in prev) {
-        newIndex = overItems.length + 1;
+        newIndex = overItems.length;
       } else {
         const isBelowOverItem = over && active.rect.current.translated &&
           active.rect.current.translated.top > over.rect.top + over.rect.height;
   
         const modifier = isBelowOverItem ? 1 : 0;
   
-        newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length + 1;
+        newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length;
       }
       
       const [movedItem] = activeItems.splice(activeIndex, 1);
@@ -155,22 +158,18 @@ export default function BoardPage() {
     const { id: overId } = over;
 
     const activeContainer = findContainer(id as string);
-    const overContainer = findContainer(overId as string) || (over.id as NoteStatus);
+    const overContainer = findContainer(overId as string);
 
     if (!activeContainer || !overContainer) return;
 
     let finalContainers = containers;
     if (activeContainer === overContainer) {
-      const activeIndex = containers[activeContainer].findIndex((i) => i.id === id);
-      const overIndex = containers[overContainer].findIndex((i) => i.id === overId);
+      const items = containers[activeContainer];
+      const activeIndex = items.findIndex((i) => i.id === id);
+      const overIndex = items.findIndex((i) => i.id === overId);
       
-      if (activeIndex !== overIndex) {
-        const newItems = Array.from(containers[activeContainer]);
-        const [movedItem] = newItems.splice(activeIndex, 1);
-        if (movedItem) {
-            newItems.splice(overIndex > activeIndex ? overIndex -1 : overIndex, 0, movedItem);
-        }
-        finalContainers = { ...containers, [activeContainer]: newItems };
+      if (id !== overId && activeIndex !== -1 && overIndex !== -1) {
+        finalContainers = { ...containers, [activeContainer]: arrayMove(items, activeIndex, overIndex) };
         setContainers(finalContainers);
       }
     } else {
