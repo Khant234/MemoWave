@@ -64,8 +64,13 @@ export function NoteCard({
 }: NoteCardProps) {
   const [formattedDate, setFormattedDate] = React.useState("");
 
-  const contentPreview = React.useMemo(() => {
-    return note.content.split('\n\n**Summary:**')[0];
+  const { summary, mainContent } = React.useMemo(() => {
+    const summaryMarker = '\n\n**Summary:**\n';
+    const parts = note.content.split(summaryMarker);
+    if (parts.length > 1 && parts[1].trim() !== '') {
+        return { summary: parts[1].trim(), mainContent: parts[0] };
+    }
+    return { summary: null, mainContent: note.content };
   }, [note.content]);
 
   React.useEffect(() => {
@@ -193,9 +198,16 @@ export function NoteCard({
           </div>
         )}
         <div className="relative h-[60px] overflow-hidden">
-          <p className="text-sm text-muted-foreground">
-            {contentPreview}
-          </p>
+          {summary ? (
+            <>
+                <Badge variant="outline" className="mb-1 text-xs">AI Summary</Badge>
+                <p className="text-sm text-foreground font-medium italic">"{summary}"</p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+                {mainContent}
+            </p>
+          )}
           <div className="absolute bottom-0 h-6 w-full bg-gradient-to-t from-card to-transparent pointer-events-none" />
         </div>
       </CardContent>
