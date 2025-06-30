@@ -54,7 +54,7 @@ export function KanbanCard({ note, onClick }: KanbanCardProps) {
       <Card
         onClick={() => onClick(note)}
         className={cn(
-            "mb-4 cursor-pointer hover:shadow-lg transition-shadow",
+            "cursor-pointer hover:shadow-lg transition-shadow",
             isDragging && "shadow-2xl ring-2 ring-primary"
         )}
       >

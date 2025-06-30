@@ -20,9 +20,9 @@ export function KanbanColumn({ id, title, notes, onCardClick }: KanbanColumnProp
 
   return (
     <div className="flex flex-col w-[80vw] max-w-[300px] sm:w-80 sm:max-w-none flex-shrink-0">
-      <h2 className="text-lg font-semibold mb-4 px-2">{title} ({notes.length})</h2>
+      <h2 className="text-lg font-semibold mb-2 px-1 sm:mb-4 sm:px-2">{title} ({notes.length})</h2>
       <ScrollArea className={cn(
-          "flex-1 bg-secondary rounded-lg p-2 transition-colors",
+          "flex-1 bg-secondary rounded-lg p-1 sm:p-2 transition-colors",
           isOver && "bg-primary/10"
         )}
       >
@@ -31,7 +31,7 @@ export function KanbanColumn({ id, title, notes, onCardClick }: KanbanColumnProp
           items={notes.map(n => n.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div ref={setNodeRef} className="min-h-[200px] space-y-4">
+          <div ref={setNodeRef} className="min-h-[200px] space-y-2 sm:space-y-4">
             {notes.map(note => (
               <KanbanCard key={note.id} note={note} onClick={onCardClick} />
             ))}
