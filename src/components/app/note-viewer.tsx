@@ -63,6 +63,11 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
   const [formattedUpdateDate, setFormattedUpdateDate] = React.useState('');
   const playClickSound = useClickSound();
   
+  const audioFileExtension = React.useMemo(() => {
+    if (!note?.audioUrl) return 'wav';
+    return note.audioUrl.match(/data:audio\/(.*?);/)?.[1] || 'wav';
+  }, [note?.audioUrl]);
+  
   React.useEffect(() => {
     if (note) {
       setFormattedUpdateDate(
@@ -105,11 +110,6 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
   const checklistProgress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
   const allItemsComplete = checklistExists && totalItems > 0 && completedItems === totalItems;
 
-
-  const audioFileExtension = React.useMemo(() => {
-    if (!note.audioUrl) return 'wav';
-    return note.audioUrl.match(/data:audio\/(.*?);/)?.[1] || 'wav';
-  }, [note.audioUrl]);
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
