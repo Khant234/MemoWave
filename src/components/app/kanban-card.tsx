@@ -58,8 +58,8 @@ export function KanbanCard({ note, onClick }: KanbanCardProps) {
             isDragging && "shadow-2xl ring-2 ring-primary"
         )}
       >
-        <CardHeader className="flex flex-row items-start justify-between p-3">
-          <CardTitle className="text-base font-medium line-clamp-3 pr-2">{note.title || "Untitled"}</CardTitle>
+        <CardHeader className="flex flex-row items-start justify-between p-2 sm:p-3">
+          <CardTitle className="text-sm sm:text-base font-medium line-clamp-3 pr-2">{note.title || "Untitled"}</CardTitle>
           <div
             className="p-1 cursor-grab touch-none"
             {...listeners}
@@ -67,7 +67,7 @@ export function KanbanCard({ note, onClick }: KanbanCardProps) {
             <GripVertical className="h-5 w-5 text-muted-foreground" />
           </div>
         </CardHeader>
-        <CardContent className="p-3 pt-0">
+        <CardContent className="p-2 sm:p-3 pt-0">
           <div className="flex justify-between items-center">
              <div className="flex items-center gap-2">
                 {note.priority !== 'none' && (
