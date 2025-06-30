@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -23,6 +22,33 @@ type NoteVersionHistoryProps = {
   onRestore: (version: NoteVersion) => void;
 };
 
+const VersionItem = ({ version, isSelected, onSelect }: { version: NoteVersion, isSelected: boolean, onSelect: () => void }) => {
+    const [formattedDate, setFormattedDate] = React.useState('');
+
+    React.useEffect(() => {
+        setFormattedDate(new Date(version.updatedAt).toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }));
+    }, [version.updatedAt]);
+
+    return (
+        <button
+          onClick={onSelect}
+          className={`w-full text-left p-3 rounded-lg transition-colors ${isSelected ? 'bg-secondary' : 'hover:bg-secondary/50'}`}
+        >
+          <p className="font-medium text-sm truncate">{version.title || "Untitled"}</p>
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+              <Clock className="h-3 w-3" />
+              {formattedDate}
+          </p>
+        </button>
+    );
+};
+
 export function NoteVersionHistory({
   open,
   setOpen,
@@ -45,16 +71,6 @@ export function NoteVersionHistory({
     }
   }
 
-  const formattedDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
@@ -70,17 +86,12 @@ export function NoteVersionHistory({
             <ScrollArea className="flex-grow">
               <div className="space-y-2">
                 {history.length > 0 ? history.map((version, index) => (
-                  <button
+                  <VersionItem
                     key={index}
-                    onClick={() => setSelectedVersion(version)}
-                    className={`w-full text-left p-3 rounded-lg transition-colors ${selectedVersion?.updatedAt === version.updatedAt ? 'bg-secondary' : 'hover:bg-secondary/50'}`}
-                  >
-                    <p className="font-medium text-sm truncate">{version.title || "Untitled"}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-                        <Clock className="h-3 w-3" />
-                        {formattedDate(version.updatedAt)}
-                    </p>
-                  </button>
+                    version={version}
+                    isSelected={selectedVersion?.updatedAt === version.updatedAt}
+                    onSelect={() => setSelectedVersion(version)}
+                  />
                 )) : (
                     <div className="text-center text-muted-foreground py-10">
                         <p>No history available.</p>

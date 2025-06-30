@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -61,6 +60,22 @@ const LinkifiedText = ({ text }: { text: string }) => {
 
 
 export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemToggle }: NoteViewerProps) {
+  const [formattedUpdateDate, setFormattedUpdateDate] = React.useState('');
+  
+  React.useEffect(() => {
+    if (note) {
+      setFormattedUpdateDate(
+        new Date(note.updatedAt).toLocaleString(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      );
+    }
+  }, [note]);
+
   if (!note) return null;
   
   const playClickSound = useClickSound();
@@ -74,16 +89,6 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
     playClickSound();
     onChecklistItemToggle(note.id, itemId);
   };
-
-  const formattedDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
 
   const checklistExists = note.checklist && note.checklist.length > 0;
   
@@ -113,7 +118,7 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
         <SheetHeader className="p-6 pb-2">
           <SheetTitle className="font-headline text-2xl">{note.title || 'Untitled Note'}</SheetTitle>
           <SheetDescription>
-            Last updated on {formattedDate(note.updatedAt)}
+            Last updated on {formattedUpdateDate}
           </SheetDescription>
         </SheetHeader>
         <ScrollArea className="flex-grow px-6">
