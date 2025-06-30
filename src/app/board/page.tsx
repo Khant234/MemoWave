@@ -235,7 +235,7 @@ export default function BoardPage() {
                         onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                     >
-                        <div className="flex gap-6 flex-1">
+                        <div className="flex flex-1 gap-4 sm:gap-6">
                         {KANBAN_COLUMNS.map(columnId => (
                             <KanbanColumn
                             key={columnId}

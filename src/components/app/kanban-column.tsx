@@ -19,7 +19,7 @@ export function KanbanColumn({ id, title, notes, onCardClick }: KanbanColumnProp
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
-    <div className="flex flex-col w-full sm:w-80 md:w-96 flex-shrink-0">
+    <div className="flex flex-col w-[300px] sm:w-80 flex-shrink-0">
       <h2 className="text-lg font-semibold mb-4 px-2">{title} ({notes.length})</h2>
       <ScrollArea className={cn(
           "flex-1 bg-secondary rounded-lg p-2 transition-colors",
