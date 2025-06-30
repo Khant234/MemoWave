@@ -102,11 +102,12 @@ export function NoteCard({
                     className="h-8 w-8 rounded-full"
                     onClick={handlePinClick}
                     >
-                    {note.isPinned ? (
-                        <Pin className="h-4 w-4 text-primary fill-primary" />
-                    ) : (
-                        <Pin className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    )}
+                    <Pin className={cn(
+                        "h-4 w-4 transition-all duration-300 ease-in-out",
+                        note.isPinned
+                        ? "rotate-45 fill-primary text-primary"
+                        : "text-muted-foreground group-hover:scale-125 group-hover:text-primary"
+                    )} />
                     <span className="sr-only">
                         {note.isPinned ? "Unpin note" : "Pin note"}
                     </span>
