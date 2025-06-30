@@ -197,18 +197,19 @@ export function NoteCard({
             />
           </div>
         )}
-        <div className="relative h-[60px] overflow-hidden">
+        <div className="h-[60px] text-sm"> {/* Keep a fixed height for grid consistency */}
           {summary ? (
-            <>
-                <Badge variant="outline" className="mb-1 text-xs">AI Summary</Badge>
-                <p className="text-sm text-foreground font-medium italic">"{summary}"</p>
-            </>
+            <div className="space-y-1">
+              <Badge variant="outline" className="text-xs">AI Summary</Badge>
+              <p className="italic text-foreground font-medium line-clamp-2">
+                &ldquo;{summary}&rdquo;
+              </p>
+            </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-                {mainContent}
+            <p className="text-muted-foreground line-clamp-3">
+              {mainContent}
             </p>
           )}
-          <div className="absolute bottom-0 h-6 w-full bg-gradient-to-t from-card to-transparent pointer-events-none" />
         </div>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 px-4 pb-4 pt-0">
