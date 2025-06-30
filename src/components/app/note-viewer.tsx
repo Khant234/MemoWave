@@ -61,6 +61,7 @@ const LinkifiedText = ({ text }: { text: string }) => {
 
 export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemToggle }: NoteViewerProps) {
   const [formattedUpdateDate, setFormattedUpdateDate] = React.useState('');
+  const playClickSound = useClickSound();
   
   React.useEffect(() => {
     if (note) {
@@ -77,8 +78,6 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
   }, [note]);
 
   if (!note) return null;
-  
-  const playClickSound = useClickSound();
 
   const handleEditClick = () => {
     playClickSound();
