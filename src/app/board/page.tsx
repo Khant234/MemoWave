@@ -133,6 +133,7 @@ export default function BoardPage() {
         newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length + 1;
       }
       const [movedItem] = activeItems.splice(activeIndex, 1);
+      if (!movedItem) return prev;
       movedItem.status = overContainer; // Update status locally
       overItems.splice(newIndex, 0, movedItem);
   
@@ -245,7 +246,7 @@ export default function BoardPage() {
                         onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                     >
-                        <div className="flex flex-1 gap-4 sm:gap-6 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+                        <div className="flex flex-1 min-h-0 gap-4 sm:gap-6 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
                         {KANBAN_COLUMNS.map(columnId => (
                             <KanbanColumn
                             key={columnId}
