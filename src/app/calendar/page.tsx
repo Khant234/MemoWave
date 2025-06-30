@@ -22,6 +22,7 @@ import { NoteEditor } from "@/components/app/note-editor";
 import { CalendarPageSkeleton } from "@/components/app/calendar-page-skeleton";
 import { NOTE_PRIORITIES } from "@/lib/constants";
 import { Separator } from "@/components/ui/separator";
+import { ChecklistViewer } from "@/components/app/checklist-viewer";
 
 export default function CalendarPage() {
     const { notes, isLoading, allTags } = useNotes();
@@ -36,6 +37,8 @@ export default function CalendarPage() {
     const [isEditorOpen, setIsEditorOpen] = React.useState(false);
     const [editingNote, setEditingNote] = React.useState<Note | null>(null);
     const [isSaving, setIsSaving] = React.useState(false);
+    const [isChecklistViewerOpen, setIsChecklistViewerOpen] = React.useState(false);
+    const [viewingChecklistNote, setViewingChecklistNote] = React.useState<Note | null>(null);
 
     const notesWithDueDate = React.useMemo(() => {
         const filteredNotes = notes.filter(note => 
@@ -68,13 +71,19 @@ export default function CalendarPage() {
         return { pendingTasks: pending, completedTasks: completed };
     }, [notesWithDueDate, selectedDate]);
     
-    const handleViewNote = (note: Note) => {
+    const handleCardClick = (note: Note) => {
+        setViewingChecklistNote(note);
+        setIsChecklistViewerOpen(true);
+    };
+
+    const handleViewFullNote = (note: Note) => {
         setViewingNote(note);
         setIsViewerOpen(true);
-    };
+    }
     
     const handleStartEditing = (note: Note) => {
         setIsViewerOpen(false);
+        setIsChecklistViewerOpen(false);
         setEditingNote(note);
         setIsEditorOpen(true);
     };
@@ -82,6 +91,9 @@ export default function CalendarPage() {
     const updateNoteField = async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
         if (viewingNote && viewingNote.id === noteId) {
             setViewingNote(prev => prev ? { ...prev, ...updates } : null);
+        }
+        if (viewingChecklistNote && viewingChecklistNote.id === noteId) {
+            setViewingChecklistNote(prev => prev ? { ...prev, ...updates } : null);
         }
 
         try {
@@ -203,7 +215,7 @@ export default function CalendarPage() {
                                                             {pendingTasks.length > 0 && (
                                                                 <div className="space-y-4">
                                                                     {pendingTasks.map(note => (
-                                                                        <div key={note.id} onClick={() => handleViewNote(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4" style={{borderColor: note.color}}>
+                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4" style={{borderColor: note.color}}>
                                                                             <h3 className="font-semibold">{note.title}</h3>
                                                                             <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
                                                                                 <Badge variant={note.priority === 'high' ? 'destructive' : 'outline'}>{note.priority}</Badge>
@@ -218,7 +230,7 @@ export default function CalendarPage() {
                                                                 <div className="space-y-4">
                                                                     <h4 className="text-sm font-medium text-muted-foreground px-1">Completed</h4>
                                                                     {completedTasks.map(note => (
-                                                                        <div key={note.id} onClick={() => handleViewNote(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 opacity-70" style={{borderColor: note.color}}>
+                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 opacity-70" style={{borderColor: note.color}}>
                                                                             <h3 className="font-semibold line-through">{note.title}</h3>
                                                                             <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
                                                                                 <Badge variant="outline">{note.priority}</Badge>
@@ -246,6 +258,14 @@ export default function CalendarPage() {
                 note={viewingNote}
                 onEdit={handleStartEditing}
                 onChecklistItemToggle={handleChecklistItemToggle}
+            />
+            <ChecklistViewer
+                isOpen={isChecklistViewerOpen}
+                setIsOpen={setIsChecklistViewerOpen}
+                note={viewingChecklistNote}
+                onChecklistItemToggle={handleChecklistItemToggle}
+                onEditNote={handleStartEditing}
+                onViewFullNote={handleViewFullNote}
             />
             <NoteEditor
                 isOpen={isEditorOpen}
