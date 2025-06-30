@@ -22,8 +22,8 @@ import { AppHeader } from "@/components/app/app-header";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { KanbanColumn } from "@/components/app/kanban-column";
-import { type Note, type NoteStatus, type NoteVersion } from "@/lib/types";
-import { KANBAN_COLUMNS, KANBAN_COLUMN_TITLES } from "@/lib/constants";
+import { type Note, type NoteStatus, type NoteVersion, type NotePriority } from "@/lib/types";
+import { KANBAN_COLUMNS, KANBAN_COLUMN_TITLES, NOTE_PRIORITIES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
 import { NoteViewer } from "@/components/app/note-viewer";
 import { NoteEditor } from "@/components/app/note-editor";
 import { useToast } from "@/hooks/use-toast";
@@ -31,16 +31,26 @@ import { KanbanBoardSkeleton } from "@/components/app/kanban-board-skeleton";
 import { LayoutGrid } from "lucide-react";
 import { useGamification } from "@/contexts/gamification-context";
 import { KanbanCardContent } from "@/components/app/kanban-card-content";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-type NoteContainers = Record<NoteStatus, Note[]>;
+
+type NoteContainers = Record<string, Note[]>; // e.g. { 'work-todo': [note1], 'personal-inprogress': [note2] }
+
+type GroupedRenderData = {
+    groupTitle: string;
+    groupKey: string;
+    columns: {
+        todo: Note[];
+        inprogress: Note[];
+        done: Note[];
+    }
+};
 
 export default function BoardPage() {
   const { notes, isLoading, allTags } = useNotes();
-  const [containers, setContainers] = React.useState<NoteContainers>({
-    todo: [],
-    inprogress: [],
-    done: [],
-  });
+  const [containers, setContainers] = React.useState<NoteContainers>({});
+  const [groupedRenderData, setGroupedRenderData] = React.useState<GroupedRenderData[]>([]);
 
   const { toast } = useToast();
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
@@ -53,7 +63,7 @@ export default function BoardPage() {
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
   const [activeNote, setActiveNote] = React.useState<Note | null>(null);
-
+  const [groupBy, setGroupBy] = React.useState<'none' | 'tag' | 'priority'>('none');
 
   React.useEffect(() => {
     const filteredNotes = notes.filter(note => 
@@ -65,23 +75,92 @@ export default function BoardPage() {
             note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
     );
 
-    const newContainers: NoteContainers = {
-      todo: [],
-      inprogress: [],
-      done: [],
-    };
-    for (const note of filteredNotes) {
-      if (note.status && KANBAN_COLUMNS.includes(note.status)) {
-        newContainers[note.status].push(note);
-      } else {
-        newContainers.todo.push(note); // Default to 'todo'
-      }
+    const newContainers: NoteContainers = {};
+    const groupKeys: Record<string, string> = {}; 
+
+    if (groupBy === 'none') {
+        groupKeys['all'] = 'All Tasks';
+        KANBAN_COLUMNS.forEach(status => {
+            newContainers[`all-${status}`] = [];
+        });
+
+        for (const note of filteredNotes) {
+            const status = note.status || 'todo';
+            const containerId = `all-${status}`;
+            if (newContainers[containerId]) {
+                newContainers[containerId].push(note);
+            }
+        }
+    } else if (groupBy === 'tag') {
+        const uniqueTags = ['untagged', ...allTags];
+        uniqueTags.forEach(tag => {
+            const title = tag === 'untagged' ? 'Untagged' : tag;
+            groupKeys[tag] = title;
+            KANBAN_COLUMNS.forEach(status => {
+                newContainers[`${tag}-${status}`] = [];
+            });
+        });
+        
+        for (const note of filteredNotes) {
+            const status = note.status || 'todo';
+            const tag = note.tags[0] || 'untagged';
+            const containerId = `${tag}-${status}`;
+            if (newContainers[containerId]) {
+                newContainers[containerId].push(note);
+            }
+        }
+    } else if (groupBy === 'priority') {
+        NOTE_PRIORITIES.forEach(priority => {
+            groupKeys[priority] = NOTE_PRIORITY_TITLES[priority];
+            KANBAN_COLUMNS.forEach(status => {
+                newContainers[`${priority}-${status}`] = [];
+            });
+        });
+
+        for (const note of filteredNotes) {
+            const priority = note.priority || 'none';
+            const status = note.status || 'todo';
+            const containerId = `${priority}-${status}`;
+            if (newContainers[containerId]) {
+                newContainers[containerId].push(note);
+            }
+        }
     }
-    // Sort each column by the 'order' property
+
     Object.values(newContainers).forEach(column => column.sort((a, b) => a.order - b.order));
     
     setContainers(newContainers);
-  }, [notes, searchTerm]);
+
+    const newGroupedRenderData = Object.entries(groupKeys)
+        .map(([groupKey, groupTitle]) => ({
+            groupTitle,
+            groupKey,
+            columns: {
+                todo: newContainers[`${groupKey}-todo`] || [],
+                inprogress: newContainers[`${groupKey}-inprogress`] || [],
+                done: newContainers[`${groupKey}-done`] || [],
+            }
+        }))
+        .filter(group => 
+            group.columns.todo.length > 0 || 
+            group.columns.inprogress.length > 0 || 
+            group.columns.done.length > 0
+        )
+        .sort((a, b) => {
+            if (groupBy === 'priority') {
+                return NOTE_PRIORITIES.indexOf(a.groupKey as NotePriority) - NOTE_PRIORITIES.indexOf(b.groupKey as NotePriority);
+            }
+            if (groupBy === 'tag') {
+                if (a.groupKey === 'untagged') return 1;
+                if (b.groupKey === 'untagged') return -1;
+                return a.groupTitle.localeCompare(b.groupTitle);
+            }
+            return 0;
+        });
+
+    setGroupedRenderData(newGroupedRenderData);
+
+  }, [notes, searchTerm, groupBy, allTags]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -92,11 +171,11 @@ export default function BoardPage() {
 
   const findContainer = (id: string | number) => {
     if (id in containers) {
-      return id as NoteStatus;
+      return id as string;
     }
     for (const key in containers) {
-      if (containers[key as NoteStatus].some(note => note.id === id)) {
-        return key as NoteStatus;
+      if (containers[key].some(note => note.id === id)) {
+        return key;
       }
     }
     return null;
@@ -137,23 +216,20 @@ export default function BoardPage() {
         return prev;
       }
 
-      const overIndex = overItems.findIndex((item) => item.id === overId);
-  
-      let newIndex;
-      if (overId in prev) {
-        newIndex = overItems.length;
-      } else {
-        const isBelowOverItem = over && active.rect.current.translated &&
-          active.rect.current.translated.top > over.rect.top + over.rect.height;
-  
-        const modifier = isBelowOverItem ? 1 : 0;
-  
-        newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length;
-      }
-      
       const [movedItem] = activeItems.splice(activeIndex, 1);
       if (!movedItem) return prev;
-      movedItem.status = overContainer; // Update status locally
+      
+      const [, newStatus] = overContainer.split('-');
+      movedItem.status = newStatus as NoteStatus;
+
+      const overIndex = overItems.findIndex((item) => item.id === overId);
+      let newIndex;
+      if (overIndex !== -1) {
+        newIndex = overIndex;
+      } else {
+        newIndex = overItems.length;
+      }
+      
       overItems.splice(newIndex, 0, movedItem);
   
       return {
@@ -173,54 +249,66 @@ export default function BoardPage() {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const activeContainer = findContainer(activeId);
-    const overContainer = findContainer(overId);
-
-    if (!activeContainer || !overContainer) {
-      return;
-    }
-
+    const originalContainerId = findContainer(activeId);
     let finalContainers = containers;
-
-    if (activeContainer === overContainer) {
-      if (activeId !== overId) {
-        const items = containers[activeContainer];
+    
+    if (originalContainerId && originalContainerId === findContainer(overId) && activeId !== overId) {
+        const items = finalContainers[originalContainerId];
         const oldIndex = items.findIndex((i) => i.id === activeId);
         const newIndex = items.findIndex((i) => i.id === overId);
 
         if (oldIndex !== -1 && newIndex !== -1) {
-          const reorderedItems = arrayMove(items, oldIndex, newIndex);
-          finalContainers = {
-            ...containers,
-            [activeContainer]: reorderedItems,
-          };
-          setContainers(finalContainers);
+            const reorderedItems = arrayMove(items, oldIndex, newIndex);
+            finalContainers = {
+                ...finalContainers,
+                [originalContainerId]: reorderedItems,
+            };
+            setContainers(finalContainers);
         }
-      }
-    } else {
-      finalContainers = containers;
     }
 
     const batch = writeBatch(db);
 
-    const columnsToUpdate = new Set([activeContainer, overContainer]);
-    columnsToUpdate.forEach(columnId => {
-        finalContainers[columnId].forEach((note, index) => {
+    for (const containerId in finalContainers) {
+        const [groupKey, status] = containerId.split('-');
+        finalContainers[containerId].forEach((note, index) => {
             const noteRef = doc(db, "notes", note.id);
-            batch.update(noteRef, { status: columnId, order: index });
+            const updates: Partial<Omit<Note, 'id'>> = {
+                order: index,
+                status: status as NoteStatus,
+            };
+
+            if (groupBy === 'priority') {
+                updates.priority = groupKey as NotePriority;
+            } else if (groupBy === 'tag') {
+                const originalNote = notes.find(n => n.id === note.id)!;
+                const originalFirstTag = originalNote.tags[0] || 'untagged';
+                
+                if (originalFirstTag !== groupKey) {
+                    let newTags = originalNote.tags.filter(t => t !== originalFirstTag);
+                    if (groupKey !== 'untagged') {
+                        newTags.unshift(groupKey);
+                    }
+                    updates.tags = [...new Set(newTags)];
+                }
+            }
+            batch.update(noteRef, updates);
         });
-    });
+    }
 
     try {
-      await batch.commit();
+        await batch.commit();
+        toast({
+            title: "Board Updated",
+            description: "Your changes have been saved.",
+        });
     } catch (error) {
-      console.error("Error updating board:", error);
-      toast({
-        title: "Update Failed",
-        description: "Could not save board changes. Please try again.",
-        variant: "destructive",
-      });
-      // Here you might want to revert the state to the original notes state from the context
+        console.error("Error updating board:", error);
+        toast({
+            title: "Update Failed",
+            description: "Could not save board changes. Please try again.",
+            variant: "destructive",
+        });
     }
   };
 
@@ -310,6 +398,63 @@ export default function BoardPage() {
     }
   };
 
+  const renderContent = () => {
+    if (isLoading) {
+      return <KanbanBoardSkeleton />;
+    }
+
+    if (notes.length === 0 || (searchTerm && groupedRenderData.length === 0)) {
+        const emptyTitle = searchTerm ? `No results for "${searchTerm}"` : "Your Board is Empty";
+        const emptyDescription = searchTerm ? "Try a different search term to find your notes." : "Create a note to see it here. Tasks will appear in the 'To Do' column by default.";
+        
+        return (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 rounded-lg bg-background border-2 border-dashed">
+                <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
+                    <LayoutGrid className="h-12 w-12" />
+                </div>
+                <h2 className="text-2xl font-semibold mb-2 font-headline">{emptyTitle}</h2>
+                <p className="text-muted-foreground max-w-sm">{emptyDescription}</p>
+            </div>
+        );
+    }
+
+    return (
+        <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+        >
+            <ScrollArea className="flex-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+                <div className="flex flex-col gap-8 pb-4">
+                    {groupedRenderData.map(({ groupKey, groupTitle, columns }) => (
+                        <div key={groupKey}>
+                            {groupBy !== 'none' && (
+                                 <h2 className="text-xl font-bold mb-4 px-1 capitalize">{groupTitle}</h2>
+                            )}
+                            <div className="flex gap-4 sm:gap-6">
+                                {KANBAN_COLUMNS.map(columnId => (
+                                    <KanbanColumn
+                                        key={`${groupKey}-${columnId}`}
+                                        id={`${groupKey}-${columnId}`}
+                                        title={KANBAN_COLUMN_TITLES[columnId]}
+                                        notes={columns[columnId]}
+                                        onCardClick={handleCardClick}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </ScrollArea>
+            <DragOverlay>
+                {activeNote ? <KanbanCardContent note={activeNote} onClick={() => {}} isOverlay /> : null}
+            </DragOverlay>
+        </DndContext>
+    );
+  }
+
   return (
     <>
       <div className="flex h-screen w-full flex-col bg-secondary">
@@ -326,48 +471,23 @@ export default function BoardPage() {
             setSearchTerm={setSearchTerm}
           />
           <main className="flex-1 flex flex-col overflow-hidden bg-background p-4 sm:p-6 transition-all duration-300 ease-in-out">
-            <div className="flex-shrink-0">
-                <h1 className="text-3xl font-bold font-headline mb-6">Kanban Board</h1>
+            <div className="flex items-center justify-between flex-shrink-0 mb-6">
+                <h1 className="text-2xl sm:text-3xl font-bold font-headline">Kanban Board</h1>
+                <Select value={groupBy} onValueChange={(value) => setGroupBy(value as any)}>
+                    <SelectTrigger className="w-[150px] sm:w-[180px]">
+                        <SelectValue placeholder="Group by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="none">No Grouping</SelectItem>
+                        <SelectItem value="priority">By Priority</SelectItem>
+                        <SelectItem value="tag">By Tag</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
             
-            {isLoading ? (
-                <KanbanBoardSkeleton />
-            ) : (notes.length > 0 || searchTerm) ? (
-                <div className="flex-1 min-h-0">
-                    <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCorners}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                        onDragOver={handleDragOver}
-                    >
-                        <div className="h-full flex gap-4 sm:gap-6 overflow-x-auto pb-2">
-                        {KANBAN_COLUMNS.map(columnId => (
-                            <KanbanColumn
-                            key={columnId}
-                            id={columnId}
-                            title={KANBAN_COLUMN_TITLES[columnId]}
-                            notes={containers[columnId]}
-                            onCardClick={handleCardClick}
-                            />
-                        ))}
-                        </div>
-                        <DragOverlay>
-                          {activeNote ? <KanbanCardContent note={activeNote} onClick={() => {}} isOverlay /> : null}
-                        </DragOverlay>
-                    </DndContext>
-                </div>
-            ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 rounded-lg bg-background border-2 border-dashed">
-                    <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
-                        <LayoutGrid className="h-12 w-12" />
-                    </div>
-                    <h2 className="text-2xl font-semibold mb-2 font-headline">Your Board is Empty</h2>
-                    <p className="text-muted-foreground max-w-sm">
-                    Create a note to see it here. Tasks will appear in the 'To Do' column by default.
-                    </p>
-                </div>
-            )}
+            <div className="flex-1 flex flex-col min-h-0">
+               {renderContent()}
+            </div>
           </main>
         </div>
       </div>
