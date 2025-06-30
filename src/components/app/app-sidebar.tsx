@@ -48,6 +48,10 @@ export function AppSidebar({
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     const href = filter === 'all' ? '/' : `/?filter=${filter}`;
     router.push(href);
+    // On mobile, the setActiveFilter prop is wrapped to also close the menu.
+    if (isMobile) {
+      setActiveFilter?.(filter);
+    }
   };
 
   const handleTagClick = (tag: string) => {
