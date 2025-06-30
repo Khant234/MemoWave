@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -5,19 +6,19 @@ import * as React from "react";
 const SIDEBAR_STATE_KEY = "sidebar-collapsed";
 
 export function useSidebar() {
-  // Default to `false` (expanded) for SSR and initial client render to avoid hydration mismatch.
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [isCollapsed, setIsCollapsed] = React.useState<boolean | undefined>(
+    undefined
+  );
 
-  // On component mount, check localStorage for the user's preference.
   React.useEffect(() => {
     const storedValue = localStorage.getItem(SIDEBAR_STATE_KEY);
-    if (storedValue !== null) {
-      setIsCollapsed(JSON.parse(storedValue));
-    }
+    // Default to expanded (false) if no value is stored
+    setIsCollapsed(storedValue ? JSON.parse(storedValue) : false);
   }, []);
 
   const toggleSidebar = () => {
     setIsCollapsed((prevState) => {
+      if (prevState === undefined) return undefined;
       const newState = !prevState;
       // Persist the new state to localStorage.
       localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(newState));

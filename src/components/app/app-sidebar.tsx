@@ -34,10 +34,16 @@ export function AppSidebar({
   onTagClick,
   activeTag,
   isMobile,
-  isCollapsed,
+  isCollapsed: isCollapsedFromProp, // Renamed to avoid confusion
 }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  // When loading from localStorage, isCollapsedFromProp is undefined.
+  // In this "loading" state, we treat the sidebar as collapsed to prevent a flash.
+  const isLoading = isCollapsedFromProp === undefined;
+  const isCollapsed = isLoading ? true : isCollapsedFromProp;
+
 
   const handleFilterClick = (filter: "all" | "archived" | "trash") => {
     const href = filter === 'all' ? '/' : `/?filter=${filter}`;
@@ -185,7 +191,8 @@ export function AppSidebar({
       data-collapsed={isCollapsed}
       className={cn(
         "hidden sm:flex h-full flex-col bg-card z-40 border-r",
-        "transition-[width] duration-300 ease-in-out",
+        // Only apply transition after the initial state is determined
+        !isLoading && "transition-[width] duration-300 ease-in-out",
         isCollapsed ? "w-20" : "w-60"
       )}
     >
