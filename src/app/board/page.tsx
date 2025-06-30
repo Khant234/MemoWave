@@ -223,7 +223,7 @@ export default function BoardPage() {
             tags={allTags}
             setSearchTerm={setSearchTerm}
           />
-          <main className="flex flex-1 flex-col overflow-x-auto overflow-y-hidden bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
+          <main className="flex flex-1 flex-col overflow-y-hidden bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
             <div className="mx-auto max-w-7xl w-full flex flex-col flex-1">
                 <h1 className="text-3xl font-bold font-headline mb-6">Kanban Board</h1>
                 {isLoading ? (
@@ -235,7 +235,7 @@ export default function BoardPage() {
                         onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                     >
-                        <div className="flex flex-1 gap-4 sm:gap-6">
+                        <div className="flex flex-1 gap-4 sm:gap-6 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
                         {KANBAN_COLUMNS.map(columnId => (
                             <KanbanColumn
                             key={columnId}
