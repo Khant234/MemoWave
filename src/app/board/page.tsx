@@ -114,6 +114,11 @@ export default function BoardPage() {
       const overItems = prev[overContainer];
   
       const activeIndex = activeItems.findIndex((item) => item.id === id);
+
+      if (activeIndex === -1) {
+        return prev;
+      }
+
       const overIndex = overItems.findIndex((item) => item.id === overId);
   
       let newIndex;
@@ -144,44 +149,49 @@ export default function BoardPage() {
     const { id } = active;
     if (!over) return;
     const { id: overId } = over;
-  
+
     const activeContainer = findContainer(id as string);
     const overContainer = findContainer(overId as string) || (over.id as NoteStatus);
-  
+
     if (!activeContainer || !overContainer) return;
-  
-    const activeIndex = containers[activeContainer].findIndex((i) => i.id === id);
-    const overIndex = containers[overContainer].findIndex((i) => i.id === overId);
-  
+
     let finalContainers = containers;
     if (activeContainer === overContainer) {
+      const activeIndex = containers[activeContainer].findIndex((i) => i.id === id);
+      const overIndex = containers[overContainer].findIndex((i) => i.id === overId);
+      
       if (activeIndex !== overIndex) {
         const newItems = Array.from(containers[activeContainer]);
         const [movedItem] = newItems.splice(activeIndex, 1);
-        newItems.splice(overIndex, 0, movedItem);
+        if (movedItem) {
+            newItems.splice(overIndex > activeIndex ? overIndex -1 : overIndex, 0, movedItem);
+        }
         finalContainers = { ...containers, [activeContainer]: newItems };
         setContainers(finalContainers);
       }
     } else {
-      // The state is already updated in handleDragOver, we just need the final state
+      // State is updated optimistically in handleDragOver.
+      // We just need to commit the final state.
       finalContainers = { ...containers };
     }
-  
-    // Firestore update
+
     const batch = writeBatch(db);
-    const columnToUpdate = finalContainers[overContainer];
-  
-    columnToUpdate.forEach((note, index) => {
+
+    // Update orders in both source and destination columns
+    if (activeContainer !== overContainer) {
+      finalContainers[activeContainer].forEach((note, index) => {
+        const noteRef = doc(db, "notes", note.id);
+        batch.update(noteRef, { order: index });
+      });
+    }
+
+    finalContainers[overContainer].forEach((note, index) => {
       const noteRef = doc(db, "notes", note.id);
       batch.update(noteRef, { status: overContainer, order: index });
     });
-  
+
     try {
       await batch.commit();
-      toast({
-        title: "Board Updated",
-        description: "Your changes have been saved.",
-      });
     } catch (error) {
       console.error("Error updating board:", error);
       toast({
