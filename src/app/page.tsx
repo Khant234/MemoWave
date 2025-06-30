@@ -154,6 +154,7 @@ export default function Home() {
         status: 'todo',
         priority: 'none',
         dueDate: null,
+        showOnBoard: true,
         order: Date.now(),
       };
 
@@ -356,6 +357,7 @@ export default function Home() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       history: [],
+      showOnBoard: noteToCopy.showOnBoard,
       order: Date.now(),
     };
 

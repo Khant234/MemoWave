@@ -66,6 +66,7 @@ import { NoteVersionHistory } from "./note-version-history";
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
+import { Switch } from "@/components/ui/switch";
 
 
 type NoteEditorProps = {
@@ -108,6 +109,9 @@ export function NoteEditor({
   const [status, setStatus] = React.useState<NoteStatus>('todo');
   const [priority, setPriority] = React.useState<NotePriority>('none');
   const [dueDate, setDueDate] = React.useState<Date | null | undefined>(null);
+  const [showOnBoard, setShowOnBoard] = React.useState(false);
+  const [isKanbanConfirmOpen, setIsKanbanConfirmOpen] = React.useState(false);
+  const prevChecklistLength = React.useRef(0);
 
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
@@ -152,6 +156,7 @@ export function NoteEditor({
     setStatus(data.status || 'todo');
     setPriority(data.priority || 'none');
     setDueDate(data.dueDate ? new Date(data.dueDate) : null);
+    setShowOnBoard(data.showOnBoard || false);
   };
 
   React.useEffect(() => {
@@ -178,7 +183,11 @@ export function NoteEditor({
         setStatus('todo');
         setPriority('none');
         setDueDate(null);
+        setShowOnBoard(false);
       }
+      
+      const currentChecklist = (draft || note)?.checklist || [];
+      prevChecklistLength.current = currentChecklist.length; // Initialize ref
     }
   }, [note, isOpen]);
 
@@ -196,10 +205,11 @@ export function NoteEditor({
         status,
         priority,
         dueDate: dueDate ? dueDate.toISOString() : null,
+        showOnBoard,
       };
       saveDraft(draftNote);
     }
-  }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, saveDraft]);
+  }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, showOnBoard, saveDraft]);
 
   // Effect to check if the form is "dirty" (has unsaved changes)
   React.useEffect(() => {
@@ -219,6 +229,7 @@ export function NoteEditor({
       status,
       priority,
       dueDate: dueDate ? dueDate.toISOString() : undefined,
+      showOnBoard,
     };
   
     if (note) { // Editing an existing note
@@ -233,13 +244,14 @@ export function NoteEditor({
         status: note.status,
         priority: note.priority,
         dueDate: note.dueDate || undefined,
+        showOnBoard: note.showOnBoard || false,
       };
       setIsDirty(JSON.stringify(currentState) !== JSON.stringify(noteState));
     } else { // Creating a new note
-      const isEmpty = !title && !content && tags.length === 0 && checklist.length === 0 && !imageUrl && !generatedAudio;
+      const isEmpty = !title && !content && tags.length === 0 && checklist.length === 0 && !imageUrl && !generatedAudio && !showOnBoard;
       setIsDirty(!isEmpty);
     }
-  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate]);
+  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, showOnBoard]);
 
   // Auto-generate checklist from content after user stops typing
   React.useEffect(() => {
@@ -287,6 +299,18 @@ export function NoteEditor({
     };
   }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems]);
 
+  // Prompt to add to Kanban when first checklist item is added
+  React.useEffect(() => {
+    if (isOpen) {
+        if (checklist.length > 0 && prevChecklistLength.current === 0) {
+            if (!showOnBoard) {
+                setIsKanbanConfirmOpen(true);
+            }
+        }
+        prevChecklistLength.current = checklist.length;
+    }
+  }, [checklist.length, isOpen, showOnBoard]);
+
   const handleSave = () => {
     if (!title && !content) {
       toast({
@@ -314,6 +338,7 @@ export function NoteEditor({
       status,
       priority,
       dueDate: dueDate ? dueDate.toISOString() : null,
+      showOnBoard,
       order: note?.order || Date.now(),
     };
 
@@ -362,6 +387,7 @@ export function NoteEditor({
       status,
       priority,
       dueDate: dueDate ? dueDate.toISOString() : null,
+      showOnBoard,
       order: note?.order || Date.now(),
     };
 
@@ -607,37 +633,46 @@ export function NoteEditor({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select value={status} onValueChange={(value: NoteStatus) => setStatus(value)}>
-                          <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                              {Object.entries(KANBAN_COLUMN_TITLES).map(([key, title]) => (
-                                  <SelectItem key={key} value={key}>{title}</SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
-                  </div>
-                  <div className="space-y-2">
-                      <Label>Priority</Label>
-                      <Select value={priority} onValueChange={(value: NotePriority) => setPriority(value)}>
-                          <SelectTrigger>
-                              <SelectValue placeholder="Select priority" />
-                          </SelectTrigger>
-                          <SelectContent>
-                              {Object.entries(NOTE_PRIORITY_TITLES).map(([key, title]) => (
-                                  <SelectItem key={key} value={key}>{title}</SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
-                  </div>
-                  <div className="space-y-2">
-                      <Label>Due Date</Label>
-                      <DatePicker date={dueDate} setDate={(d) => setDueDate(d)} />
-                  </div>
+              <div className="space-y-4">
+                <Label>Project Settings</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-lg border p-4">
+                    <div className="space-y-2">
+                        <Label>Status</Label>
+                        <Select value={status} onValueChange={(value: NoteStatus) => setStatus(value)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(KANBAN_COLUMN_TITLES).map(([key, title]) => (
+                                    <SelectItem key={key} value={key}>{title}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Priority</Label>
+                        <Select value={priority} onValueChange={(value: NotePriority) => setPriority(value)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(NOTE_PRIORITY_TITLES).map(([key, title]) => (
+                                    <SelectItem key={key} value={key}>{title}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Due Date</Label>
+                        <DatePicker date={dueDate} setDate={(d) => setDueDate(d)} />
+                    </div>
+                    <div className="sm:col-span-3 flex items-center space-x-2 pt-2">
+                      <Switch id="show-on-board" checked={showOnBoard} onCheckedChange={setShowOnBoard} />
+                      <Label htmlFor="show-on-board" className="cursor-pointer">
+                        Show on Kanban Board
+                      </Label>
+                    </div>
+                </div>
               </div>
               
               {imageUrl && (
@@ -863,6 +898,30 @@ export function NoteEditor({
             <Button onClick={handleSaveAsDraftAndClose}>
               Save as Draft
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={isKanbanConfirmOpen} onOpenChange={setIsKanbanConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Track Tasks on Kanban Board?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You've added checklist items. Would you like to add this note to the Kanban board to visualize and track your tasks?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, thanks</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowOnBoard(true);
+                toast({
+                    title: "Added to Kanban",
+                    description: "This note will now appear on your board."
+                })
+              }}
+            >
+              Yes, Add to Board
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

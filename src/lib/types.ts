@@ -29,5 +29,6 @@ export type Note = {
   status: NoteStatus;
   priority: NotePriority;
   dueDate?: string | null;
+  showOnBoard?: boolean;
   order: number;
 };

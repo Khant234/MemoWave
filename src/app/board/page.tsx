@@ -67,6 +67,7 @@ export default function BoardPage() {
 
   React.useEffect(() => {
     const filteredNotes = notes.filter(note => 
+        note.showOnBoard &&
         !note.isArchived && 
         !note.isTrashed &&
         (searchTerm.trim() === "" ||
@@ -417,9 +418,13 @@ export default function BoardPage() {
       return <KanbanBoardSkeleton />;
     }
 
-    if (notes.length === 0 || (searchTerm && groupedRenderData.length === 0)) {
+    const hasNotesOnBoard = groupedRenderData.some(g => g.columns.todo.length > 0 || g.columns.inprogress.length > 0 || g.columns.done.length > 0);
+
+    if (!hasNotesOnBoard) {
         const emptyTitle = searchTerm ? `No results for "${searchTerm}"` : "Your Board is Empty";
-        const emptyDescription = searchTerm ? "Try a different search term to find your notes." : "Create a note to see it here. Tasks will appear in the 'To Do' column by default.";
+        const emptyDescription = searchTerm 
+            ? "Try a different search term to find your notes." 
+            : "Add notes to the board from the editor, or create a new note with a checklist to track it here.";
         
         return (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-6 rounded-lg bg-background border-2 border-dashed">
