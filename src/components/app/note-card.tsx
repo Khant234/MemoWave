@@ -86,7 +86,7 @@ export function NoteCard({
         note.isPinned && "ring-2 ring-primary",
         note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}
-      style={{ borderTop: `4px solid ${note.color}` }}
+      style={{ borderLeft: `4px solid ${note.color}` }}
     >
       <CardHeader className="relative px-4 pt-4 pb-2">
         <CardTitle className="pr-12 text-lg font-bold font-headline line-clamp-2">

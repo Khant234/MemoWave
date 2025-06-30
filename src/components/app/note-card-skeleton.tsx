@@ -11,7 +11,7 @@ export function NoteCardSkeleton() {
       className={cn(
         "overflow-hidden shadow-md flex flex-col"
       )}
-      style={{ borderTop: `4px solid hsl(var(--muted))` }}
+      style={{ borderLeft: `4px solid hsl(var(--muted))` }}
     >
       <CardHeader className="relative px-4 pt-4 pb-2">
         <Skeleton className="h-6 w-3/4" />
