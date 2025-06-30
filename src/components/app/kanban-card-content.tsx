@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { type Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Flag, CheckSquare, CalendarClock } from "lucide-react";
+import { Flag, CheckSquare, CalendarClock, Square } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
@@ -46,9 +46,8 @@ export function KanbanCardContent({ note, isOverlay }: KanbanCardContentProps) {
     }
   }, [note.dueDate]);
     
-  const checklistProgress = note.checklist?.length > 0
-    ? `${note.checklist.filter(i => i.completed).length}/${note.checklist.length}`
-    : '';
+  const checklistItems = note.checklist?.slice(0, 4) || [];
+  const hasMoreChecklistItems = (note.checklist?.length || 0) > 4;
 
   return (
     <Card
@@ -70,6 +69,26 @@ export function KanbanCardContent({ note, isOverlay }: KanbanCardContentProps) {
             </div>
         )}
 
+        {checklistItems.length > 0 && (
+          <div className="space-y-1.5 mb-3">
+            {checklistItems.map(item => (
+              <div key={item.id} className="flex items-start gap-2 text-xs">
+                {item.completed ? (
+                  <CheckSquare className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                ) : (
+                  <Square className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                )}
+                <span className={cn("flex-grow", item.completed && "line-through text-muted-foreground")}>
+                  {item.text}
+                </span>
+              </div>
+            ))}
+            {hasMoreChecklistItems && (
+              <div className="text-xs text-muted-foreground pl-6">...and {note.checklist.length - 4} more</div>
+            )}
+          </div>
+        )}
+
         <div className="flex justify-between items-center text-xs text-muted-foreground">
            <div className="flex items-center gap-3">
               {note.priority !== 'none' && (
@@ -78,17 +97,6 @@ export function KanbanCardContent({ note, isOverlay }: KanbanCardContentProps) {
                       <TooltipContent>
                           <p>{priorityTooltips[note.priority]}</p>
                       </TooltipContent>
-                  </Tooltip>
-              )}
-              {checklistProgress && (
-                  <Tooltip>
-                    <TooltipTrigger className="flex items-center gap-1">
-                        <CheckSquare className="h-4 w-4" />
-                        <span>{checklistProgress}</span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Checklist progress</p>
-                    </TooltipContent>
                   </Tooltip>
               )}
            </div>
