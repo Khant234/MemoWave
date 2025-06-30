@@ -14,7 +14,6 @@ import {
 
 type KanbanCardContentProps = {
   note: Note;
-  onClick: (note: Note) => void;
   listeners?: any;
   isOverlay?: boolean;
 };
@@ -33,13 +32,12 @@ const priorityTooltips: Record<Note['priority'], string> = {
     none: "No Priority",
 };
 
-export function KanbanCardContent({ note, onClick, listeners, isOverlay }: KanbanCardContentProps) {
+export function KanbanCardContent({ note, listeners, isOverlay }: KanbanCardContentProps) {
   return (
     <Card
-      onClick={() => onClick(note)}
       className={cn(
-          "cursor-pointer hover:shadow-lg transition-shadow",
-          isOverlay && "shadow-2xl ring-2 ring-primary"
+          "bg-card hover:shadow-lg transition-shadow",
+          isOverlay ? "shadow-2xl ring-2 ring-primary cursor-grabbing" : "cursor-pointer"
       )}
     >
       <CardHeader className="flex flex-row items-start justify-between p-2 sm:p-3">

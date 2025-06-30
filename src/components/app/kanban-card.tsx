@@ -9,9 +9,10 @@ import { type Note } from "@/lib/types";
 type KanbanCardProps = {
   note: Note;
   onClick: (note: Note) => void;
+  isOverlay?: boolean;
 };
 
-export function KanbanCard({ note, onClick }: KanbanCardProps) {
+export function KanbanCard({ note, onClick, isOverlay }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -24,13 +25,16 @@ export function KanbanCard({ note, onClick }: KanbanCardProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 10 : 'auto',
-    opacity: isDragging ? 0 : 1, // Hide the original item
+    opacity: isDragging ? 0 : 1,
   };
+  
+  if (isOverlay) {
+    return <KanbanCardContent note={note} />;
+  }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
-        <KanbanCardContent note={note} onClick={onClick} listeners={listeners} />
+    <div ref={setNodeRef} style={style} {...attributes} onClick={() => onClick(note)}>
+        <KanbanCardContent note={note} listeners={listeners} />
     </div>
   );
 }

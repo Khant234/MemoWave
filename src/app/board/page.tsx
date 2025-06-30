@@ -170,8 +170,8 @@ export default function BoardPage() {
   );
 
   const findContainer = (id: string | number) => {
-    if (id in containers) {
-      return id as string;
+    if (typeof id === 'string' && id in containers) {
+      return id;
     }
     for (const key in containers) {
       if (containers[key].some(note => note.id === id)) {
@@ -222,12 +222,20 @@ export default function BoardPage() {
       const [, newStatus] = overContainer.split('-');
       movedItem.status = newStatus as NoteStatus;
 
-      const overIndex = overItems.findIndex((item) => item.id === overId);
+      // Check if overId is a container or a card
+      const overIsContainer = overId in prev;
       let newIndex;
-      if (overIndex !== -1) {
-        newIndex = overIndex;
-      } else {
+
+      if(overIsContainer) {
         newIndex = overItems.length;
+      } else {
+        const overIndex = overItems.findIndex((item) => item.id === overId);
+        if (overIndex !== -1) {
+          newIndex = overIndex;
+        } else {
+          // This case should ideally not happen if overId is a card
+          newIndex = overItems.length;
+        }
       }
       
       overItems.splice(newIndex, 0, movedItem);
@@ -241,31 +249,36 @@ export default function BoardPage() {
   };
   
   const handleDragEnd = async (event: DragEndEvent) => {
-    setActiveNote(null);
     const { active, over } = event;
+    setActiveNote(null);
 
     if (!over) return;
 
     const activeId = active.id as string;
-    const overId = over.id as string;
+    const overId = over.id;
 
-    const originalContainerId = findContainer(activeId);
-    let finalContainers = containers;
+    const activeContainerId = findContainer(activeId);
+    const overContainerId = findContainer(overId);
     
-    if (originalContainerId && originalContainerId === findContainer(overId) && activeId !== overId) {
-        const items = finalContainers[originalContainerId];
-        const oldIndex = items.findIndex((i) => i.id === activeId);
-        const newIndex = items.findIndex((i) => i.id === overId);
-
-        if (oldIndex !== -1 && newIndex !== -1) {
-            const reorderedItems = arrayMove(items, oldIndex, newIndex);
-            finalContainers = {
-                ...finalContainers,
-                [originalContainerId]: reorderedItems,
-            };
-            setContainers(finalContainers);
-        }
+    if (!activeContainerId || !overContainerId) {
+        return;
     }
+
+    let finalContainers = containers;
+    if (activeContainerId === overContainerId) {
+      const items = finalContainers[activeContainerId];
+      const oldIndex = items.findIndex((i) => i.id === activeId);
+      const newIndex = items.findIndex((i) => i.id === overId);
+
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        finalContainers = {
+            ...finalContainers,
+            [activeContainerId]: arrayMove(items, oldIndex, newIndex),
+        };
+      }
+    }
+    
+    setContainers(finalContainers);
 
     const batch = writeBatch(db);
 
@@ -282,10 +295,11 @@ export default function BoardPage() {
                 updates.priority = groupKey as NotePriority;
             } else if (groupBy === 'tag') {
                 const originalNote = notes.find(n => n.id === note.id)!;
-                const originalFirstTag = originalNote.tags[0] || 'untagged';
+                // Find the original groupKey for the note before this drag operation
+                const originalGroupKey = originalNote.tags[0] || 'untagged';
                 
-                if (originalFirstTag !== groupKey) {
-                    let newTags = originalNote.tags.filter(t => t !== originalFirstTag);
+                if (originalGroupKey !== groupKey) {
+                    let newTags = originalNote.tags.filter(t => t !== originalGroupKey);
                     if (groupKey !== 'untagged') {
                         newTags.unshift(groupKey);
                     }
@@ -449,7 +463,7 @@ export default function BoardPage() {
                 </div>
             </ScrollArea>
             <DragOverlay>
-                {activeNote ? <KanbanCardContent note={activeNote} onClick={() => {}} isOverlay /> : null}
+                {activeNote ? <KanbanCardContent note={activeNote} isOverlay /> : null}
             </DragOverlay>
         </DndContext>
     );
