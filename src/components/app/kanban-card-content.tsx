@@ -6,16 +6,18 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { type Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Flag, CheckSquare, CalendarClock, Square } from "lucide-react";
+import { Flag, CheckSquare, CalendarClock, Square, GripVertical } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
   } from "@/components/ui/tooltip";
+import type { DraggableSyntheticListeners } from "@dnd-kit/core";
 
 type KanbanCardContentProps = {
   note: Note;
   isOverlay?: boolean;
+  dragHandleListeners?: DraggableSyntheticListeners;
 };
 
 const priorityIcons: Record<Note['priority'], React.ReactNode> = {
@@ -32,7 +34,7 @@ const priorityTooltips: Record<Note['priority'], string> = {
     none: "No Priority",
 };
 
-export function KanbanCardContent({ note, isOverlay }: KanbanCardContentProps) {
+export function KanbanCardContent({ note, isOverlay, dragHandleListeners }: KanbanCardContentProps) {
   const [formattedDueDate, setFormattedDueDate] = React.useState('');
 
   React.useEffect(() => {
@@ -49,16 +51,30 @@ export function KanbanCardContent({ note, isOverlay }: KanbanCardContentProps) {
   const checklistItems = note.checklist?.slice(0, 4) || [];
   const hasMoreChecklistItems = (note.checklist?.length || 0) > 4;
 
+  const handleDragHandleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <Card
       className={cn(
           "bg-card hover:shadow-lg transition-shadow duration-200",
-          isOverlay ? "shadow-2xl ring-2 ring-primary cursor-grabbing" : "cursor-grab"
+          isOverlay ? "shadow-2xl ring-2 ring-primary" : "cursor-pointer"
       )}
       style={{ borderLeft: `4px solid ${note.color}` }}
     >
       <CardHeader className="flex flex-row items-start justify-between p-3">
         <CardTitle className="text-sm font-medium line-clamp-3 pr-2">{note.title || "Untitled"}</CardTitle>
+        {!isOverlay && (
+            <div
+                {...dragHandleListeners}
+                onClick={handleDragHandleClick}
+                className="flex-shrink-0 cursor-grab p-1 -mr-1 -mt-1 touch-none"
+                aria-label="Drag handle"
+            >
+                <GripVertical className="h-5 w-5 text-muted-foreground" />
+            </div>
+        )}
       </CardHeader>
       <CardContent className="p-3 pt-1">
         {note.tags.length > 0 && (
