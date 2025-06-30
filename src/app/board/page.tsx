@@ -440,12 +440,12 @@ export default function BoardPage() {
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
         >
-            <ScrollArea className="flex-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-                <div className="flex flex-col gap-8 pb-4">
+            <div className="flex-1 overflow-x-auto pb-4">
+                <div className="inline-flex flex-col gap-8 h-full">
                     {groupedRenderData.map(({ groupKey, groupTitle, columns }) => (
-                        <div key={groupKey}>
+                        <div key={groupKey} className="flex flex-col">
                             {groupBy !== 'none' && (
-                                 <h2 className="text-xl font-bold mb-4 px-1 capitalize">{groupTitle}</h2>
+                                <h2 className="text-xl font-bold mb-4 px-1 capitalize">{groupTitle}</h2>
                             )}
                             <div className="flex gap-4 sm:gap-6">
                                 {KANBAN_COLUMNS.map(columnId => (
@@ -461,7 +461,7 @@ export default function BoardPage() {
                         </div>
                     ))}
                 </div>
-            </ScrollArea>
+            </div>
             <DragOverlay>
                 {activeNote ? <KanbanCardContent note={activeNote} isOverlay /> : null}
             </DragOverlay>
