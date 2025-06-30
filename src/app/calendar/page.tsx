@@ -20,6 +20,8 @@ import { ListChecks } from "lucide-react";
 import { NoteViewer } from "@/components/app/note-viewer";
 import { NoteEditor } from "@/components/app/note-editor";
 import { CalendarPageSkeleton } from "@/components/app/calendar-page-skeleton";
+import { NOTE_PRIORITIES } from "@/lib/constants";
+import { Separator } from "@/components/ui/separator";
 
 export default function CalendarPage() {
     const { notes, isLoading, allTags } = useNotes();
@@ -49,14 +51,21 @@ export default function CalendarPage() {
     }, [notes, searchTerm]);
     
     const daysWithNotes = React.useMemo(() => {
+        // Highlight days that have any tasks, regardless of completion status.
         return notesWithDueDate.map(note => new Date(note.dueDate!));
     }, [notesWithDueDate]);
 
-    const notesForSelectedDay = React.useMemo(() => {
-        if (!selectedDate) return [];
-        return notesWithDueDate
+    const { pendingTasks, completedTasks } = React.useMemo(() => {
+        if (!selectedDate) return { pendingTasks: [], completedTasks: [] };
+        
+        const tasksForDay = notesWithDueDate
             .filter(note => isSameDay(new Date(note.dueDate!), selectedDate))
-            .sort((a,b) => (a.priority > b.priority ? -1 : 1)); // Simplified sort
+            .sort((a,b) => NOTE_PRIORITIES.indexOf(b.priority) - NOTE_PRIORITIES.indexOf(a.priority));
+    
+        const pending = tasksForDay.filter(note => note.status !== 'done');
+        const completed = tasksForDay.filter(note => note.status === 'done');
+        
+        return { pendingTasks: pending, completedTasks: completed };
     }, [notesWithDueDate, selectedDate]);
     
     const handleViewNote = (note: Note) => {
@@ -184,22 +193,41 @@ export default function CalendarPage() {
                                         <Card>
                                             <ScrollArea className="h-[60vh]">
                                                 <CardContent className="p-4">
-                                                    {notesForSelectedDay.length > 0 ? (
-                                                        <div className="space-y-4">
-                                                            {notesForSelectedDay.map(note => (
-                                                                <div key={note.id} onClick={() => handleViewNote(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4" style={{borderColor: note.color}}>
-                                                                    <h3 className="font-semibold">{note.title}</h3>
-                                                                    <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
-                                                                        <Badge variant={note.priority === 'high' ? 'destructive' : 'outline'}>{note.priority}</Badge>
-                                                                        <span>{note.status}</span>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
+                                                    {pendingTasks.length === 0 && completedTasks.length === 0 ? (
                                                         <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground h-full">
                                                             <ListChecks className="h-10 w-10 mb-4" />
                                                             <p>No tasks due on this day.</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-4">
+                                                            {pendingTasks.length > 0 && (
+                                                                <div className="space-y-4">
+                                                                    {pendingTasks.map(note => (
+                                                                        <div key={note.id} onClick={() => handleViewNote(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4" style={{borderColor: note.color}}>
+                                                                            <h3 className="font-semibold">{note.title}</h3>
+                                                                            <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
+                                                                                <Badge variant={note.priority === 'high' ? 'destructive' : 'outline'}>{note.priority}</Badge>
+                                                                                <Badge variant="outline">{note.status}</Badge>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            {pendingTasks.length > 0 && completedTasks.length > 0 && <Separator className="my-4" />}
+                                                            {completedTasks.length > 0 && (
+                                                                <div className="space-y-4">
+                                                                    <h4 className="text-sm font-medium text-muted-foreground px-1">Completed</h4>
+                                                                    {completedTasks.map(note => (
+                                                                        <div key={note.id} onClick={() => handleViewNote(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 opacity-70" style={{borderColor: note.color}}>
+                                                                            <h3 className="font-semibold line-through">{note.title}</h3>
+                                                                            <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
+                                                                                <Badge variant="outline">{note.priority}</Badge>
+                                                                                <Badge variant="secondary">Done</Badge>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </CardContent>
