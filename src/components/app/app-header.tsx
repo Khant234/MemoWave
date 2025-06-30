@@ -74,6 +74,13 @@ export function AppHeader({
     }
   }, [isMobile, isMobileSearchOpen]);
 
+  const handleMobileMenuOpenChange = (open: boolean) => {
+    if (open) {
+      playClickSound();
+    }
+    setIsMobileMenuOpen(open);
+  }
+
   if (isMobile && isMobileSearchOpen) {
     return (
         <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-card px-4">
@@ -105,9 +112,9 @@ export function AppHeader({
             <span className="sr-only">Toggle Menu</span>
         </Button>
          {/* Mobile Menu Toggle */}
-        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <Sheet open={isMobileMenuOpen} onOpenChange={handleMobileMenuOpenChange}>
           <SheetTrigger asChild>
-            <Button size="icon" variant="ghost" className="sm:hidden h-10 w-10" onClick={playClickSound}>
+            <Button size="icon" variant="ghost" className="sm:hidden h-10 w-10">
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle Menu</span>
             </Button>

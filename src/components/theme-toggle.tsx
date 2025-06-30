@@ -28,8 +28,14 @@ export function ThemeToggle() {
     setTheme(theme);
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      playClickSound();
+    }
+  };
+
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={handleOpenChange}>
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
