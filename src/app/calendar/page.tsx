@@ -121,8 +121,13 @@ export default function CalendarPage() {
     }, [notesWithDueDate, selectedDate]);
     
     const handleCardClick = (note: Note) => {
-        setViewingChecklistNote(note);
-        setIsChecklistViewerOpen(true);
+        if (note.checklist && note.checklist.length > 0) {
+            setViewingChecklistNote(note);
+            setIsChecklistViewerOpen(true);
+        } else {
+            setViewingNote(note);
+            setIsViewerOpen(true);
+        }
     };
 
     const handleViewFullNote = (note: Note) => {
