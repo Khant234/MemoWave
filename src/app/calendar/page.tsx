@@ -16,7 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ListChecks } from "lucide-react";
+import { ListChecks, ChevronDown, ChevronRight } from "lucide-react";
 import { NoteViewer } from "@/components/app/note-viewer";
 import { NoteEditor } from "@/components/app/note-editor";
 import { CalendarPageSkeleton } from "@/components/app/calendar-page-skeleton";
@@ -24,6 +24,7 @@ import { NOTE_PRIORITIES, KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/l
 import { Separator } from "@/components/ui/separator";
 import { ChecklistViewer } from "@/components/app/checklist-viewer";
 import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 
 const CalendarTaskItem = ({ note, isOverdue = false, onClick }: { note: Note, isOverdue?: boolean, onClick: (note: Note) => void }) => {
@@ -267,14 +268,19 @@ export default function CalendarPage() {
                                                             <p className="font-medium">No tasks for this day.</p>
                                                         </div>
                                                     ) : (
-                                                        <div className="space-y-6">
+                                                        <div className="space-y-4">
                                                             {overdueTasks.length > 0 && (
-                                                                <div className="space-y-3">
-                                                                    <h4 className="text-base font-semibold text-destructive px-1 font-headline">Overdue</h4>
-                                                                    {overdueTasks.map(note => (
-                                                                        <CalendarTaskItem key={note.id} note={note} isOverdue onClick={handleCardClick} />
-                                                                    ))}
-                                                                </div>
+                                                                <Collapsible defaultOpen>
+                                                                    <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg p-3 text-left font-headline text-base font-semibold text-destructive hover:bg-destructive/10">
+                                                                        <span>Overdue ({overdueTasks.length})</span>
+                                                                        <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
+                                                                    </CollapsibleTrigger>
+                                                                    <CollapsibleContent className="pt-3 space-y-3">
+                                                                        {overdueTasks.map(note => (
+                                                                            <CalendarTaskItem key={note.id} note={note} isOverdue onClick={handleCardClick} />
+                                                                        ))}
+                                                                    </CollapsibleContent>
+                                                                </Collapsible>
                                                             )}
                                 
                                                             {(pendingTasks.length > 0 || completedTasks.length > 0) && (
@@ -285,10 +291,26 @@ export default function CalendarPage() {
                                                                     {pendingTasks.map(note => (
                                                                         <CalendarTaskItem key={note.id} note={note} onClick={handleCardClick} />
                                                                     ))}
+                                                                    
+                                                                    {pendingTasks.length === 0 && completedTasks.length > 0 && (
+                                                                        <p className="px-1 text-sm text-muted-foreground italic">All tasks for this day are complete!</p>
+                                                                    )}
+
                                                                     {pendingTasks.length > 0 && completedTasks.length > 0 && <Separator className="my-3" />}
-                                                                    {completedTasks.map(note => (
-                                                                        <CalendarTaskItem key={note.id} note={note} onClick={handleCardClick} />
-                                                                    ))}
+                                                                    
+                                                                    {completedTasks.length > 0 && (
+                                                                        <Collapsible>
+                                                                            <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md p-2 text-md font-semibold text-muted-foreground transition-colors hover:bg-secondary data-[state=open]:bg-secondary">
+                                                                                <ChevronRight className="h-5 w-5 transition-transform [&[data-state=open]]:rotate-90" />
+                                                                                <span>Completed ({completedTasks.length})</span>
+                                                                            </CollapsibleTrigger>
+                                                                            <CollapsibleContent className="pt-3 space-y-3">
+                                                                                {completedTasks.map(note => (
+                                                                                    <CalendarTaskItem key={note.id} note={note} onClick={handleCardClick} />
+                                                                                ))}
+                                                                            </CollapsibleContent>
+                                                                        </Collapsible>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>
