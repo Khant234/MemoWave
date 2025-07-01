@@ -192,14 +192,14 @@ export default function CalendarPage() {
                         setSearchTerm={setSearchTerm}
                     />
                     <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 transition-all duration-300 ease-in-out">
-                        <div className="mx-auto max-w-6xl">
+                        <div className="mx-auto max-w-7xl">
                             <h1 className="text-3xl font-bold font-headline mb-6">Calendar</h1>
                             {isLoading ? (
                                 <CalendarPageSkeleton />
                             ) : (
-                                <div className="flex flex-col lg:flex-row justify-center gap-8 items-start">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                                     <Card className="shadow-sm">
-                                        <CardContent className="p-2 sm:p-4">
+                                        <CardContent className="p-0 flex justify-center">
                                             <Calendar
                                                 mode="single"
                                                 selected={selectedDate}
@@ -209,12 +209,12 @@ export default function CalendarPage() {
                                             />
                                         </CardContent>
                                     </Card>
-                                    <div className="w-full lg:w-[400px] flex-shrink-0">
+                                    <div className="flex-shrink-0">
                                         <h2 className="text-xl font-semibold mb-4 font-headline">
                                             Tasks for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}
                                         </h2>
                                         <Card className="shadow-sm">
-                                            <ScrollArea className="h-[470px]">
+                                            <ScrollArea className="h-[400px]">
                                                 <CardContent className="p-4">
                                                     {pendingTasks.length === 0 && completedTasks.length === 0 ? (
                                                         <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground h-full">
@@ -226,7 +226,7 @@ export default function CalendarPage() {
                                                             {pendingTasks.length > 0 && (
                                                                 <div className="space-y-3">
                                                                     {pendingTasks.map(note => (
-                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-background transition-colors" style={{borderColor: note.color}}>
+                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-card border transition-colors" style={{borderColor: note.color}}>
                                                                             <h3 className="font-semibold">{note.title}</h3>
                                                                             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
                                                                                 <div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ export default function CalendarPage() {
                                                                 <div className="space-y-3">
                                                                     <h4 className="text-sm font-medium text-muted-foreground px-1">Completed</h4>
                                                                     {completedTasks.map(note => (
-                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-background opacity-60 transition-colors" style={{borderColor: note.color}}>
+                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-card border opacity-60 transition-colors" style={{borderColor: note.color}}>
                                                                             <h3 className="font-semibold line-through">{note.title}</h3>
                                                                             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
                                                                                 <div className="flex items-center gap-2">

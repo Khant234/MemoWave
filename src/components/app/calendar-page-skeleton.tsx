@@ -6,8 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export function CalendarPageSkeleton() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <Card className="lg:col-span-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <Card>
         <CardContent className="p-2 sm:p-4">
           <div className="flex flex-col items-center">
             <div className="flex justify-between w-full p-3">
@@ -34,7 +34,7 @@ export function CalendarPageSkeleton() {
           </div>
         </CardContent>
       </Card>
-      <div className="lg:col-span-1">
+      <div>
         <Skeleton className="h-7 w-48 mb-4" />
         <Card>
           <CardContent className="p-4 space-y-4">
