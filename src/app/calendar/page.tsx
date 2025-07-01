@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, isBefore, startOfDay } from 'date-fns';
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useNotes } from "@/contexts/notes-context";
@@ -23,6 +23,41 @@ import { CalendarPageSkeleton } from "@/components/app/calendar-page-skeleton";
 import { NOTE_PRIORITIES, KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
 import { Separator } from "@/components/ui/separator";
 import { ChecklistViewer } from "@/components/app/checklist-viewer";
+import { cn } from "@/lib/utils";
+
+
+const CalendarTaskItem = ({ note, isOverdue = false, onClick }: { note: Note, isOverdue?: boolean, onClick: (note: Note) => void }) => {
+    const isCompleted = note.status === 'done';
+    
+    return (
+        <div 
+            onClick={() => onClick(note)} 
+            className={cn(
+                "block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-card border transition-colors", 
+                isCompleted && "opacity-60",
+                isOverdue && !isCompleted && "border-destructive/70 bg-destructive/5 hover:bg-destructive/10"
+            )} 
+            style={{borderColor: isOverdue && !isCompleted ? 'hsl(var(--destructive))' : note.color}}
+        >
+            <h3 className={cn("font-semibold", isCompleted && "line-through")}>{note.title}</h3>
+            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                    {isOverdue && !isCompleted && (
+                        <Badge variant="destructive">Overdue</Badge>
+                    )}
+                    {note.priority !== 'none' && <Badge variant={note.priority === 'high' && !isCompleted ? 'destructive' : 'outline'}>{NOTE_PRIORITY_TITLES[note.priority]}</Badge>}
+                    <Badge variant={isCompleted ? "secondary" : "outline"}>{KANBAN_COLUMN_TITLES[note.status]}</Badge>
+                </div>
+                {note.checklist.length > 0 && (
+                    <div className="flex items-center gap-1">
+                        <ListChecks className="h-3 w-3" />
+                        <span>{note.checklist.filter(i => i.completed).length}/{note.checklist.length}</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default function CalendarPage() {
     const { notes, isLoading, allTags } = useNotes();
@@ -41,7 +76,7 @@ export default function CalendarPage() {
     const [viewingChecklistNote, setViewingChecklistNote] = React.useState<Note | null>(null);
 
     const notesWithDueDate = React.useMemo(() => {
-        const filteredNotes = notes.filter(note => 
+        return notes.filter(note => 
             note.dueDate && 
             !note.isTrashed && 
             !note.isArchived &&
@@ -50,25 +85,38 @@ export default function CalendarPage() {
                 note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
         );
-        return filteredNotes;
     }, [notes, searchTerm]);
     
     const daysWithNotes = React.useMemo(() => {
-        // Highlight days that have any tasks, regardless of completion status.
         return notesWithDueDate.map(note => new Date(note.dueDate!));
     }, [notesWithDueDate]);
 
-    const { pendingTasks, completedTasks } = React.useMemo(() => {
-        if (!selectedDate) return { pendingTasks: [], completedTasks: [] };
+    const { overdueTasks, pendingTasks, completedTasks } = React.useMemo(() => {
+        if (!selectedDate) return { overdueTasks: [], pendingTasks: [], completedTasks: [] };
         
+        const today = startOfDay(new Date());
+        const selectedDay = startOfDay(selectedDate);
+        
+        const showOverdue = !isBefore(selectedDay, today);
+
         const tasksForDay = notesWithDueDate
-            .filter(note => isSameDay(new Date(note.dueDate!), selectedDate))
+            .filter(note => isSameDay(new Date(note.dueDate!), selectedDay))
             .sort((a,b) => NOTE_PRIORITIES.indexOf(b.priority) - NOTE_PRIORITIES.indexOf(a.priority));
-    
+
+        let overdue = [];
+        if (showOverdue) {
+            overdue = notesWithDueDate
+                .filter(note => {
+                    const dueDate = startOfDay(new Date(note.dueDate!));
+                    return isBefore(dueDate, today) && note.status !== 'done';
+                })
+                .sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+        }
+        
         const pending = tasksForDay.filter(note => note.status !== 'done');
         const completed = tasksForDay.filter(note => note.status === 'done');
-        
-        return { pendingTasks: pending, completedTasks: completed };
+
+        return { overdueTasks: overdue, pendingTasks: pending, completedTasks: completed };
     }, [notesWithDueDate, selectedDate]);
     
     const handleCardClick = (note: Note) => {
@@ -197,8 +245,8 @@ export default function CalendarPage() {
                             {isLoading ? (
                                 <CalendarPageSkeleton />
                             ) : (
-                                <div className="flex flex-col lg:flex-row gap-8 items-start">
-                                    <Card className="shadow-sm w-full lg:w-auto">
+                                <div className="flex flex-col lg:flex-row gap-6 items-start">
+                                    <Card className="shadow-sm w-full lg:w-auto self-start">
                                         <CardContent className="p-0 flex justify-center">
                                             <Calendar
                                                 mode="single"
@@ -210,60 +258,36 @@ export default function CalendarPage() {
                                         </CardContent>
                                     </Card>
                                     <div className="flex-1 w-full">
-                                        <h2 className="text-xl font-semibold mb-4 font-headline">
-                                            Tasks for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}
-                                        </h2>
                                         <Card className="shadow-sm">
-                                            <ScrollArea className="h-[400px]">
+                                            <ScrollArea className="h-[520px]">
                                                 <CardContent className="p-4">
-                                                    {pendingTasks.length === 0 && completedTasks.length === 0 ? (
+                                                    {overdueTasks.length === 0 && pendingTasks.length === 0 && completedTasks.length === 0 ? (
                                                         <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground h-full">
                                                             <ListChecks className="h-10 w-10 mb-4" />
-                                                            <p className="font-medium">No tasks due on this day.</p>
+                                                            <p className="font-medium">No tasks for this day.</p>
                                                         </div>
                                                     ) : (
-                                                        <div className="space-y-4">
-                                                            {pendingTasks.length > 0 && (
+                                                        <div className="space-y-6">
+                                                            {overdueTasks.length > 0 && (
                                                                 <div className="space-y-3">
-                                                                    {pendingTasks.map(note => (
-                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-card border transition-colors" style={{borderColor: note.color}}>
-                                                                            <h3 className="font-semibold">{note.title}</h3>
-                                                                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    {note.priority !== 'none' && <Badge variant={note.priority === 'high' ? 'destructive' : 'outline'}>{NOTE_PRIORITY_TITLES[note.priority]}</Badge>}
-                                                                                    <Badge variant="outline">{KANBAN_COLUMN_TITLES[note.status]}</Badge>
-                                                                                </div>
-                                                                                {note.checklist.length > 0 && (
-                                                                                    <div className="flex items-center gap-1">
-                                                                                        <ListChecks className="h-3 w-3" />
-                                                                                        <span>{note.checklist.filter(i => i.completed).length}/{note.checklist.length}</span>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
+                                                                    <h4 className="text-base font-semibold text-destructive px-1 font-headline">Overdue</h4>
+                                                                    {overdueTasks.map(note => (
+                                                                        <CalendarTaskItem key={note.id} note={note} isOverdue onClick={handleCardClick} />
                                                                     ))}
                                                                 </div>
                                                             )}
-                                                            {pendingTasks.length > 0 && completedTasks.length > 0 && <Separator className="my-4" />}
-                                                            {completedTasks.length > 0 && (
+                                
+                                                            {(pendingTasks.length > 0 || completedTasks.length > 0) && (
                                                                 <div className="space-y-3">
-                                                                    <h4 className="text-sm font-medium text-muted-foreground px-1">Completed</h4>
+                                                                    <h4 className="text-base font-semibold text-foreground px-1 font-headline">
+                                                                        Tasks for {selectedDate ? format(selectedDate, 'MMMM d') : ''}
+                                                                    </h4>
+                                                                    {pendingTasks.map(note => (
+                                                                        <CalendarTaskItem key={note.id} note={note} onClick={handleCardClick} />
+                                                                    ))}
+                                                                    {pendingTasks.length > 0 && completedTasks.length > 0 && <Separator className="my-3" />}
                                                                     {completedTasks.map(note => (
-                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-card border opacity-60 transition-colors" style={{borderColor: note.color}}>
-                                                                            <h3 className="font-semibold line-through">{note.title}</h3>
-                                                                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    {note.priority !== 'none' && <Badge variant='outline'>{NOTE_PRIORITY_TITLES[note.priority]}</Badge>}
-                                                                                    <Badge variant="secondary">Done</Badge>
-                                                                                </div>
-                                                                                {note.checklist.length > 0 && (
-                                                                                    <div className="flex items-center gap-1">
-                                                                                        <ListChecks className="h-3 w-3" />
-                                                                                        <span>{note.checklist.filter(i => i.completed).length}/{note.checklist.length}</span>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
+                                                                        <CalendarTaskItem key={note.id} note={note} onClick={handleCardClick} />
                                                                     ))}
                                                                 </div>
                                                             )}
