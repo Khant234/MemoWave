@@ -61,6 +61,7 @@ export default function BoardPage() {
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
+  const isBoardUpdating = React.useRef(false);
   const [activeNote, setActiveNote] = React.useState<Note | null>(null);
   const [groupBy, setGroupBy] = React.useState<'none' | 'tag' | 'priority'>('none');
   const [isChecklistViewerOpen, setIsChecklistViewerOpen] = React.useState(false);
@@ -68,6 +69,11 @@ export default function BoardPage() {
 
 
   React.useEffect(() => {
+    if (isBoardUpdating.current) {
+        // Don't derive state from props while we are in the middle of a drag-and-drop update.
+        // The optimistic update in handleDragEnd is the source of truth during this time.
+        return;
+    }
     const filteredNotes = notes.filter(note => 
         note.showOnBoard &&
         !note.isArchived && 
@@ -190,6 +196,7 @@ export default function BoardPage() {
     if (note) {
       setActiveNote(note);
     }
+    isBoardUpdating.current = true;
     document.body.style.cursor = "grabbing";
   };
   
@@ -199,6 +206,7 @@ export default function BoardPage() {
     setActiveNote(null);
   
     if (!over || active.id === over.id) {
+      isBoardUpdating.current = false;
       return;
     }
   
@@ -213,22 +221,23 @@ export default function BoardPage() {
     }
   
     if (!activeContainerId || !overContainerId) {
+      isBoardUpdating.current = false;
       return;
     }
   
-    let finalContainers = JSON.parse(JSON.stringify(containers));
+    const newContainers = JSON.parse(JSON.stringify(containers));
   
     if (activeContainerId === overContainerId) {
-      const items = finalContainers[activeContainerId];
+      const items = newContainers[activeContainerId];
       const oldIndex = items.findIndex((i: Note) => i.id === activeId);
       const newIndex = items.findIndex((i: Note) => i.id === overId);
   
       if (oldIndex !== -1 && newIndex !== -1) {
-        finalContainers[activeContainerId] = arrayMove(items, oldIndex, newIndex);
+        newContainers[activeContainerId] = arrayMove(items, oldIndex, newIndex);
       }
     } else {
-      const activeItems = finalContainers[activeContainerId];
-      const overItems = finalContainers[overContainerId];
+      const activeItems = newContainers[activeContainerId];
+      const overItems = newContainers[overContainerId];
       const activeIndex = activeItems.findIndex((i: Note) => i.id === activeId);
   
       if (activeIndex === -1) return;
@@ -240,12 +249,12 @@ export default function BoardPage() {
       overItems.splice(newIndex, 0, movedItem);
     }
   
-    setContainers(finalContainers);
+    setContainers(newContainers);
   
     const batch = writeBatch(db);
-    for (const containerId in finalContainers) {
+    for (const containerId in newContainers) {
       const [groupKey, status] = containerId.split('-');
-      finalContainers[containerId].forEach((note: Note, index: number) => {
+      newContainers[containerId].forEach((note: Note, index: number) => {
         const noteRef = doc(db, "notes", note.id);
         const updates: Partial<Omit<Note, 'id'>> = {
           order: index,
@@ -284,6 +293,8 @@ export default function BoardPage() {
         description: "Could not save board changes. Please try again.",
         variant: "destructive",
       });
+    } finally {
+        isBoardUpdating.current = false;
     }
   };
 
