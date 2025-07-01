@@ -28,7 +28,7 @@ import { NoteViewer } from "@/components/app/note-viewer";
 import { NoteEditor } from "@/components/app/note-editor";
 import { useToast } from "@/hooks/use-toast";
 import { KanbanBoardSkeleton } from "@/components/app/kanban-board-skeleton";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, GripVertical } from "lucide-react";
 import { useGamification } from "@/contexts/gamification-context";
 import { KanbanCardContent } from "@/components/app/kanban-card-content";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -380,7 +380,19 @@ export default function BoardPage() {
           ? { ...item, completed: !item.completed }
           : item
       );
-      updateNoteField(noteId, { checklist: updatedChecklist });
+
+      const allItemsComplete = updatedChecklist.length > 0 && updatedChecklist.every(item => item.completed);
+      const updates: Partial<Omit<Note, 'id'>> = { checklist: updatedChecklist };
+
+      if (allItemsComplete && note.status !== 'done') {
+        updates.status = 'done';
+        toast({
+          title: `Moved to "Done"`,
+          description: `"${note.title}" was automatically moved to the Done column.`,
+        });
+      }
+
+      updateNoteField(noteId, updates);
     }
   };
 

@@ -119,7 +119,19 @@ export default function CalendarPage() {
               ? { ...item, completed: !item.completed }
               : item
           );
-          updateNoteField(noteId, { checklist: updatedChecklist });
+          
+          const allItemsComplete = updatedChecklist.length > 0 && updatedChecklist.every(item => item.completed);
+          const updates: Partial<Omit<Note, 'id'>> = { checklist: updatedChecklist };
+    
+          if (allItemsComplete && note.status !== 'done') {
+            updates.status = 'done';
+            toast({
+                title: `Task Complete!`,
+                description: `"${note.title}" has been marked as done.`,
+            });
+          }
+
+          updateNoteField(noteId, updates);
         }
     };
 

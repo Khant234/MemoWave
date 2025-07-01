@@ -58,9 +58,20 @@ export default function TodosPage() {
           : item
       );
       
+      const allItemsComplete = updatedChecklist.length > 0 && updatedChecklist.every(item => item.completed);
+      const updates: Partial<Omit<Note, 'id'>> = { checklist: updatedChecklist };
+
+      if (allItemsComplete && note.status !== 'done') {
+        updates.status = 'done';
+        toast({
+            title: `List Complete!`,
+            description: `All items in "${note.title}" are done. The note status has been updated.`,
+        });
+      }
+
       try {
         const noteRef = doc(db, "notes", noteId);
-        await updateDoc(noteRef, { checklist: updatedChecklist });
+        await updateDoc(noteRef, updates);
       } catch (error) {
         console.error("Error updating checklist:", error);
         toast({

@@ -271,7 +271,19 @@ export default function Home() {
           ? { ...item, completed: !item.completed }
           : item
       );
-      updateNoteField(noteId, { checklist: updatedChecklist });
+
+      const allItemsComplete = updatedChecklist.length > 0 && updatedChecklist.every(item => item.completed);
+      const updates: Partial<Omit<Note, 'id'>> = { checklist: updatedChecklist };
+
+      if (allItemsComplete && note.status !== 'done') {
+        updates.status = 'done';
+        toast({
+          title: `List Complete!`,
+          description: `All items in "${note.title}" are done. The note status has been updated.`,
+        });
+      }
+      
+      updateNoteField(noteId, updates);
     }
   };
 
