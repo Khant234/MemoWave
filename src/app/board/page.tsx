@@ -250,6 +250,51 @@ export default function BoardPage() {
     }
   
     setContainers(newContainers);
+    
+    // This part is crucial for optimistic UI update. We regenerate the render data
+    // from the new optimistic `containers` state, instead of waiting for the useEffect.
+    const groupKeys: Record<string, string> = {}; 
+    if (groupBy === 'none') {
+        groupKeys['all'] = 'All Tasks';
+    } else if (groupBy === 'tag') {
+        const uniqueTags = ['untagged', ...allTags];
+        uniqueTags.forEach(tag => {
+            const title = tag === 'untagged' ? 'Untagged' : tag;
+            groupKeys[tag] = title;
+        });
+    } else if (groupBy === 'priority') {
+        NOTE_PRIORITIES.forEach(priority => {
+            groupKeys[priority] = NOTE_PRIORITY_TITLES[priority];
+        });
+    }
+
+    const newGroupedRenderData = Object.entries(groupKeys)
+        .map(([groupKey, groupTitle]) => ({
+            groupTitle,
+            groupKey,
+            columns: {
+                todo: newContainers[`${groupKey}-todo`] || [],
+                inprogress: newContainers[`${groupKey}-inprogress`] || [],
+                done: newContainers[`${groupKey}-done`] || [],
+            }
+        }))
+        .filter(group => 
+            group.columns.todo.length > 0 || 
+            group.columns.inprogress.length > 0 || 
+            group.columns.done.length > 0
+        )
+        .sort((a, b) => {
+            if (groupBy === 'priority') {
+                return NOTE_PRIORITIES.indexOf(a.groupKey as NotePriority) - NOTE_PRIORITIES.indexOf(b.groupKey as NotePriority);
+            }
+            if (groupBy === 'tag') {
+                if (a.groupKey === 'untagged') return 1;
+                if (b.groupKey === 'untagged') return -1;
+                return a.groupTitle.localeCompare(b.groupTitle);
+            }
+            return 0;
+        });
+    setGroupedRenderData(newGroupedRenderData);
   
     const batch = writeBatch(db);
     for (const containerId in newContainers) {
