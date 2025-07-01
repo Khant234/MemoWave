@@ -6,7 +6,6 @@ import {
   DndContext,
   closestCorners,
   type DragEndEvent,
-  type DragOverEvent,
   type DragStartEvent,
   PointerSensor,
   useSensor,
@@ -194,116 +193,71 @@ export default function BoardPage() {
     document.body.style.cursor = "grabbing";
   };
   
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    const { id } = active;
-    if (!over) return;
-    const { id: overId } = over;
-  
-    const activeContainer = findContainer(id as string);
-    const overContainer = findContainer(overId as string);
-  
-    if (
-      !activeContainer ||
-      !overContainer ||
-      activeContainer === overContainer
-    ) {
-      return;
-    }
-  
-    setContainers((prev) => {
-      const activeItems = prev[activeContainer];
-      const overItems = prev[overContainer];
-  
-      const activeIndex = activeItems.findIndex((item) => item.id === id);
-
-      if (activeIndex === -1) {
-        return prev;
-      }
-
-      const [movedItem] = activeItems.splice(activeIndex, 1);
-      if (!movedItem) return prev;
-      
-      const [, newStatus] = overContainer.split('-');
-      movedItem.status = newStatus as NoteStatus;
-
-      // Check if overId is a container or a card
-      const overIsContainer = overId in prev;
-      let newIndex;
-
-      if(overIsContainer) {
-        newIndex = overItems.length;
-      } else {
-        const overIndex = overItems.findIndex((item) => item.id === overId);
-        if (overIndex !== -1) {
-          newIndex = overIndex;
-        } else {
-          // This case should ideally not happen if overId is a card
-          newIndex = overItems.length;
-        }
-      }
-      
-      overItems.splice(newIndex, 0, movedItem);
-  
-      return {
-        ...prev,
-        [activeContainer]: [...activeItems],
-        [overContainer]: [...overItems],
-      };
-    });
-  };
-  
   const handleDragEnd = async (event: DragEndEvent) => {
     document.body.style.cursor = "";
     const { active, over } = event;
     setActiveNote(null);
-
-    if (!over) return;
-
-    const activeId = active.id as string;
-    const overId = over.id;
-
-    const activeContainerId = findContainer(activeId);
-    const overContainerId = findContainer(overId);
-    
-    if (!activeContainerId || !overContainerId) {
-        return;
+  
+    if (!over || active.id === over.id) {
+      return;
     }
-
-    let finalContainers = containers;
+  
+    const activeId = active.id as string;
+    const overId = over.id as string;
+  
+    const activeContainerId = findContainer(activeId);
+    let overContainerId = findContainer(overId);
+  
+    if (overId in containers) {
+      overContainerId = overId;
+    }
+  
+    if (!activeContainerId || !overContainerId) {
+      return;
+    }
+  
+    let finalContainers = JSON.parse(JSON.stringify(containers));
+  
     if (activeContainerId === overContainerId) {
       const items = finalContainers[activeContainerId];
-      const oldIndex = items.findIndex((i) => i.id === activeId);
-      const newIndex = items.findIndex((i) => i.id === overId);
-
-      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        finalContainers = {
-            ...finalContainers,
-            [activeContainerId]: arrayMove(items, oldIndex, newIndex),
-        };
+      const oldIndex = items.findIndex((i: Note) => i.id === activeId);
+      const newIndex = items.findIndex((i: Note) => i.id === overId);
+  
+      if (oldIndex !== -1 && newIndex !== -1) {
+        finalContainers[activeContainerId] = arrayMove(items, oldIndex, newIndex);
       }
+    } else {
+      const activeItems = finalContainers[activeContainerId];
+      const overItems = finalContainers[overContainerId];
+      const activeIndex = activeItems.findIndex((i: Note) => i.id === activeId);
+  
+      if (activeIndex === -1) return;
+  
+      const [movedItem] = activeItems.splice(activeIndex, 1);
+      const overIndex = overItems.findIndex((i: Note) => i.id === overId);
+      const newIndex = overIndex !== -1 ? overIndex : overItems.length;
+  
+      overItems.splice(newIndex, 0, movedItem);
     }
-    
+  
     setContainers(finalContainers);
-
+  
     const batch = writeBatch(db);
-
     for (const containerId in finalContainers) {
-        const [groupKey, status] = containerId.split('-');
-        finalContainers[containerId].forEach((note, index) => {
-            const noteRef = doc(db, "notes", note.id);
-            const updates: Partial<Omit<Note, 'id'>> = {
-                order: index,
-                status: status as NoteStatus,
-            };
-
-            if (groupBy === 'priority') {
+      const [groupKey, status] = containerId.split('-');
+      finalContainers[containerId].forEach((note: Note, index: number) => {
+        const noteRef = doc(db, "notes", note.id);
+        const updates: Partial<Omit<Note, 'id'>> = {
+          order: index,
+          status: status as NoteStatus,
+        };
+  
+        const originalNote = notes.find(n => n.id === note.id);
+        if (originalNote) {
+            if (groupBy === 'priority' && originalNote.priority !== groupKey) {
                 updates.priority = groupKey as NotePriority;
             } else if (groupBy === 'tag') {
-                const originalNote = notes.find(n => n.id === note.id)!;
-                // Find the original groupKey for the note before this drag operation
                 const originalGroupKey = originalNote.tags[0] || 'untagged';
-                
                 if (originalGroupKey !== groupKey) {
                     let newTags = originalNote.tags.filter(t => t !== originalGroupKey);
                     if (groupKey !== 'untagged') {
@@ -312,23 +266,24 @@ export default function BoardPage() {
                     updates.tags = [...new Set(newTags)];
                 }
             }
-            batch.update(noteRef, updates);
-        });
+        }
+        batch.update(noteRef, updates);
+      });
     }
-
+  
     try {
-        await batch.commit();
-        toast({
-            title: "Board Updated",
-            description: "Your changes have been saved.",
-        });
+      await batch.commit();
+      toast({
+        title: "Board Updated",
+        description: "Your changes have been saved.",
+      });
     } catch (error) {
-        console.error("Error updating board:", error);
-        toast({
-            title: "Update Failed",
-            description: "Could not save board changes. Please try again.",
-            variant: "destructive",
-        });
+      console.error("Error updating board:", error);
+      toast({
+        title: "Update Failed",
+        description: "Could not save board changes. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -469,7 +424,6 @@ export default function BoardPage() {
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        onDragOver={handleDragOver}
       >
         <div className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 flex gap-4 sm:gap-6 overflow-x-auto pb-4">

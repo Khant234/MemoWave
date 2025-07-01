@@ -5,6 +5,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { KanbanCardContent } from "./kanban-card-content";
 import { type Note } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 type KanbanCardProps = {
   note: Note;
@@ -24,11 +25,16 @@ export function KanbanCard({ note, onClick }: KanbanCardProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} onClick={() => onClick(note)}>
+    <div 
+        ref={setNodeRef} 
+        style={style} 
+        {...attributes} 
+        onClick={() => onClick(note)}
+        className={cn(isDragging && "opacity-30")}
+    >
         <KanbanCardContent note={note} dragHandleListeners={listeners} />
     </div>
   );
