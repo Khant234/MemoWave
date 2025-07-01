@@ -61,7 +61,6 @@ export function KanbanCardContent({ note, isOverlay, dragHandleListeners }: Kanb
           "bg-card hover:shadow-lg transition-shadow duration-200",
           isOverlay ? "shadow-2xl ring-2 ring-primary" : "cursor-pointer"
       )}
-      style={{ borderLeft: `4px solid ${note.color}` }}
     >
       <CardHeader className="flex flex-row items-start justify-between p-3">
         <CardTitle className="text-sm font-medium line-clamp-3 pr-2">{note.title || "Untitled"}</CardTitle>

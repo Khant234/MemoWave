@@ -69,7 +69,7 @@ export function ChecklistViewer({ isOpen, setIsOpen, note, onChecklistItemToggle
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-headline text-xl" style={{ borderLeft: `4px solid ${note.color}`, paddingLeft: '0.75rem', marginLeft: '-0.75rem' }}>{note.title || 'Untitled Note'}</DialogTitle>
+          <DialogTitle className="font-headline text-xl">{note.title || 'Untitled Note'}</DialogTitle>
         </DialogHeader>
         
         <ScrollArea className="max-h-[60vh] -mx-6 px-6">

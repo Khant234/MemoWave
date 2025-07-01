@@ -593,7 +593,7 @@ export function NoteEditor({
           accept="audio/*"
           className="hidden"
         />
-        <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0" style={{ borderLeft: `4px solid ${color}`}}>
+        <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
           <SheetHeader className="p-6">
             <SheetTitle className="font-headline">
               {note ? "Edit Note" : "New Note"}

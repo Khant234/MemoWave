@@ -126,7 +126,7 @@ export default function TodosPage() {
     const allComplete = group.items.length > 0 && group.items.every(item => item.completed);
     return (
       <AccordionItem value={group.noteId} key={group.noteId} className="border-none">
-        <Card style={{ borderLeft: `4px solid ${group.noteColor}` }}>
+        <Card>
           <CardHeader className="p-4">
             <AccordionTrigger className="p-0 hover:no-underline">
               <Link href={`/?note=${group.noteId}`} className="hover:underline">

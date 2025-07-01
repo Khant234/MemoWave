@@ -46,11 +46,10 @@ const CalendarTaskItem = ({ note, onClick }: { note: Note, onClick: (note: Note)
         <div 
             onClick={() => onClick(note)} 
             className={cn(
-                "block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-card border transition-colors", 
+                "block p-3 rounded-lg hover:bg-secondary cursor-pointer bg-card border transition-colors", 
                 isCompleted && "opacity-60",
-                isOverdue && "border-destructive/70 bg-destructive/5 hover:bg-destructive/10"
+                isOverdue ? "border-destructive/70 bg-destructive/5 hover:bg-destructive/10" : "border-transparent"
             )} 
-            style={{borderColor: isOverdue ? 'hsl(var(--destructive))' : note.color}}
         >
             <h3 className={cn("font-semibold", isCompleted && "line-through")}>{note.title}</h3>
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
@@ -260,7 +259,7 @@ export default function CalendarPage() {
                                 <CalendarPageSkeleton />
                             ) : (
                                 <div className="flex flex-col lg:flex-row gap-6 items-start">
-                                    <Card className="shadow-sm w-full lg:w-auto self-start">
+                                    <Card className="shadow-md w-full lg:w-auto self-start">
                                         <CardContent className="p-0 flex justify-center">
                                             <Calendar
                                                 mode="single"
@@ -272,7 +271,7 @@ export default function CalendarPage() {
                                         </CardContent>
                                     </Card>
                                     <div className="flex-1 w-full">
-                                        <Card className="shadow-sm">
+                                        <Card className="shadow-md">
                                             <ScrollArea className="h-[calc(80vh-120px)] lg:h-[520px]">
                                                 <CardContent className="p-4">
                                                     {overdueTasks.length === 0 && pendingTasks.length === 0 && completedTasks.length === 0 ? (

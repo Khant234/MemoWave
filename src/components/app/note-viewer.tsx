@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -113,7 +114,7 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0" style={{ borderLeft: `4px solid ${note.color}`}}>
+      <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
         <SheetHeader className="p-6 pb-2">
           <SheetTitle className="font-headline text-2xl">{note.title || 'Untitled Note'}</SheetTitle>
           <SheetDescription>

@@ -101,11 +101,10 @@ export function NoteCard({
     <Card
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
-        "cursor-pointer group hover:shadow-2xl transition-all duration-300 ease-in-out overflow-hidden shadow-lg transform hover:-translate-y-1.5 flex flex-col",
-        note.isPinned && "ring-2 ring-primary",
+        "cursor-pointer group hover:shadow-xl transition-all duration-300 ease-in-out overflow-hidden flex flex-col transform hover:-translate-y-1",
+        note.isPinned && "shadow-lg shadow-primary/20",
         note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
       )}
-      style={{ borderLeft: `4px solid ${note.color}` }}
     >
       <CardHeader className="relative px-4 pt-4 pb-2">
         <CardTitle className="pr-12 text-lg font-bold font-headline line-clamp-2">
