@@ -20,7 +20,7 @@ import { ListChecks } from "lucide-react";
 import { NoteViewer } from "@/components/app/note-viewer";
 import { NoteEditor } from "@/components/app/note-editor";
 import { CalendarPageSkeleton } from "@/components/app/calendar-page-skeleton";
-import { NOTE_PRIORITIES } from "@/lib/constants";
+import { NOTE_PRIORITIES, KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
 import { Separator } from "@/components/ui/separator";
 import { ChecklistViewer } from "@/components/app/checklist-viewer";
 
@@ -198,40 +198,48 @@ export default function CalendarPage() {
                                 <CalendarPageSkeleton />
                             ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    <Card className="lg:col-span-2">
+                                    <Card className="lg:col-span-2 shadow-sm">
                                         <CardContent className="p-2 sm:p-4">
                                             <Calendar
                                                 mode="single"
                                                 selected={selectedDate}
                                                 onSelect={setSelectedDate}
                                                 modifiers={{ due: daysWithNotes }}
-                                                modifiersClassNames={{ due: 'bg-primary/20 rounded-full' }}
+                                                modifiersClassNames={{ due: 'has-due-date' }}
                                                 className="w-full"
                                             />
                                         </CardContent>
                                     </Card>
                                     <div className="lg:col-span-1">
-                                        <h2 className="text-xl font-semibold mb-4">
+                                        <h2 className="text-xl font-semibold mb-4 font-headline">
                                             Tasks for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}
                                         </h2>
-                                        <Card>
+                                        <Card className="shadow-sm">
                                             <ScrollArea className="h-[480px]">
                                                 <CardContent className="p-4">
                                                     {pendingTasks.length === 0 && completedTasks.length === 0 ? (
                                                         <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground h-full">
                                                             <ListChecks className="h-10 w-10 mb-4" />
-                                                            <p>No tasks due on this day.</p>
+                                                            <p className="font-medium">No tasks due on this day.</p>
                                                         </div>
                                                     ) : (
                                                         <div className="space-y-4">
                                                             {pendingTasks.length > 0 && (
-                                                                <div className="space-y-4">
+                                                                <div className="space-y-3">
                                                                     {pendingTasks.map(note => (
-                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4" style={{borderColor: note.color}}>
+                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-background transition-colors" style={{borderColor: note.color}}>
                                                                             <h3 className="font-semibold">{note.title}</h3>
-                                                                            <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
-                                                                                <Badge variant={note.priority === 'high' ? 'destructive' : 'outline'}>{note.priority}</Badge>
-                                                                                <Badge variant="outline">{note.status}</Badge>
+                                                                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    {note.priority !== 'none' && <Badge variant={note.priority === 'high' ? 'destructive' : 'outline'}>{NOTE_PRIORITY_TITLES[note.priority]}</Badge>}
+                                                                                    <Badge variant="outline">{KANBAN_COLUMN_TITLES[note.status]}</Badge>
+                                                                                </div>
+                                                                                {note.checklist.length > 0 && (
+                                                                                    <div className="flex items-center gap-1">
+                                                                                        <ListChecks className="h-3 w-3" />
+                                                                                        <span>{note.checklist.filter(i => i.completed).length}/{note.checklist.length}</span>
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                     ))}
@@ -239,14 +247,22 @@ export default function CalendarPage() {
                                                             )}
                                                             {pendingTasks.length > 0 && completedTasks.length > 0 && <Separator className="my-4" />}
                                                             {completedTasks.length > 0 && (
-                                                                <div className="space-y-4">
+                                                                <div className="space-y-3">
                                                                     <h4 className="text-sm font-medium text-muted-foreground px-1">Completed</h4>
                                                                     {completedTasks.map(note => (
-                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 opacity-70" style={{borderColor: note.color}}>
+                                                                        <div key={note.id} onClick={() => handleCardClick(note)} className="block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-background opacity-60 transition-colors" style={{borderColor: note.color}}>
                                                                             <h3 className="font-semibold line-through">{note.title}</h3>
-                                                                            <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
-                                                                                <Badge variant="outline">{note.priority}</Badge>
-                                                                                <Badge variant="secondary">Done</Badge>
+                                                                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    {note.priority !== 'none' && <Badge variant='outline'>{NOTE_PRIORITY_TITLES[note.priority]}</Badge>}
+                                                                                    <Badge variant="secondary">Done</Badge>
+                                                                                </div>
+                                                                                {note.checklist.length > 0 && (
+                                                                                    <div className="flex items-center gap-1">
+                                                                                        <ListChecks className="h-3 w-3" />
+                                                                                        <span>{note.checklist.filter(i => i.completed).length}/{note.checklist.length}</span>
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                     ))}
