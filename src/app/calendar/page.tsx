@@ -197,8 +197,8 @@ export default function CalendarPage() {
                             {isLoading ? (
                                 <CalendarPageSkeleton />
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                                    <Card className="shadow-sm">
+                                <div className="flex flex-col lg:flex-row gap-8 items-start">
+                                    <Card className="shadow-sm w-full lg:w-auto">
                                         <CardContent className="p-0 flex justify-center">
                                             <Calendar
                                                 mode="single"
@@ -209,7 +209,7 @@ export default function CalendarPage() {
                                             />
                                         </CardContent>
                                     </Card>
-                                    <div className="flex-shrink-0">
+                                    <div className="flex-1 w-full">
                                         <h2 className="text-xl font-semibold mb-4 font-headline">
                                             Tasks for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}
                                         </h2>
