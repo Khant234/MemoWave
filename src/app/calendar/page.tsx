@@ -191,13 +191,13 @@ export default function CalendarPage() {
                         tags={allTags}
                         setSearchTerm={setSearchTerm}
                     />
-                    <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
+                    <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 transition-all duration-300 ease-in-out">
                         <div className="mx-auto max-w-7xl">
                             <h1 className="text-3xl font-bold font-headline mb-6">Calendar</h1>
                             {isLoading ? (
                                 <CalendarPageSkeleton />
                             ) : (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                     <Card className="lg:col-span-2">
                                         <CardContent className="p-2 sm:p-4">
                                             <Calendar
@@ -215,7 +215,7 @@ export default function CalendarPage() {
                                             Tasks for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}
                                         </h2>
                                         <Card>
-                                            <ScrollArea className="h-[60vh]">
+                                            <ScrollArea className="h-[480px]">
                                                 <CardContent className="p-4">
                                                     {pendingTasks.length === 0 && completedTasks.length === 0 ? (
                                                         <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground h-full">
