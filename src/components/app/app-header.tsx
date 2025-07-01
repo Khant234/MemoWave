@@ -83,7 +83,7 @@ export function AppHeader({
 
   if (isMobile && isMobileSearchOpen) {
     return (
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-card px-4">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border/40 bg-card/80 px-4 backdrop-blur-lg">
             <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0" onClick={() => setIsMobileSearchOpen(false)}>
                 <ArrowLeft className="h-5 w-5" />
                 <span className="sr-only">Close Search</span>
@@ -104,7 +104,7 @@ export function AppHeader({
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-card/80 px-4 backdrop-blur-lg sm:px-6">
       <div className="flex items-center gap-2">
          {/* Desktop Menu Toggle */}
         <Button size="icon" variant="ghost" className="hidden sm:flex h-10 w-10" onClick={onToggleSidebar}>
@@ -190,7 +190,7 @@ export function AppHeader({
                 strokeLinejoin="round"
                 />
             </svg>
-            <span className="text-xl font-semibold text-foreground/90 tracking-tight">
+            <span className="font-headline text-xl font-bold text-foreground/90 tracking-tight">
                 MemoWeave
             </span>
         </div>
