@@ -192,13 +192,13 @@ export default function CalendarPage() {
                         setSearchTerm={setSearchTerm}
                     />
                     <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 transition-all duration-300 ease-in-out">
-                        <div className="mx-auto max-w-7xl">
+                        <div className="mx-auto max-w-6xl">
                             <h1 className="text-3xl font-bold font-headline mb-6">Calendar</h1>
                             {isLoading ? (
                                 <CalendarPageSkeleton />
                             ) : (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    <Card className="lg:col-span-2 shadow-sm">
+                                <div className="flex flex-col lg:flex-row justify-center gap-8 items-start">
+                                    <Card className="shadow-sm">
                                         <CardContent className="p-2 sm:p-4">
                                             <Calendar
                                                 mode="single"
@@ -206,16 +206,15 @@ export default function CalendarPage() {
                                                 onSelect={setSelectedDate}
                                                 modifiers={{ due: daysWithNotes }}
                                                 modifiersClassNames={{ due: 'has-due-date' }}
-                                                className="w-full"
                                             />
                                         </CardContent>
                                     </Card>
-                                    <div className="lg:col-span-1">
+                                    <div className="w-full lg:w-[400px] flex-shrink-0">
                                         <h2 className="text-xl font-semibold mb-4 font-headline">
                                             Tasks for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : '...'}
                                         </h2>
                                         <Card className="shadow-sm">
-                                            <ScrollArea className="h-[480px]">
+                                            <ScrollArea className="h-[470px]">
                                                 <CardContent className="p-4">
                                                     {pendingTasks.length === 0 && completedTasks.length === 0 ? (
                                                         <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground h-full">
