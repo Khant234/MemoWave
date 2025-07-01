@@ -27,8 +27,20 @@ import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 
-const CalendarTaskItem = ({ note, isOverdue = false, onClick }: { note: Note, isOverdue?: boolean, onClick: (note: Note) => void }) => {
+const CalendarTaskItem = ({ note, onClick }: { note: Note, onClick: (note: Note) => void }) => {
     const isCompleted = note.status === 'done';
+    const [isOverdue, setIsOverdue] = React.useState(false);
+
+    React.useEffect(() => {
+        // isOverdue logic depends on current date, so it must be client-side
+        if (note.dueDate && !isCompleted) {
+            const dueDate = startOfDay(new Date(note.dueDate));
+            const today = startOfDay(new Date());
+            setIsOverdue(isBefore(dueDate, today));
+        } else {
+            setIsOverdue(false);
+        }
+    }, [note.dueDate, note.status, isCompleted]);
     
     return (
         <div 
@@ -36,14 +48,14 @@ const CalendarTaskItem = ({ note, isOverdue = false, onClick }: { note: Note, is
             className={cn(
                 "block p-3 rounded-lg hover:bg-secondary cursor-pointer border-l-4 bg-card border transition-colors", 
                 isCompleted && "opacity-60",
-                isOverdue && !isCompleted && "border-destructive/70 bg-destructive/5 hover:bg-destructive/10"
+                isOverdue && "border-destructive/70 bg-destructive/5 hover:bg-destructive/10"
             )} 
-            style={{borderColor: isOverdue && !isCompleted ? 'hsl(var(--destructive))' : note.color}}
+            style={{borderColor: isOverdue ? 'hsl(var(--destructive))' : note.color}}
         >
             <h3 className={cn("font-semibold", isCompleted && "line-through")}>{note.title}</h3>
             <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                    {isOverdue && !isCompleted && (
+                    {isOverdue && (
                         <Badge variant="destructive">Overdue</Badge>
                     )}
                     {note.priority !== 'none' && <Badge variant={note.priority === 'high' && !isCompleted ? 'destructive' : 'outline'}>{NOTE_PRIORITY_TITLES[note.priority]}</Badge>}
@@ -95,28 +107,24 @@ export default function CalendarPage() {
     const { overdueTasks, pendingTasks, completedTasks } = React.useMemo(() => {
         if (!selectedDate) return { overdueTasks: [], pendingTasks: [], completedTasks: [] };
         
-        const today = startOfDay(new Date());
         const selectedDay = startOfDay(selectedDate);
         
-        const showOverdue = !isBefore(selectedDay, today);
+        // Overdue tasks are tasks due before the selected day that are not done.
+        const overdue = notesWithDueDate
+            .filter(note => {
+                const dueDate = startOfDay(new Date(note.dueDate!));
+                return isBefore(dueDate, selectedDay) && note.status !== 'done';
+            })
+            .sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
+        // Tasks for the selected day
         const tasksForDay = notesWithDueDate
             .filter(note => isSameDay(new Date(note.dueDate!), selectedDay))
             .sort((a,b) => NOTE_PRIORITIES.indexOf(b.priority) - NOTE_PRIORITIES.indexOf(a.priority));
 
-        let overdue = [];
-        if (showOverdue) {
-            overdue = notesWithDueDate
-                .filter(note => {
-                    const dueDate = startOfDay(new Date(note.dueDate!));
-                    return isBefore(dueDate, today) && note.status !== 'done';
-                })
-                .sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
-        }
-        
         const pending = tasksForDay.filter(note => note.status !== 'done');
         const completed = tasksForDay.filter(note => note.status === 'done');
-
+        
         return { overdueTasks: overdue, pendingTasks: pending, completedTasks: completed };
     }, [notesWithDueDate, selectedDate]);
     
@@ -265,7 +273,7 @@ export default function CalendarPage() {
                                     </Card>
                                     <div className="flex-1 w-full">
                                         <Card className="shadow-sm">
-                                            <ScrollArea className="h-[520px]">
+                                            <ScrollArea className="h-[calc(80vh-120px)] lg:h-[520px]">
                                                 <CardContent className="p-4">
                                                     {overdueTasks.length === 0 && pendingTasks.length === 0 && completedTasks.length === 0 ? (
                                                         <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground h-full">
@@ -277,12 +285,12 @@ export default function CalendarPage() {
                                                             {overdueTasks.length > 0 && (
                                                                 <Collapsible defaultOpen>
                                                                     <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg p-3 text-left font-headline text-base font-semibold text-destructive hover:bg-destructive/10">
-                                                                        <span>Overdue ({overdueTasks.length})</span>
+                                                                        <span>Pending from Previous Days ({overdueTasks.length})</span>
                                                                         <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
                                                                     </CollapsibleTrigger>
                                                                     <CollapsibleContent className="pt-3 space-y-3">
                                                                         {overdueTasks.map(note => (
-                                                                            <CalendarTaskItem key={note.id} note={note} isOverdue onClick={handleCardClick} />
+                                                                            <CalendarTaskItem key={note.id} note={note} onClick={handleCardClick} />
                                                                         ))}
                                                                     </CollapsibleContent>
                                                                 </Collapsible>
