@@ -17,22 +17,22 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ListChecks, ChevronDown, ChevronRight } from "lucide-react";
-import { NoteViewer } from "@/components/app/note-viewer";
-import { NoteEditor } from "@/components/app/note-editor";
 import { CalendarPageSkeleton } from "@/components/app/calendar-page-skeleton";
 import { NOTE_PRIORITIES, KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
 import { Separator } from "@/components/ui/separator";
-import { ChecklistViewer } from "@/components/app/checklist-viewer";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
+// Lazy load modals
+const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
+const NoteEditor = React.lazy(() => import('@/components/app/note-editor').then(module => ({ default: module.NoteEditor })));
+const ChecklistViewer = React.lazy(() => import('@/components/app/checklist-viewer').then(module => ({ default: module.ChecklistViewer })));
 
-const CalendarTaskItem = ({ note, onClick }: { note: Note, onClick: (note: Note) => void }) => {
+const CalendarTaskItemInner = ({ note, onClick }: { note: Note, onClick: (note: Note) => void }) => {
     const isCompleted = note.status === 'done';
     const [isOverdue, setIsOverdue] = React.useState(false);
 
     React.useEffect(() => {
-        // isOverdue logic depends on current date, so it must be client-side
         if (note.dueDate && !isCompleted) {
             const dueDate = startOfDay(new Date(note.dueDate));
             const today = startOfDay(new Date());
@@ -40,13 +40,13 @@ const CalendarTaskItem = ({ note, onClick }: { note: Note, onClick: (note: Note)
         } else {
             setIsOverdue(false);
         }
-    }, [note.dueDate, note.status, isCompleted]);
+    }, [note.dueDate, isCompleted]);
     
     return (
         <div 
             onClick={() => onClick(note)} 
             className={cn(
-                "block p-3 rounded-lg hover:bg-secondary cursor-pointer bg-card border transition-colors", 
+                "block p-3 rounded-lg hover:bg-secondary cursor-pointer bg-card/50 border transition-colors", 
                 isCompleted && "opacity-60",
                 isOverdue ? "border-destructive/70 bg-destructive/5 hover:bg-destructive/10" : "border-transparent"
             )} 
@@ -70,6 +70,9 @@ const CalendarTaskItem = ({ note, onClick }: { note: Note, onClick: (note: Note)
         </div>
     );
 }
+
+const CalendarTaskItem = React.memo(CalendarTaskItemInner);
+
 
 export default function CalendarPage() {
     const { notes, isLoading, allTags } = useNotes();
@@ -108,7 +111,6 @@ export default function CalendarPage() {
         
         const selectedDay = startOfDay(selectedDate);
         
-        // Overdue tasks are tasks due before the selected day that are not done.
         const overdue = notesWithDueDate
             .filter(note => {
                 const dueDate = startOfDay(new Date(note.dueDate!));
@@ -116,7 +118,6 @@ export default function CalendarPage() {
             })
             .sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
-        // Tasks for the selected day
         const tasksForDay = notesWithDueDate
             .filter(note => isSameDay(new Date(note.dueDate!), selectedDay))
             .sort((a,b) => NOTE_PRIORITIES.indexOf(b.priority) - NOTE_PRIORITIES.indexOf(a.priority));
@@ -127,7 +128,7 @@ export default function CalendarPage() {
         return { overdueTasks: overdue, pendingTasks: pending, completedTasks: completed };
     }, [notesWithDueDate, selectedDate]);
     
-    const handleCardClick = (note: Note) => {
+    const handleCardClick = React.useCallback((note: Note) => {
         if (note.checklist && note.checklist.length > 0) {
             setViewingChecklistNote(note);
             setIsChecklistViewerOpen(true);
@@ -135,27 +136,23 @@ export default function CalendarPage() {
             setViewingNote(note);
             setIsViewerOpen(true);
         }
-    };
+    }, []);
 
-    const handleViewFullNote = (note: Note) => {
+    const handleViewFullNote = React.useCallback((note: Note) => {
         setViewingNote(note);
         setIsViewerOpen(true);
-    }
+    }, []);
     
-    const handleStartEditing = (note: Note) => {
+    const handleStartEditing = React.useCallback((note: Note) => {
         setIsViewerOpen(false);
         setIsChecklistViewerOpen(false);
         setEditingNote(note);
         setIsEditorOpen(true);
-    };
+    }, []);
 
-    const updateNoteField = async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
-        if (viewingNote && viewingNote.id === noteId) {
-            setViewingNote(prev => prev ? { ...prev, ...updates } : null);
-        }
-        if (viewingChecklistNote && viewingChecklistNote.id === noteId) {
-            setViewingChecklistNote(prev => prev ? { ...prev, ...updates } : null);
-        }
+    const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
+        setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
+        setViewingChecklistNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
 
         try {
           const noteRef = doc(db, "notes", noteId);
@@ -168,9 +165,9 @@ export default function CalendarPage() {
             variant: "destructive",
           });
         }
-    };
+    }, [toast]);
 
-    const handleChecklistItemToggle = (noteId: string, checklistItemId: string) => {
+    const handleChecklistItemToggle = React.useCallback((noteId: string, checklistItemId: string) => {
         const note = notes.find((n) => n.id === noteId);
         if (note) {
           recordTaskCompletion(note, checklistItemId);
@@ -194,9 +191,9 @@ export default function CalendarPage() {
 
           updateNoteField(noteId, updates);
         }
-    };
+    }, [notes, recordTaskCompletion, toast, updateNoteField]);
 
-    const handleSaveNote = async (noteToSave: Note) => {
+    const handleSaveNote = React.useCallback(async (noteToSave: Note) => {
         setIsSaving(true);
         try {
             const originalNote = notes.find((n) => n.id === noteToSave.id);
@@ -235,7 +232,7 @@ export default function CalendarPage() {
         } finally {
             setIsSaving(false);
         }
-    };
+    }, [notes, toast]);
 
     return (
         <>
@@ -259,7 +256,7 @@ export default function CalendarPage() {
                                 <CalendarPageSkeleton />
                             ) : (
                                 <div className="flex flex-col lg:flex-row gap-6 items-start">
-                                    <Card className="shadow-md w-full lg:w-auto self-start">
+                                    <Card className="shadow-soft w-full lg:w-auto self-start border-none">
                                         <CardContent className="p-0 flex justify-center">
                                             <Calendar
                                                 mode="single"
@@ -271,7 +268,7 @@ export default function CalendarPage() {
                                         </CardContent>
                                     </Card>
                                     <div className="flex-1 w-full">
-                                        <Card className="shadow-md">
+                                        <Card className="shadow-soft border-none">
                                             <ScrollArea className="h-[calc(80vh-120px)] lg:h-[520px]">
                                                 <CardContent className="p-4">
                                                     {overdueTasks.length === 0 && pendingTasks.length === 0 && completedTasks.length === 0 ? (
@@ -337,28 +334,36 @@ export default function CalendarPage() {
                     </main>
                 </div>
             </div>
-            <NoteViewer
-                isOpen={isViewerOpen}
-                setIsOpen={setIsViewerOpen}
-                note={viewingNote}
-                onEdit={handleStartEditing}
-                onChecklistItemToggle={handleChecklistItemToggle}
-            />
-            <ChecklistViewer
-                isOpen={isChecklistViewerOpen}
-                setIsOpen={setIsChecklistViewerOpen}
-                note={viewingChecklistNote}
-                onChecklistItemToggle={handleChecklistItemToggle}
-                onEditNote={handleStartEditing}
-                onViewFullNote={handleViewFullNote}
-            />
-            <NoteEditor
-                isOpen={isEditorOpen}
-                setIsOpen={setIsEditorOpen}
-                note={editingNote}
-                onSave={handleSaveNote}
-                isSaving={isSaving}
-            />
+            <React.Suspense fallback={null}>
+                {isViewerOpen && (
+                    <NoteViewer
+                        isOpen={isViewerOpen}
+                        setIsOpen={setIsViewerOpen}
+                        note={viewingNote}
+                        onEdit={handleStartEditing}
+                        onChecklistItemToggle={handleChecklistItemToggle}
+                    />
+                )}
+                {isChecklistViewerOpen && (
+                    <ChecklistViewer
+                        isOpen={isChecklistViewerOpen}
+                        setIsOpen={setIsChecklistViewerOpen}
+                        note={viewingChecklistNote}
+                        onChecklistItemToggle={handleChecklistItemToggle}
+                        onEditNote={handleStartEditing}
+                        onViewFullNote={handleViewFullNote}
+                    />
+                )}
+                {isEditorOpen && (
+                    <NoteEditor
+                        isOpen={isEditorOpen}
+                        setIsOpen={setIsEditorOpen}
+                        note={editingNote}
+                        onSave={handleSaveNote}
+                        isSaving={isSaving}
+                    />
+                )}
+            </React.Suspense>
         </>
     );
 }

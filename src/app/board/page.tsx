@@ -23,15 +23,17 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { KanbanColumn } from "@/components/app/kanban-column";
 import { type Note, type NoteStatus, type NoteVersion, type NotePriority } from "@/lib/types";
 import { KANBAN_COLUMNS, KANBAN_COLUMN_TITLES, NOTE_PRIORITIES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
-import { NoteViewer } from "@/components/app/note-viewer";
-import { NoteEditor } from "@/components/app/note-editor";
 import { useToast } from "@/hooks/use-toast";
 import { KanbanBoardSkeleton } from "@/components/app/kanban-board-skeleton";
-import { LayoutGrid, GripVertical } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { useGamification } from "@/contexts/gamification-context";
 import { KanbanCardContent } from "@/components/app/kanban-card-content";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChecklistViewer } from "@/components/app/checklist-viewer";
+
+// Lazy load modals
+const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
+const NoteEditor = React.lazy(() => import('@/components/app/note-editor').then(module => ({ default: module.NoteEditor })));
+const ChecklistViewer = React.lazy(() => import('@/components/app/checklist-viewer').then(module => ({ default: module.ChecklistViewer })));
 
 
 type NoteContainers = Record<string, Note[]>; // e.g. { 'work-todo': [note1], 'personal-inprogress': [note2] }
@@ -70,8 +72,6 @@ export default function BoardPage() {
 
   React.useEffect(() => {
     if (isBoardUpdating.current) {
-        // Don't derive state from props while we are in the middle of a drag-and-drop update.
-        // The optimistic update in handleDragEnd is the source of truth during this time.
         return;
     }
     const filteredNotes = notes.filter(note => 
@@ -178,7 +178,7 @@ export default function BoardPage() {
     })
   );
 
-  const findContainer = (id: string | number) => {
+  const findContainer = React.useCallback((id: string | number) => {
     if (typeof id === 'string' && id in containers) {
       return id;
     }
@@ -188,9 +188,9 @@ export default function BoardPage() {
       }
     }
     return null;
-  };
+  }, [containers]);
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = React.useCallback((event: DragStartEvent) => {
     const { active } = event;
     const note = notes.find((n) => n.id === active.id);
     if (note) {
@@ -198,9 +198,9 @@ export default function BoardPage() {
     }
     isBoardUpdating.current = true;
     document.body.style.cursor = "grabbing";
-  };
+  }, [notes]);
   
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = React.useCallback(async (event: DragEndEvent) => {
     document.body.style.cursor = "";
     const { active, over } = event;
     setActiveNote(null);
@@ -251,8 +251,6 @@ export default function BoardPage() {
   
     setContainers(newContainers);
     
-    // This part is crucial for optimistic UI update. We regenerate the render data
-    // from the new optimistic `containers` state, instead of waiting for the useEffect.
     const groupKeys: Record<string, string> = {}; 
     if (groupBy === 'none') {
         groupKeys['all'] = 'All Tasks';
@@ -341,32 +339,28 @@ export default function BoardPage() {
     } finally {
         isBoardUpdating.current = false;
     }
-  };
+  }, [containers, findContainer, groupBy, allTags, notes, toast]);
 
-  const handleCardClick = (note: Note) => {
+  const handleCardClick = React.useCallback((note: Note) => {
     setViewingChecklistNote(note);
     setIsChecklistViewerOpen(true);
-  };
+  }, []);
   
-  const handleViewFullNote = (note: Note) => {
+  const handleViewFullNote = React.useCallback((note: Note) => {
     setViewingNote(note);
     setIsViewerOpen(true);
-  }
+  }, []);
 
-  const handleStartEditing = (note: Note) => {
+  const handleStartEditing = React.useCallback((note: Note) => {
     setIsViewerOpen(false);
     setIsChecklistViewerOpen(false);
     setEditingNote(note);
     setIsEditorOpen(true);
-  };
+  }, []);
   
-  const updateNoteField = async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
-    if (viewingNote && viewingNote.id === noteId) {
-        setViewingNote(prev => prev ? { ...prev, ...updates } : null);
-    }
-    if (viewingChecklistNote && viewingChecklistNote.id === noteId) {
-        setViewingChecklistNote(prev => prev ? { ...prev, ...updates } : null);
-    }
+  const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
+    setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
+    setViewingChecklistNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
 
     try {
       const noteRef = doc(db, "notes", noteId);
@@ -379,9 +373,9 @@ export default function BoardPage() {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
-  const handleChecklistItemToggle = (noteId: string, checklistItemId: string) => {
+  const handleChecklistItemToggle = React.useCallback((noteId: string, checklistItemId: string) => {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
       recordTaskCompletion(note, checklistItemId);
@@ -405,9 +399,9 @@ export default function BoardPage() {
 
       updateNoteField(noteId, updates);
     }
-  };
+  }, [notes, recordTaskCompletion, toast, updateNoteField]);
 
-  const handleSaveNote = async (noteToSave: Note) => {
+  const handleSaveNote = React.useCallback(async (noteToSave: Note) => {
     setIsSaving(true);
     
     try {
@@ -448,7 +442,7 @@ export default function BoardPage() {
     } finally {
         setIsSaving(false);
     }
-  };
+  }, [notes, toast]);
 
   const renderContent = () => {
     if (isLoading) {
@@ -464,7 +458,7 @@ export default function BoardPage() {
             : "Add notes to the board from the editor, or create a new note with a checklist to track it here.";
         
         return (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 rounded-lg bg-background border-2 border-dashed">
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 rounded-lg bg-background/50 border-2 border-dashed">
                 <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
                     <LayoutGrid className="h-12 w-12" />
                 </div>
@@ -550,28 +544,36 @@ export default function BoardPage() {
           </main>
         </div>
       </div>
-      <NoteViewer
-        isOpen={isViewerOpen}
-        setIsOpen={setIsViewerOpen}
-        note={viewingNote}
-        onEdit={handleStartEditing}
-        onChecklistItemToggle={handleChecklistItemToggle}
-      />
-      <ChecklistViewer
-        isOpen={isChecklistViewerOpen}
-        setIsOpen={setIsChecklistViewerOpen}
-        note={viewingChecklistNote}
-        onChecklistItemToggle={handleChecklistItemToggle}
-        onEditNote={handleStartEditing}
-        onViewFullNote={handleViewFullNote}
-      />
-      <NoteEditor
-        isOpen={isEditorOpen}
-        setIsOpen={setIsEditorOpen}
-        note={editingNote}
-        onSave={handleSaveNote}
-        isSaving={isSaving}
-      />
+      <React.Suspense fallback={null}>
+        {isViewerOpen && (
+            <NoteViewer
+                isOpen={isViewerOpen}
+                setIsOpen={setIsViewerOpen}
+                note={viewingNote}
+                onEdit={handleStartEditing}
+                onChecklistItemToggle={handleChecklistItemToggle}
+            />
+        )}
+        {isChecklistViewerOpen && (
+            <ChecklistViewer
+                isOpen={isChecklistViewerOpen}
+                setIsOpen={setIsChecklistViewerOpen}
+                note={viewingChecklistNote}
+                onChecklistItemToggle={handleChecklistItemToggle}
+                onEditNote={handleStartEditing}
+                onViewFullNote={handleViewFullNote}
+            />
+        )}
+        {isEditorOpen && (
+            <NoteEditor
+                isOpen={isEditorOpen}
+                setIsOpen={setIsEditorOpen}
+                note={editingNote}
+                onSave={handleSaveNote}
+                isSaving={isSaving}
+            />
+        )}
+      </React.Suspense>
     </>
   );
 }

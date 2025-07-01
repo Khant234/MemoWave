@@ -1,6 +1,7 @@
 
 "use client";
 
+import * as React from "react";
 import { type Note } from "@/lib/types";
 import { NoteCard } from "./note-card";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,7 @@ type NoteListProps = {
   activeFilter: "all" | "archived" | "trash";
 };
 
-export function NoteList({
+const NoteListComponent = ({
   notes,
   layout,
   isLoading,
@@ -40,10 +41,10 @@ export function NoteList({
   onRemoveTagFromNote,
   onEmptyTrash,
   activeFilter,
-}: NoteListProps) {
+}: NoteListProps) => {
 
   const gridClasses = cn(
-    "grid gap-4",
+    "grid gap-4 sm:gap-6",
     layout === "grid"
       ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
       : "grid-cols-1"
@@ -79,7 +80,7 @@ export function NoteList({
     };
     const { icon: Icon, title, description } = messages[activeFilter];
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center p-6 rounded-lg bg-background border-2 border-dashed">
+      <div className="flex flex-col items-center justify-center h-full text-center p-6 rounded-lg bg-background/50 border-2 border-dashed">
         <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
             <Icon className="h-12 w-12" />
         </div>
@@ -132,3 +133,5 @@ export function NoteList({
     </>
   );
 }
+
+export const NoteList = React.memo(NoteListComponent);

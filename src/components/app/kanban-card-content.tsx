@@ -34,7 +34,7 @@ const priorityTooltips: Record<Note['priority'], string> = {
     none: "No Priority",
 };
 
-export function KanbanCardContent({ note, isOverlay, dragHandleListeners }: KanbanCardContentProps) {
+const KanbanCardContentComponent = ({ note, isOverlay, dragHandleListeners }: KanbanCardContentProps) => {
   const [formattedDueDate, setFormattedDueDate] = React.useState('');
 
   React.useEffect(() => {
@@ -58,7 +58,7 @@ export function KanbanCardContent({ note, isOverlay, dragHandleListeners }: Kanb
   return (
     <Card
       className={cn(
-          "bg-card hover:shadow-lg transition-shadow duration-200",
+          "bg-card hover:shadow-lg transition-shadow duration-200 border-none shadow-soft",
           isOverlay ? "shadow-2xl ring-2 ring-primary" : "cursor-pointer"
       )}
     >
@@ -131,3 +131,5 @@ export function KanbanCardContent({ note, isOverlay, dragHandleListeners }: Kanb
     </Card>
   );
 }
+
+export const KanbanCardContent = React.memo(KanbanCardContentComponent);

@@ -23,6 +23,7 @@ import {
   X,
   CheckSquare,
   Flag,
+  Sparkles,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -64,7 +65,7 @@ const priorityTooltips: Record<Note['priority'], string> = {
     none: "No Priority",
 };
 
-export function NoteCard({
+const NoteCardComponent = ({
   note,
   onViewNote,
   onTogglePin,
@@ -75,7 +76,7 @@ export function NoteCard({
   onCopyNote,
   onTagClick,
   onRemoveTagFromNote,
-}: NoteCardProps) {
+}: NoteCardProps) => {
   const [formattedDate, setFormattedDate] = React.useState("");
 
   const { summary, mainContent } = React.useMemo(() => {
@@ -88,22 +89,36 @@ export function NoteCard({
   }, [note.content]);
 
   React.useEffect(() => {
-    // Client-side effect to prevent hydration mismatch
     setFormattedDate(new Date(note.updatedAt).toLocaleDateString());
   }, [note.updatedAt]);
   
-  const handlePinClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card's onClick from firing
+  const handlePinClick = React.useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
     onTogglePin(note.id);
-  };
+  }, [onTogglePin, note.id]);
+
+  const handleDropdownClick = React.useCallback((e: React.MouseEvent) => {
+      e.stopPropagation();
+  }, []);
+
+  const handleTagClick = React.useCallback((e: React.MouseEvent, tag: string) => {
+      e.stopPropagation();
+      onTagClick(tag);
+  }, [onTagClick]);
+
+  const handleRemoveTag = React.useCallback((e: React.MouseEvent, tag: string) => {
+    e.stopPropagation();
+    onRemoveTagFromNote(note.id, tag);
+  }, [onRemoveTagFromNote, note.id]);
 
   return (
     <Card
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
-        "cursor-pointer group hover:shadow-xl transition-all duration-300 ease-in-out overflow-hidden flex flex-col transform hover:-translate-y-1",
-        note.isPinned && "shadow-lg shadow-primary/20",
-        note.isTrashed && "opacity-70 bg-muted/50 cursor-default"
+        "group flex transform-gpu flex-col overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1",
+        note.isPinned ? "shadow-soft-glow" : "shadow-soft",
+        note.isTrashed ? "opacity-70 bg-secondary/50 cursor-default" : "cursor-pointer bg-card/80",
+        "border-none"
       )}
     >
       <CardHeader className="relative px-4 pt-4 pb-2">
@@ -144,7 +159,7 @@ export function NoteCard({
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 rounded-full"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={handleDropdownClick}
                     >
                         <MoreVertical className="h-4 w-4" />
                         <span className="sr-only">More options</span>
@@ -157,7 +172,7 @@ export function NoteCard({
             </Tooltip>
             <DropdownMenuContent
               align="end"
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleDropdownClick}
             >
               {note.isTrashed ? (
                 <>
@@ -210,10 +225,13 @@ export function NoteCard({
             />
           </div>
         )}
-        <div className="h-[60px] text-sm"> {/* Keep a fixed height for grid consistency */}
+        <div className="h-[60px] text-sm">
           {summary ? (
-            <div className="space-y-1">
-              <Badge variant="outline" className="text-xs">AI Summary</Badge>
+            <div className="space-y-1.5">
+              <Badge variant="outline" className="text-xs border-primary/20 text-primary/90 bg-primary/10">
+                <Sparkles className="mr-1.5 h-3 w-3" />
+                AI Summary
+              </Badge>
               <p className="italic text-foreground font-medium line-clamp-2">
                 &ldquo;{summary}&rdquo;
               </p>
@@ -234,10 +252,7 @@ export function NoteCard({
             >
               <span
                 className="cursor-pointer hover:underline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTagClick(tag);
-                }}
+                onClick={(e) => handleTagClick(e, tag)}
               >
                 {tag}
               </span>
@@ -245,10 +260,7 @@ export function NoteCard({
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onRemoveTagFromNote(note.id, tag);
-                        }}
+                        onClick={(e) => handleRemoveTag(e, tag)}
                         className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
                         aria-label={`Remove tag ${tag}`}
                         >
@@ -302,3 +314,5 @@ export function NoteCard({
     </Card>
   );
 }
+
+export const NoteCard = React.memo(NoteCardComponent);

@@ -17,11 +17,8 @@ import { db } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppHeader } from "@/components/app/app-header";
 import { NoteList } from "@/components/app/note-list";
-import { NoteViewer } from "@/components/app/note-viewer";
-import { NoteEditor } from "@/components/app/note-editor";
-import { type Note, type NoteVersion, type NoteStatus, type NotePriority } from "@/lib/types";
+import { type Note, type NoteVersion } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Plus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,10 +34,15 @@ import { cn } from "@/lib/utils";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useNotes } from "@/contexts/notes-context";
 import { useGamification } from "@/contexts/gamification-context";
-import { AudioTranscriber } from "@/components/app/audio-transcriber";
 import { generateTitle } from "@/ai/flows/title-generation";
 import { NOTE_COLORS } from "@/lib/data";
 import { MobileFab } from "@/components/app/mobile-fab";
+
+// Lazy load modals and heavy components
+const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
+const NoteEditor = React.lazy(() => import('@/components/app/note-editor').then(module => ({ default: module.NoteEditor })));
+const AudioTranscriber = React.lazy(() => import('@/components/app/audio-transcriber').then(module => ({ default: module.AudioTranscriber })));
+
 
 export default function Home() {
   const { notes, isLoading, allTags } = useNotes();
@@ -72,7 +74,7 @@ export default function Home() {
   const { recordTaskCompletion } = useGamification();
 
 
-  const notesCollectionRef = collection(db, "notes");
+  const notesCollectionRef = React.useMemo(() => collection(db, "notes"), []);
 
   React.useEffect(() => {
     const filter = searchParams.get('filter');
@@ -86,6 +88,11 @@ export default function Home() {
     setSearchTerm(q || '');
   }, [searchParams]);
 
+  const handleViewNote = React.useCallback((note: Note) => {
+    setViewingNote(note);
+    setIsViewerOpen(true);
+  }, []);
+
   React.useEffect(() => {
     const noteIdToOpen = searchParams.get('note');
     if (noteIdToOpen && notes.length > 0) {
@@ -98,32 +105,26 @@ export default function Home() {
         router.replace(newUrl.pathname + newUrl.search, { scroll: false });
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, notes]);
+  }, [searchParams, notes, router, handleViewNote]);
   
-  useHotkeys("n", () => handleNewNote(), { preventDefault: true });
-
-  const handleNewNote = () => {
+  const handleNewNote = React.useCallback(() => {
     setEditingNote(null);
     setIsEditorOpen(true);
-  };
+  }, []);
 
-  const handleNewVoiceNote = () => {
+  useHotkeys("n", () => handleNewNote(), { preventDefault: true });
+
+  const handleNewVoiceNote = React.useCallback(() => {
     setIsTranscriberOpen(true);
-  };
-  
-  const handleViewNote = (note: Note) => {
-    setViewingNote(note);
-    setIsViewerOpen(true);
-  };
+  }, []);
 
-  const handleStartEditing = (note: Note) => {
-    setIsViewerOpen(false); // Close viewer
-    setEditingNote(note);   // Set note to edit
-    setIsEditorOpen(true);  // Open editor
-  };
+  const handleStartEditing = React.useCallback((note: Note) => {
+    setIsViewerOpen(false);
+    setEditingNote(note);
+    setIsEditorOpen(true);
+  }, []);
 
-  const handleTranscriptionToNewNote = async (transcription: string) => {
+  const handleTranscriptionToNewNote = React.useCallback(async (transcription: string) => {
     if (!transcription.trim()) {
       toast({
         title: "Empty Transcription",
@@ -178,10 +179,10 @@ export default function Home() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [notesCollectionRef, toast, handleViewNote]);
 
 
-  const handleSaveNote = async (noteToSave: Note) => {
+  const handleSaveNote = React.useCallback(async (noteToSave: Note) => {
     setIsSaving(true);
     
     const isExisting = notes.some((n) => n.id === noteToSave.id);
@@ -200,7 +201,7 @@ export default function Home() {
             newHistory.unshift(version);
         }
         if (newHistory.length > 20) {
-            newHistory = newHistory.slice(0, 20); // Limit history to 20 entries
+            newHistory = newHistory.slice(0, 20);
         }
 
         const noteRef = doc(db, "notes", noteToSave.id);
@@ -210,9 +211,8 @@ export default function Home() {
 
       } else {
         const { id, ...noteData } = noteToSave;
-        const finalNoteData = { ...noteData, history: [] }; // New notes start with empty history
-        const docRef = await addDoc(notesCollectionRef, finalNoteData as any);
-        // No need to update state here, onSnapshot will do it
+        const finalNoteData = { ...noteData, history: [] };
+        await addDoc(notesCollectionRef, finalNoteData as any);
       }
 
       setIsEditorOpen(false);
@@ -239,13 +239,10 @@ export default function Home() {
     } finally {
         setIsSaving(false);
     }
-  };
+  }, [notes, toast, notesCollectionRef]);
   
-  const updateNoteField = async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
-    // Optimistic UI update for viewing note, main list is updated by real-time listener
-    if (viewingNote && viewingNote.id === noteId) {
-        setViewingNote(prev => prev ? { ...prev, ...updates } : null);
-    }
+  const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
+    setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
 
     try {
       const noteRef = doc(db, "notes", noteId);
@@ -257,11 +254,10 @@ export default function Home() {
         description: "Could not sync changes. Please try again.",
         variant: "destructive",
       });
-      // The real-time listener will automatically revert the state on failure.
     }
-  };
+  }, [toast]);
 
-  const handleChecklistItemToggle = (noteId: string, checklistItemId: string) => {
+  const handleChecklistItemToggle = React.useCallback((noteId: string, checklistItemId: string) => {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
       recordTaskCompletion(note, checklistItemId);
@@ -285,39 +281,39 @@ export default function Home() {
       
       updateNoteField(noteId, updates);
     }
-  };
+  }, [notes, recordTaskCompletion, toast, updateNoteField]);
 
-  const handleTogglePin = (noteId: string) => {
+  const handleTogglePin = React.useCallback((noteId: string) => {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
       updateNoteField(noteId, { isPinned: !note.isPinned });
     }
-  };
+  }, [notes, updateNoteField]);
 
-  const handleToggleArchive = (noteId: string) => {
+  const handleToggleArchive = React.useCallback((noteId: string) => {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
       updateNoteField(noteId, { isArchived: !note.isArchived, isPinned: false });
     }
-  };
+  }, [notes, updateNoteField]);
 
-  const handleMoveToTrash = (noteId: string) => {
+  const handleMoveToTrash = React.useCallback((noteId: string) => {
     setDeleteConfirmation({ noteId, type: 'trash' });
-  };
+  }, []);
 
-  const handleRestoreNote = (noteId: string) => {
+  const handleRestoreNote = React.useCallback((noteId: string) => {
     updateNoteField(noteId, { isTrashed: false });
-  };
+  }, [updateNoteField]);
 
-  const handlePermanentlyDeleteNote = (noteId: string) => {
+  const handlePermanentlyDeleteNote = React.useCallback((noteId: string) => {
     setDeleteConfirmation({ noteId, type: 'permanent' });
-  };
+  }, []);
 
-  const handleEmptyTrash = () => {
+  const handleEmptyTrash = React.useCallback(() => {
     setIsEmptyTrashConfirmOpen(true);
-  };
+  }, []);
 
-  const handleConfirmEmptyTrash = async () => {
+  const handleConfirmEmptyTrash = React.useCallback(async () => {
     const trashedNotes = notes.filter(note => note.isTrashed);
     if (trashedNotes.length === 0) {
       setIsEmptyTrashConfirmOpen(false);
@@ -346,9 +342,9 @@ export default function Home() {
     } finally {
       setIsEmptyTrashConfirmOpen(false);
     }
-  };
+  }, [notes, toast]);
 
-  const handleCopyNote = async (noteId: string) => {
+  const handleCopyNote = React.useCallback(async (noteId: string) => {
     const noteToCopy = notes.find((n) => n.id === noteId);
     if (!noteToCopy) {
       toast({
@@ -374,8 +370,7 @@ export default function Home() {
     };
 
     try {
-      const docRef = await addDoc(notesCollectionRef, newNoteData);
-      // No need to update state, onSnapshot will handle it.
+      await addDoc(notesCollectionRef, newNoteData);
       toast({
         title: "Note Copied",
         description: `A copy of "${noteToCopy.title || 'Untitled'}" has been created.`,
@@ -388,13 +383,13 @@ export default function Home() {
         variant: "destructive",
       });
     }
-  };
+  }, [notes, toast, notesCollectionRef]);
 
-  const handleTagClick = (tag: string) => {
+  const handleTagClick = React.useCallback((tag: string) => {
     router.push(`/?q=${tag}`);
-  };
+  }, [router]);
   
-  const handleRemoveTagFromNote = async (noteId: string, tagToRemove: string) => {
+  const handleRemoveTagFromNote = React.useCallback(async (noteId: string, tagToRemove: string) => {
     const note = notes.find((n) => n.id === noteId);
     if (note) {
       const updatedTags = note.tags.filter((tag) => tag !== tagToRemove);
@@ -404,9 +399,9 @@ export default function Home() {
         description: `The tag "${tagToRemove}" has been removed from the note.`,
       });
     }
-  };
+  }, [notes, toast, updateNoteField]);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = React.useCallback(async () => {
     if (!deleteConfirmation) return;
     const { noteId, type } = deleteConfirmation;
 
@@ -435,11 +430,11 @@ export default function Home() {
       }
     }
     setDeleteConfirmation(null);
-  };
+  }, [deleteConfirmation, toast, updateNoteField, viewingNote?.id]);
   
-  const handleCancelDelete = () => {
+  const handleCancelDelete = React.useCallback(() => {
     setDeleteConfirmation(null);
-  };
+  }, []);
 
 
   const filteredNotes = React.useMemo(() => {
@@ -460,12 +455,18 @@ export default function Home() {
             matchesFilter = true;
         }
         
+        const searchInput = searchTerm.toLowerCase();
+        if (searchInput.startsWith('#')) {
+            const searchTag = searchInput.substring(1);
+            return matchesFilter && note.tags.some(tag => tag.toLowerCase().includes(searchTag));
+        }
+
         const matchesSearch =
           searchTerm.trim() === "" ||
-          note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          note.title.toLowerCase().includes(searchInput) ||
+          note.content.toLowerCase().includes(searchInput) ||
           note.tags.some((tag) =>
-            tag.toLowerCase().includes(searchTerm.toLowerCase())
+            tag.toLowerCase().includes(searchInput)
           );
         return matchesFilter && matchesSearch;
       })
@@ -534,25 +535,34 @@ export default function Home() {
         <MobileFab onNewNote={handleNewNote} onNewVoiceNote={handleNewVoiceNote} />
       )}
 
-      <NoteViewer
-        isOpen={isViewerOpen}
-        setIsOpen={setIsViewerOpen}
-        note={viewingNote}
-        onEdit={handleStartEditing}
-        onChecklistItemToggle={handleChecklistItemToggle}
-      />
-      <NoteEditor
-        isOpen={isEditorOpen}
-        setIsOpen={setIsEditorOpen}
-        note={editingNote}
-        onSave={handleSaveNote}
-        isSaving={isSaving}
-      />
-      <AudioTranscriber
-        open={isTranscriberOpen}
-        setOpen={setIsTranscriberOpen}
-        onTranscriptionComplete={handleTranscriptionToNewNote}
-      />
+      <React.Suspense fallback={null}>
+        {isViewerOpen && (
+            <NoteViewer
+                isOpen={isViewerOpen}
+                setIsOpen={setIsViewerOpen}
+                note={viewingNote}
+                onEdit={handleStartEditing}
+                onChecklistItemToggle={handleChecklistItemToggle}
+            />
+        )}
+        {isEditorOpen && (
+            <NoteEditor
+                isOpen={isEditorOpen}
+                setIsOpen={setIsEditorOpen}
+                note={editingNote}
+                onSave={handleSaveNote}
+                isSaving={isSaving}
+            />
+        )}
+        {isTranscriberOpen && (
+            <AudioTranscriber
+                open={isTranscriberOpen}
+                setOpen={setIsTranscriberOpen}
+                onTranscriptionComplete={handleTranscriptionToNewNote}
+            />
+        )}
+      </React.Suspense>
+
       <AlertDialog open={!!deleteConfirmation} onOpenChange={(open) => !open && handleCancelDelete()}>
         <AlertDialogContent>
           <AlertDialogHeader>

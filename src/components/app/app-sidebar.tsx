@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -25,7 +26,7 @@ type AppSidebarProps = {
   isCollapsed?: boolean;
 };
 
-export function AppSidebar({
+const AppSidebarComponent = ({
   activeFilter,
   setActiveFilter,
   setSearchTerm,
@@ -33,31 +34,20 @@ export function AppSidebar({
   onTagClick,
   activeTag,
   isMobile,
-  isCollapsed: isCollapsedFromProp, // Renamed to avoid confusion
-}: AppSidebarProps) {
+  isCollapsed: isCollapsedFromProp,
+}: AppSidebarProps) => {
   const pathname = usePathname();
   const router = useRouter();
 
-  // When loading from localStorage, isCollapsedFromProp is undefined.
-  // In this "loading" state, we treat the sidebar as collapsed to prevent a flash.
   const isLoading = isCollapsedFromProp === undefined;
   const isCollapsed = isLoading ? true : isCollapsedFromProp;
 
-
-  const handleFilterClick = (filter: "all" | "archived" | "trash") => {
-    const href = filter === 'all' ? '/' : `/?filter=${filter}`;
-    router.push(href);
-    // On mobile, the setActiveFilter prop is wrapped to also close the menu.
-    if (isMobile) {
-      setActiveFilter?.(filter);
-    }
-  };
-
   const handleTagClick = (tag: string) => {
+    const searchString = tag.includes(' ') ? `"#${tag}"` : `#${tag}`;
     if (pathname === '/') {
-      onTagClick?.(tag);
+        onTagClick?.(searchString);
     } else {
-      router.push(`/?q=${tag}`);
+      router.push(`/?q=${encodeURIComponent(searchString)}`);
     }
   }
 
@@ -74,9 +64,14 @@ export function AppSidebar({
     <div className="flex flex-col h-full">
       <nav className="flex flex-col gap-1 p-2 pt-4">
         {navItems.map(({ name, path, icon: Icon, filter }) => {
-          const isActive = filter
-            ? pathname === '/' && activeFilter === filter && !activeTag
-            : pathname.startsWith(path);
+          let isActive = false;
+          if (filter) {
+            const searchParams = new URLSearchParams(path.split('?')[1]);
+            const filterParam = searchParams.get('filter') || 'all';
+            isActive = pathname === '/' && activeFilter === filterParam && !activeTag;
+          } else {
+            isActive = pathname.startsWith(path);
+          }
           
           const handleClick = (e: React.MouseEvent) => {
             e.preventDefault();
@@ -134,7 +129,8 @@ export function AppSidebar({
             </CollapsibleTrigger>
             <CollapsibleContent className="flex flex-col gap-1 pt-2">
               {tags.map(tag => {
-                const isActive = pathname === '/' && activeTag === tag;
+                const searchString = tag.includes(' ') ? `"#${tag}"` : `#${tag}`;
+                const isActive = pathname === '/' && activeTag === searchString;
                 return (
                   <Tooltip key={tag} delayDuration={0}>
                     <TooltipTrigger asChild>
@@ -182,7 +178,6 @@ export function AppSidebar({
       data-collapsed={isCollapsed}
       className={cn(
         "hidden sm:flex h-full flex-col bg-card z-40 border-r",
-        // Only apply transition after the initial state is determined
         !isLoading && "transition-[width] duration-300 ease-in-out",
         isCollapsed ? "w-20" : "w-60"
       )}
@@ -191,3 +186,4 @@ export function AppSidebar({
     </aside>
   );
 }
+export const AppSidebar = React.memo(AppSidebarComponent);

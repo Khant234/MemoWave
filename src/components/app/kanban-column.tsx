@@ -1,6 +1,7 @@
 
 "use client";
 
+import * as React from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { KanbanCard } from "./kanban-card";
@@ -15,11 +16,11 @@ type KanbanColumnProps = {
   onCardClick: (note: Note) => void;
 };
 
-export function KanbanColumn({ id, title, notes, onCardClick }: KanbanColumnProps) {
+const KanbanColumnComponent = ({ id, title, notes, onCardClick }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
-    <div className="flex flex-col w-[80vw] max-w-[300px] sm:w-80 sm:max-w-none flex-shrink-0 h-full bg-secondary rounded-lg">
+    <div className="flex flex-col w-[80vw] max-w-[300px] sm:w-80 sm:max-w-none flex-shrink-0 h-full bg-secondary/70 rounded-lg">
       <div className="p-3 flex-shrink-0 border-b-2 border-background/50">
         <h2 className="text-base font-semibold text-foreground flex items-center justify-between">
             <span>{title}</span>
@@ -52,3 +53,5 @@ export function KanbanColumn({ id, title, notes, onCardClick }: KanbanColumnProp
     </div>
   );
 }
+
+export const KanbanColumn = React.memo(KanbanColumnComponent);

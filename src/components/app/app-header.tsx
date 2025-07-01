@@ -1,8 +1,8 @@
 
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
 import * as React from "react";
+import type { Dispatch, SetStateAction } from "react";
 import {
   Search,
   Plus,
@@ -11,6 +11,7 @@ import {
   Menu,
   Mic,
   ArrowLeft,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,7 +50,7 @@ type AppHeaderProps = {
   activeTag?: string;
 };
 
-export function AppHeader({
+const AppHeaderComponent = ({
   searchTerm,
   setSearchTerm,
   layout,
@@ -62,7 +63,7 @@ export function AppHeader({
   tags,
   onTagClick,
   activeTag,
-}: AppHeaderProps) {
+}: AppHeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false);
   const playClickSound = useClickSound();
@@ -92,7 +93,7 @@ export function AppHeader({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                     type="search"
-                    placeholder="Search..."
+                    placeholder="Search notes..."
                     className="h-10 w-full rounded-full border-transparent bg-secondary pl-10 focus-visible:bg-background"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -104,14 +105,12 @@ export function AppHeader({
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-card/80 px-4 backdrop-blur-lg sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/80 px-4 backdrop-blur-lg sm:px-6">
       <div className="flex items-center gap-2">
-         {/* Desktop Menu Toggle */}
         <Button size="icon" variant="ghost" className="hidden sm:flex h-10 w-10" onClick={onToggleSidebar}>
             <Menu className="h-6 w-6" />
             <span className="sr-only">Toggle Menu</span>
         </Button>
-         {/* Mobile Menu Toggle */}
         <Sheet open={isMobileMenuOpen} onOpenChange={handleMobileMenuOpenChange}>
           <SheetTrigger asChild>
             <Button size="icon" variant="ghost" className="sm:hidden h-10 w-10">
@@ -145,7 +144,7 @@ export function AppHeader({
           </SheetContent>
         </Sheet>
         
-        <div className="flex items-center gap-2">
+        <div className="hidden items-center gap-2 md:flex">
             <svg
                 width="24"
                 height="24"
@@ -198,13 +197,13 @@ export function AppHeader({
       
       <div className="hidden flex-1 items-center justify-center sm:flex">
         <div className="relative w-full max-w-2xl">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search..."
+              placeholder="Search notes, or type # for tags..."
               className={cn(
-                "w-full rounded-full bg-secondary pl-10 h-10 border-transparent transition-all duration-200 ease-in-out",
-                "focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                "w-full rounded-full bg-secondary pl-11 h-10 border-transparent transition-all duration-200 ease-in-out",
+                "focus-visible:bg-background focus-visible:shadow-inner"
               )}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -224,14 +223,11 @@ export function AppHeader({
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
-                        variant="ghost"
+                        variant={layout === "list" ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setLayout("list")}
                         aria-label="List view"
-                        className={cn(
-                            "w-9 px-0",
-                            layout === "list" && "bg-background text-foreground shadow-sm hover:bg-background"
-                        )}
+                        className="w-9 px-0"
                         >
                         <List className="h-5 w-5" />
                         </Button>
@@ -243,14 +239,11 @@ export function AppHeader({
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
-                        variant="ghost"
+                        variant={layout === "grid" ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setLayout("grid")}
                         aria-label="Grid view"
-                        className={cn(
-                            "w-9 px-0",
-                            layout === "grid" && "bg-background text-foreground shadow-sm hover:bg-background"
-                        )}
+                        className="w-9 px-0"
                         >
                         <LayoutGrid className="h-5 w-5" />
                         </Button>
@@ -261,9 +254,7 @@ export function AppHeader({
                 </Tooltip>
                 </div>
             )}
-            <ThemeToggle />
 
-            {/* Desktop Buttons */}
             {onNewVoiceNote && (
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -293,10 +284,9 @@ export function AppHeader({
                 </Button>
             )}
         </div>
-         <div className="flex sm:hidden">
-            <ThemeToggle />
-         </div>
+        <ThemeToggle />
       </div>
     </header>
   );
 }
+export const AppHeader = React.memo(AppHeaderComponent);
