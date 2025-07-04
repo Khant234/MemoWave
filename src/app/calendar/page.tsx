@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { format, isSameDay, isBefore, startOfDay } from 'date-fns';
+import { format, isSameDay, isBefore, startOfDay, isToday } from 'date-fns';
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useNotes } from "@/contexts/notes-context";
@@ -18,8 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ListChecks, ChevronDown, ChevronRight, Clock, Calendar as CalendarIcon } from "lucide-react";
 import { CalendarPageSkeleton } from "@/components/app/calendar-page-skeleton";
-import { NOTE_PRIORITIES, KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
-import { Separator } from "@/components/ui/separator";
+import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -27,7 +26,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
 const NoteEditor = React.lazy(() => import('@/components/app/note-editor').then(module => ({ default: module.NoteEditor })));
 
-const AllDayTaskItem = ({ note, onClick }: { note: Note, onClick: (note: Note) => void }) => {
+const AllDayTaskItem = ({ note, onClick, isOverdue }: { note: Note, onClick: (note: Note) => void, isOverdue?: boolean }) => {
     const isCompleted = note.status === 'done';
     
     return (
@@ -40,6 +39,7 @@ const AllDayTaskItem = ({ note, onClick }: { note: Note, onClick: (note: Note) =
                  <h3 className={cn("font-semibold", isCompleted && "line-through")}>{note.title}</h3>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {isOverdue && !isCompleted && <Badge variant="destructive">Overdue</Badge>}
                 {note.priority !== 'none' && <Badge variant={note.priority === 'high' && !isCompleted ? 'destructive' : 'outline'}>{NOTE_PRIORITY_TITLES[note.priority]}</Badge>}
                 <Badge variant={isCompleted ? "secondary" : "outline"}>{KANBAN_COLUMN_TITLES[note.status]}</Badge>
                 {note.checklist.length > 0 && (
@@ -87,12 +87,13 @@ export default function CalendarPage() {
     const { overdueTasks, allDayTasks, timedTasks, completedTasks } = React.useMemo(() => {
         if (!selectedDate) return { overdueTasks: [], allDayTasks: [], timedTasks: [], completedTasks: [] };
         
+        const today = startOfDay(new Date());
         const selectedDay = startOfDay(selectedDate);
         
         const overdue = notesWithDueDate
             .filter(note => {
                 const dueDate = startOfDay(new Date(note.dueDate!));
-                return isBefore(dueDate, selectedDay) && note.status !== 'done';
+                return isBefore(dueDate, today) && note.status !== 'done';
             })
             .sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
@@ -236,7 +237,7 @@ export default function CalendarPage() {
                                 <CalendarPageSkeleton />
                             ) : (
                                 <div className="flex flex-col lg:flex-row gap-6 items-start">
-                                    <Card className="shadow-soft w-full lg:w-auto self-start border-none">
+                                    <Card className="shadow-soft w-full lg:w-auto self-start">
                                         <CardContent className="p-0 flex justify-center">
                                             <Calendar
                                                 mode="single"
@@ -248,7 +249,7 @@ export default function CalendarPage() {
                                         </CardContent>
                                     </Card>
                                     <div className="flex-1 w-full">
-                                        <Card className="shadow-soft border-none">
+                                        <Card className="shadow-soft">
                                             <CardHeader>
                                                 <CardTitle className="font-headline">
                                                     Schedule for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : ''}
@@ -263,7 +264,7 @@ export default function CalendarPage() {
                                                         </div>
                                                     ) : (
                                                         <div className="space-y-6">
-                                                             {overdueTasks.length > 0 && (
+                                                             {selectedDate && isToday(selectedDate) && overdueTasks.length > 0 && (
                                                                 <Collapsible defaultOpen>
                                                                     <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg p-3 text-left font-headline text-base font-semibold text-destructive hover:bg-destructive/10">
                                                                         <span>Pending from Previous Days ({overdueTasks.length})</span>
@@ -271,7 +272,7 @@ export default function CalendarPage() {
                                                                     </CollapsibleTrigger>
                                                                     <CollapsibleContent className="pt-3 space-y-3">
                                                                         {overdueTasks.map(note => (
-                                                                            <AllDayTaskItem key={note.id} note={note} onClick={handleCardClick} />
+                                                                            <AllDayTaskItem key={note.id} note={note} onClick={handleCardClick} isOverdue />
                                                                         ))}
                                                                     </CollapsibleContent>
                                                                 </Collapsible>
