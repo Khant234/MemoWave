@@ -38,6 +38,7 @@ import { generateTitle } from "@/ai/flows/title-generation";
 import { type GenerateGoalPlanOutput } from "@/ai/flows/generate-goal-plan";
 import { NOTE_COLORS } from "@/lib/data";
 import { MobileFab } from "@/components/app/mobile-fab";
+import { isToday, isYesterday, isThisWeek } from 'date-fns';
 
 // Lazy load modals and heavy components
 const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
@@ -497,7 +498,7 @@ export default function Home() {
         
         const searchInput = searchTerm.toLowerCase();
         if (searchInput.startsWith('#')) {
-            const searchTag = searchInput.substring(1);
+            const searchTag = searchInput.substring(1).replace(/"/g, '');
             return matchesFilter && note.tags.some(tag => tag.toLowerCase().includes(searchTag));
         }
 
@@ -520,6 +521,41 @@ export default function Home() {
         );
       });
   }, [notes, activeFilter, searchTerm]);
+
+  const groupedNotes = React.useMemo(() => {
+    if (activeFilter !== 'all' || searchTerm.trim() !== '') {
+      if (filteredNotes.length === 0) return {};
+      return { 'Results': filteredNotes };
+    }
+
+    const groups: Record<string, Note[]> = {};
+    const pinned = filteredNotes.filter(n => n.isPinned);
+    const unpinned = filteredNotes.filter(n => !n.isPinned);
+
+    if (pinned.length > 0) {
+      groups['Pinned'] = pinned;
+    }
+
+    unpinned.forEach(note => {
+      const noteDate = new Date(note.updatedAt);
+      if (isToday(noteDate)) {
+        if (!groups['Today']) groups['Today'] = [];
+        groups['Today'].push(note);
+      } else if (isYesterday(noteDate)) {
+        if (!groups['Yesterday']) groups['Yesterday'] = [];
+        groups['Yesterday'].push(note);
+      } else if (isThisWeek(noteDate, { weekStartsOn: 1 })) {
+        if (!groups['This Week']) groups['This Week'] = [];
+        groups['This Week'].push(note);
+      } else {
+        if (!groups['Earlier']) groups['Earlier'] = [];
+        groups['Earlier'].push(note);
+      }
+    });
+
+    return groups;
+
+  }, [filteredNotes, activeFilter, searchTerm]);
 
   return (
     <>
@@ -552,7 +588,7 @@ export default function Home() {
           <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
             <div className="mx-auto max-w-7xl">
               <NoteList
-                notes={filteredNotes}
+                groupedNotes={groupedNotes}
                 isLoading={isLoading}
                 layout={layout}
                 onViewNote={handleViewNote}

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -10,7 +11,7 @@ import { NoteCardSkeleton } from "./note-card-skeleton";
 import { Button } from "../ui/button";
 
 type NoteListProps = {
-  notes: Note[];
+  groupedNotes: Record<string, Note[]>;
   layout: "grid" | "list";
   isLoading: boolean;
   onViewNote: (note: Note) => void;
@@ -27,7 +28,7 @@ type NoteListProps = {
 };
 
 const NoteListComponent = ({
-  notes,
+  groupedNotes,
   layout,
   isLoading,
   onViewNote,
@@ -60,7 +61,7 @@ const NoteListComponent = ({
     )
   }
 
-  if (notes.length === 0) {
+  if (Object.keys(groupedNotes).length === 0) {
     const messages = {
       all: {
         icon: NotepadText,
@@ -107,10 +108,19 @@ const NoteListComponent = ({
       onRemoveTagFromNote={onRemoveTagFromNote}
     />
   );
+  
+  const groupOrder = ["Pinned", "Today", "Yesterday", "This Week", "Earlier", "Results"];
+  const sortedGroupKeys = Object.keys(groupedNotes).sort((a, b) => {
+    const indexA = groupOrder.indexOf(a);
+    const indexB = groupOrder.indexOf(b);
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
 
   return (
     <>
-      {activeFilter === 'trash' && notes.length > 0 && (
+      {activeFilter === 'trash' && Object.keys(groupedNotes).length > 0 && (
         <div className="mb-6 flex flex-col items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive sm:flex-row sm:items-center sm:justify-between">
             <p>
                 Notes in the trash are not recoverable after permanent deletion.
@@ -125,10 +135,17 @@ const NoteListComponent = ({
             </Button>
         </div>
       )}
-      <div
-        className={gridClasses}
-      >
-        {notes.map(renderNoteCard)}
+      <div className="space-y-8">
+        {sortedGroupKeys.map(groupTitle => (
+          <div key={groupTitle}>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              {groupTitle}
+            </h2>
+            <div className={gridClasses}>
+              {groupedNotes[groupTitle].map(renderNoteCard)}
+            </div>
+          </div>
+        ))}
       </div>
     </>
   );
