@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from "react";
@@ -249,10 +248,11 @@ export default function Home() {
     }
   }, [notes, toast, notesCollectionRef]);
   
-  const handleSavePlan = React.useCallback(async (planNotes: GenerateGoalPlanOutput['notes']) => {
+  const handleSavePlan = React.useCallback(async (planNotes: GenerateGoalPlanOutput['notes'], goal: string) => {
     if (planNotes.length === 0) return;
 
     const batch = writeBatch(db);
+    const planId = new Date().toISOString() + Math.random();
     
     planNotes.forEach((planNote, index) => {
         const newNoteData: Omit<Note, 'id'> = {
@@ -273,14 +273,25 @@ export default function Home() {
             dueDate: planNote.dueDate,
             showOnBoard: true,
             order: Date.now() + index,
+            planId: planId,
+            planGoal: goal,
         };
         const newNoteRef = doc(notesCollectionRef);
         batch.set(newNoteRef, newNoteData);
     });
 
-    await batch.commit();
-
-  }, [notesCollectionRef]);
+    try {
+      await batch.commit();
+      router.push('/plans');
+    } catch(err) {
+      console.error("Error saving plan:", err);
+      toast({
+        title: "Error Saving Plan",
+        description: "There was an issue saving your new plan.",
+        variant: "destructive",
+      });
+    }
+  }, [notesCollectionRef, router, toast]);
 
   const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
     setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);

@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -18,7 +19,7 @@ import { Loader2, BrainCircuit } from "lucide-react";
 type GoalPlannerProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
-  onSavePlan: (plan: GenerateGoalPlanOutput['notes']) => Promise<void>;
+  onSavePlan: (plan: GenerateGoalPlanOutput['notes'], goal: string) => Promise<void>;
 };
 
 export function GoalPlanner({ open, setOpen, onSavePlan }: GoalPlannerProps) {
@@ -42,7 +43,7 @@ export function GoalPlanner({ open, setOpen, onSavePlan }: GoalPlannerProps) {
       if (!result.notes || result.notes.length === 0) {
         throw new Error("The AI could not generate a plan for this goal.");
       }
-      await onSavePlan(result.notes);
+      await onSavePlan(result.notes, goal);
       toast({
         title: "Plan Generated!",
         description: "Your new goal plan has been added to your notes.",

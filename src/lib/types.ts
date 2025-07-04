@@ -31,4 +31,8 @@ export type Note = {
   dueDate?: string | null;
   showOnBoard?: boolean;
   order: number;
+
+  // AI Goal Plan fields
+  planId?: string;
+  planGoal?: string;
 };

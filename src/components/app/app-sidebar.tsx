@@ -5,7 +5,7 @@ import * as React from "react";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button, buttonVariants } from "@/components/ui/button";
-import { NotepadText, Archive, Trash2, Tag, ChevronDown, ListTodo, LayoutGrid, CalendarDays } from "lucide-react";
+import { NotepadText, Archive, Trash2, Tag, ChevronDown, ListTodo, LayoutGrid, CalendarDays, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -56,6 +56,7 @@ const AppSidebarComponent = ({
     { name: "To-do List", path: "/todos", icon: ListTodo },
     { name: "Kanban Board", path: "/board", icon: LayoutGrid },
     { name: "Calendar", path: "/calendar", icon: CalendarDays },
+    { name: "Plans", path: "/plans", icon: Target },
     { name: "Archived", path: "/?filter=archived", icon: Archive, filter: "archived" },
     { name: "Trash", path: "/?filter=trash", icon: Trash2, filter: "trash" },
   ];
