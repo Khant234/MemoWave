@@ -115,17 +115,19 @@ const NoteCardComponent = ({
     <Card
       onClick={() => !note.isTrashed && onViewNote(note)}
       className={cn(
-        "group flex transform-gpu flex-col overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1",
-        note.isPinned ? "shadow-soft-glow" : "shadow-soft",
-        note.isTrashed ? "opacity-70 bg-secondary/50 cursor-default" : "cursor-pointer bg-card/80",
-        "border-none"
+        "group flex h-full flex-col overflow-hidden border transition-all duration-200 ease-in-out",
+        "bg-card shadow-md hover:shadow-xl",
+        note.isTrashed ? "opacity-60 bg-secondary/50 cursor-default" : "cursor-pointer",
+        note.isPinned ? "border-primary" : "border-transparent",
+        "border-l-4"
       )}
+      style={{ borderLeftColor: note.isPinned ? 'hsl(var(--primary))' : note.color }}
     >
       <CardHeader className="relative px-4 pt-4 pb-2">
-        <CardTitle className="pr-12 text-lg font-bold font-headline line-clamp-2">
+        <CardTitle className="pr-12 text-base font-bold font-headline line-clamp-2">
           {note.title || "Untitled Note"}
         </CardTitle>
-        <div className="absolute top-4 right-4 flex items-center gap-1">
+        <div className="absolute top-2 right-2 flex items-center gap-0">
           {!note.isTrashed && (
             <Tooltip>
                 <TooltipTrigger asChild>
@@ -213,9 +215,9 @@ const NoteCardComponent = ({
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-4 flex-grow">
+      <CardContent className="flex-grow px-4 pb-4 min-h-[70px]">
         {note.imageUrl && (
-          <div className="relative mb-4 aspect-video w-full rounded-md overflow-hidden">
+          <div className="relative mb-2 aspect-video w-full overflow-hidden rounded-md">
             <Image
               src={note.imageUrl}
               alt={note.title || 'Note image'}
@@ -225,14 +227,14 @@ const NoteCardComponent = ({
             />
           </div>
         )}
-        <div className="h-[60px] text-sm">
+        <div className="text-sm">
           {summary ? (
-            <div className="space-y-1.5">
-              <Badge variant="outline" className="text-xs border-primary/20 text-primary/90 bg-primary/10">
+            <div className="space-y-1 rounded-md bg-primary/5 p-2 text-xs">
+              <Badge variant="outline" className="border-primary/20 bg-transparent text-primary/90">
                 <Sparkles className="mr-1.5 h-3 w-3" />
                 AI Summary
               </Badge>
-              <p className="italic text-foreground font-medium line-clamp-2">
+              <p className="font-medium italic text-primary/90 line-clamp-3">
                 &ldquo;{summary}&rdquo;
               </p>
             </div>
@@ -243,44 +245,47 @@ const NoteCardComponent = ({
           )}
         </div>
       </CardContent>
-      <CardFooter className="flex-col items-start gap-2 px-4 pb-4 pt-0">
-        <div className="flex flex-wrap gap-2">
-          {note.tags.map((tag) => (
-            <Badge
-              key={tag}
-              variant="secondary"
-            >
-              <span
-                className="cursor-pointer hover:underline"
-                onClick={(e) => handleTagClick(e, tag)}
+      <CardFooter className="flex-col items-start gap-2 px-4 pb-3 pt-0">
+        {note.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {note.tags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="secondary"
+                className="text-xs"
               >
-                {tag}
-              </span>
-              {!note.isTrashed && (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button
-                        onClick={(e) => handleRemoveTag(e, tag)}
-                        className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
-                        aria-label={`Remove tag ${tag}`}
-                        >
-                        <X className="h-3 w-3" />
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Remove Tag</p>
-                    </TooltipContent>
-                </Tooltip>
-              )}
-            </Badge>
-          ))}
-        </div>
-        <div className="flex justify-between w-full items-center pt-2">
+                <span
+                  className="cursor-pointer hover:underline"
+                  onClick={(e) => handleTagClick(e, tag)}
+                >
+                  {tag}
+                </span>
+                {!note.isTrashed && (
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <button
+                          onClick={(e) => handleRemoveTag(e, tag)}
+                          className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
+                          aria-label={`Remove tag ${tag}`}
+                          >
+                          <X className="h-2.5 w-2.5" />
+                          </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                          <p>Remove Tag</p>
+                      </TooltipContent>
+                  </Tooltip>
+                )}
+              </Badge>
+            ))}
+          </div>
+        )}
+        <div className="flex w-full items-center justify-between pt-2">
             <p className="text-xs text-muted-foreground">
               {formattedDate}
             </p>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 text-muted-foreground">
                 {note.priority && note.priority !== 'none' && (
                     <Tooltip>
                         <TooltipTrigger>{priorityIcons[note.priority]}</TooltipTrigger>
@@ -292,7 +297,7 @@ const NoteCardComponent = ({
                 {note.checklist?.length > 0 && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1 text-xs">
                         <CheckSquare className="h-4 w-4" />
                         <span>
                         {note.checklist.filter((item) => item.completed).length}/
@@ -306,7 +311,7 @@ const NoteCardComponent = ({
                 </Tooltip>
                 )}
                 {note.isDraft && (
-                    <Badge variant="outline">Draft</Badge>
+                    <Badge variant="outline" className="text-xs">Draft</Badge>
                 )}
             </div>
         </div>
