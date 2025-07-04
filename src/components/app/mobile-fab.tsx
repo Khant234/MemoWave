@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from 'react';
-import { Plus, Mic, Pencil } from 'lucide-react';
+import { Plus, Mic, Pencil, BrainCircuit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useClickSound } from '@/hooks/use-click-sound';
@@ -10,9 +10,10 @@ import { useClickSound } from '@/hooks/use-click-sound';
 type MobileFabProps = {
   onNewNote: () => void;
   onNewVoiceNote: () => void;
+  onNewPlan: () => void;
 };
 
-export function MobileFab({ onNewNote, onNewVoiceNote }: MobileFabProps) {
+export function MobileFab({ onNewNote, onNewVoiceNote, onNewPlan }: MobileFabProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const playClickSound = useClickSound();
 
@@ -48,6 +49,12 @@ export function MobileFab({ onNewNote, onNewVoiceNote }: MobileFabProps) {
     setIsOpen(false);
   };
 
+  const handleNewPlanClick = () => {
+    playClickSound();
+    onNewPlan();
+    setIsOpen(false);
+  };
+
 
   return (
     <div className="fixed bottom-6 right-6 z-40 sm:hidden" data-fab-menu>
@@ -61,6 +68,15 @@ export function MobileFab({ onNewNote, onNewVoiceNote }: MobileFabProps) {
               : 'opacity-0 translate-y-4 pointer-events-none'
           )}
         >
+          <Button
+            size="lg"
+            variant="secondary"
+            className="rounded-full w-14 h-14 shadow-md"
+            aria-label="Plan a Goal"
+            onClick={handleNewPlanClick}
+          >
+            <BrainCircuit className="h-6 w-6" />
+          </Button>
           <Button
             size="lg"
             variant="secondary"

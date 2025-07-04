@@ -12,6 +12,7 @@ import {
   Mic,
   ArrowLeft,
   Settings,
+  BrainCircuit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,7 @@ type AppHeaderProps = {
   setLayout?: Dispatch<SetStateAction<"grid" | "list">>;
   onNewNote?: () => void;
   onNewVoiceNote?: () => void;
+  onNewPlan?: () => void;
   onToggleSidebar: () => void;
   activeFilter?: "all" | "archived" | "trash";
   setActiveFilter?: Dispatch<SetStateAction<"all" | "archived" | "trash">>;
@@ -57,6 +59,7 @@ const AppHeaderComponent = ({
   setLayout,
   onNewNote,
   onNewVoiceNote,
+  onNewPlan,
   onToggleSidebar,
   activeFilter,
   setActiveFilter,
@@ -253,6 +256,25 @@ const AppHeaderComponent = ({
                     </TooltipContent>
                 </Tooltip>
                 </div>
+            )}
+
+            {onNewPlan && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hidden sm:inline-flex"
+                            onClick={onNewPlan}
+                        >
+                            <BrainCircuit className="h-5 w-5" />
+                            <span className="sr-only">Plan New Goal</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Plan New Goal with AI</p>
+                    </TooltipContent>
+                </Tooltip>
             )}
 
             {onNewVoiceNote && (

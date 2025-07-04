@@ -35,6 +35,7 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { useNotes } from "@/contexts/notes-context";
 import { useGamification } from "@/contexts/gamification-context";
 import { generateTitle } from "@/ai/flows/title-generation";
+import { type GenerateGoalPlanOutput } from "@/ai/flows/generate-goal-plan";
 import { NOTE_COLORS } from "@/lib/data";
 import { MobileFab } from "@/components/app/mobile-fab";
 
@@ -42,6 +43,7 @@ import { MobileFab } from "@/components/app/mobile-fab";
 const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
 const NoteEditor = React.lazy(() => import('@/components/app/note-editor').then(module => ({ default: module.NoteEditor })));
 const AudioTranscriber = React.lazy(() => import('@/components/app/audio-transcriber').then(module => ({ default: module.AudioTranscriber })));
+const GoalPlanner = React.lazy(() => import('@/components/app/goal-planner').then(module => ({ default: module.GoalPlanner })));
 
 
 export default function Home() {
@@ -60,6 +62,7 @@ export default function Home() {
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
   const [isTranscriberOpen, setIsTranscriberOpen] = React.useState(false);
+  const [isPlannerOpen, setIsPlannerOpen] = React.useState(false);
 
 
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
@@ -116,6 +119,10 @@ export default function Home() {
 
   const handleNewVoiceNote = React.useCallback(() => {
     setIsTranscriberOpen(true);
+  }, []);
+
+  const handleNewPlan = React.useCallback(() => {
+    setIsPlannerOpen(true);
   }, []);
 
   const handleStartEditing = React.useCallback((note: Note) => {
@@ -241,6 +248,39 @@ export default function Home() {
     }
   }, [notes, toast, notesCollectionRef]);
   
+  const handleSavePlan = React.useCallback(async (planNotes: GenerateGoalPlanOutput['notes']) => {
+    if (planNotes.length === 0) return;
+
+    const batch = writeBatch(db);
+    
+    planNotes.forEach((planNote, index) => {
+        const newNoteData: Omit<Note, 'id'> = {
+            title: planNote.title,
+            content: planNote.content,
+            tags: [...planNote.tags, "goal-plan"],
+            color: NOTE_COLORS[index % NOTE_COLORS.length],
+            isPinned: false,
+            isArchived: false,
+            isTrashed: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            checklist: planNote.checklist.map(item => ({...item, id: new Date().toISOString() + Math.random(), completed: false })),
+            history: [],
+            isDraft: false,
+            status: 'todo',
+            priority: 'medium',
+            dueDate: planNote.dueDate,
+            showOnBoard: true,
+            order: Date.now() + index,
+        };
+        const newNoteRef = doc(notesCollectionRef);
+        batch.set(newNoteRef, newNoteData);
+    });
+
+    await batch.commit();
+
+  }, [notesCollectionRef]);
+
   const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
     setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
 
@@ -491,6 +531,7 @@ export default function Home() {
           setLayout={setLayout}
           onNewNote={handleNewNote}
           onNewVoiceNote={handleNewVoiceNote}
+          onNewPlan={handleNewPlan}
           onToggleSidebar={toggleSidebar}
           activeFilter={activeFilter}
           setActiveFilter={setActiveFilter}
@@ -532,7 +573,7 @@ export default function Home() {
       </div>
 
       {activeFilter !== 'trash' && activeFilter !== 'archived' && (
-        <MobileFab onNewNote={handleNewNote} onNewVoiceNote={handleNewVoiceNote} />
+        <MobileFab onNewNote={handleNewNote} onNewVoiceNote={handleNewVoiceNote} onNewPlan={handleNewPlan} />
       )}
 
       <React.Suspense fallback={null}>
@@ -559,6 +600,13 @@ export default function Home() {
                 open={isTranscriberOpen}
                 setOpen={setIsTranscriberOpen}
                 onTranscriptionComplete={handleTranscriptionToNewNote}
+            />
+        )}
+        {isPlannerOpen && (
+            <GoalPlanner
+                open={isPlannerOpen}
+                setOpen={setIsPlannerOpen}
+                onSavePlan={handleSavePlan}
             />
         )}
       </React.Suspense>
