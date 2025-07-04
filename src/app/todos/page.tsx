@@ -2,7 +2,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   updateDoc,
   doc,
@@ -129,9 +128,7 @@ export default function TodosPage() {
         <Card>
           <CardHeader className="p-4">
             <AccordionTrigger className="p-0 hover:no-underline">
-              <Link href={`/?note=${group.noteId}`} className="hover:underline">
-                <CardTitle className="text-lg">{group.noteTitle}</CardTitle>
-              </Link>
+              <CardTitle className="text-lg">{group.noteTitle}</CardTitle>
             </AccordionTrigger>
           </CardHeader>
           <AccordionContent>
