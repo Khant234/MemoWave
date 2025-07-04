@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { type Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Edit, CheckSquare, Square, Music, Download } from "lucide-react";
+import { Edit, CheckSquare, Square, Music, Download, Clock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { ChecklistCompleteMessage } from "./checklist-complete";
 import { useClickSound } from "@/hooks/use-click-sound";
@@ -117,8 +117,14 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
       <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
         <SheetHeader className="p-6 pb-2">
           <SheetTitle className="font-headline text-2xl">{note.title || 'Untitled Note'}</SheetTitle>
-          <SheetDescription>
-            Last updated on {formattedUpdateDate}
+          <SheetDescription className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+            <span>Last updated on {formattedUpdateDate}</span>
+            {note.startTime && (
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                Scheduled: {note.startTime}{note.endTime ? ` - ${note.endTime}` : ''}
+              </span>
+            )}
           </SheetDescription>
         </SheetHeader>
         <ScrollArea className="flex-grow px-6">

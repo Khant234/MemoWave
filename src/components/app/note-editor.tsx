@@ -109,6 +109,8 @@ export function NoteEditor({
   const [status, setStatus] = React.useState<NoteStatus>('todo');
   const [priority, setPriority] = React.useState<NotePriority>('none');
   const [dueDate, setDueDate] = React.useState<Date | null | undefined>(null);
+  const [startTime, setStartTime] = React.useState<string | null>(null);
+  const [endTime, setEndTime] = React.useState<string | null>(null);
   const [showOnBoard, setShowOnBoard] = React.useState(false);
   const [isKanbanConfirmOpen, setIsKanbanConfirmOpen] = React.useState(false);
   const prevChecklistLength = React.useRef(0);
@@ -118,6 +120,18 @@ export function NoteEditor({
   const autoChecklistRunning = React.useRef(false);
 
   const { toast } = useToast();
+
+  const timeOptions = React.useMemo(() => {
+    const options = [];
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 30) {
+            const hour = h.toString().padStart(2, '0');
+            const minute = m.toString().padStart(2, '0');
+            options.push(`${hour}:${minute}`);
+        }
+    }
+    return options;
+  }, []);
 
   const getDrafts = React.useCallback((): Record<string, NoteDraft> => {
     if (typeof window === 'undefined') return {};
@@ -156,6 +170,8 @@ export function NoteEditor({
     setStatus(data.status || 'todo');
     setPriority(data.priority || 'none');
     setDueDate(data.dueDate ? new Date(data.dueDate) : null);
+    setStartTime(data.startTime || null);
+    setEndTime(data.endTime || null);
     setShowOnBoard(data.showOnBoard || false);
   }, []);
 
@@ -182,6 +198,8 @@ export function NoteEditor({
         setStatus('todo');
         setPriority('none');
         setDueDate(null);
+        setStartTime(null);
+        setEndTime(null);
         setShowOnBoard(false);
       }
       
@@ -195,11 +213,12 @@ export function NoteEditor({
       const draftNote: NoteDraft = {
         title, content, tags, color, checklist, imageUrl, 
         audioUrl: generatedAudio, status, priority, 
-        dueDate: dueDate ? dueDate.toISOString() : null, showOnBoard,
+        dueDate: dueDate ? dueDate.toISOString() : null, 
+        startTime, endTime, showOnBoard,
       };
       saveDraft(draftNote);
     }
-  }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, showOnBoard, saveDraft]);
+  }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, startTime, endTime, showOnBoard, saveDraft]);
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -210,7 +229,10 @@ export function NoteEditor({
     const currentState = {
       title, content, tags, color, checklist, imageUrl,
       audioUrl: generatedAudio || undefined, status, priority,
-      dueDate: dueDate ? dueDate.toISOString() : undefined, showOnBoard,
+      dueDate: dueDate ? dueDate.toISOString() : undefined,
+      startTime: startTime || undefined,
+      endTime: endTime || undefined,
+      showOnBoard,
     };
   
     if (note) {
@@ -218,14 +240,16 @@ export function NoteEditor({
         title: note.title, content: note.content, tags: note.tags, color: note.color,
         checklist: note.checklist, imageUrl: note.imageUrl, audioUrl: note.audioUrl,
         status: note.status, priority: note.priority, dueDate: note.dueDate || undefined,
+        startTime: note.startTime || undefined,
+        endTime: note.endTime || undefined,
         showOnBoard: note.showOnBoard || false,
       };
       setIsDirty(JSON.stringify(currentState) !== JSON.stringify(noteState));
     } else {
-      const isEmpty = !title && !content && tags.length === 0 && checklist.length === 0 && !imageUrl && !generatedAudio && !showOnBoard;
+      const isEmpty = !title && !content && tags.length === 0 && checklist.length === 0 && !imageUrl && !generatedAudio && !showOnBoard && !dueDate;
       setIsDirty(!isEmpty);
     }
-  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, showOnBoard]);
+  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, startTime, endTime, showOnBoard]);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -276,6 +300,13 @@ export function NoteEditor({
     }
   }, [checklist.length, isOpen, showOnBoard]);
 
+  React.useEffect(() => {
+    if (!dueDate) {
+        setStartTime(null);
+        setEndTime(null);
+    }
+  }, [dueDate]);
+
   const handleSave = React.useCallback(() => {
     if (!title && !content) {
       toast({
@@ -291,14 +322,17 @@ export function NoteEditor({
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
-      isDraft: false, status, priority, dueDate: dueDate ? dueDate.toISOString() : null,
+      isDraft: false, status, priority, 
+      dueDate: dueDate ? dueDate.toISOString() : null,
+      startTime: dueDate ? startTime : null,
+      endTime: dueDate ? endTime : null,
       showOnBoard, order: note?.order || Date.now(),
     };
     if (imageUrl) newNote.imageUrl = imageUrl;
     if (generatedAudio) newNote.audioUrl = generatedAudio;
 
     onSave(newNote);
-  }, [title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, showOnBoard, note, onSave, toast]);
+  }, [title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, startTime, endTime, showOnBoard, note, onSave, toast]);
   
   const handleDiscardChanges = React.useCallback(() => {
     if (note) {
@@ -322,7 +356,10 @@ export function NoteEditor({
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
-      isDraft: true, status, priority, dueDate: dueDate ? dueDate.toISOString() : null,
+      isDraft: true, status, priority, 
+      dueDate: dueDate ? dueDate.toISOString() : null,
+      startTime: dueDate ? startTime : null,
+      endTime: dueDate ? endTime : null,
       showOnBoard, order: note?.order || Date.now(),
     };
     if (imageUrl) draftNote.imageUrl = imageUrl;
@@ -330,7 +367,7 @@ export function NoteEditor({
     
     onSave(draftNote);
     setIsCloseConfirmOpen(false);
-  }, [title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, showOnBoard, note, onSave]);
+  }, [title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, startTime, endTime, showOnBoard, note, onSave]);
 
   const handleDiscardAndClose = React.useCallback(() => {
     clearDraft();
@@ -503,35 +540,55 @@ export function NoteEditor({
               </div>
 
               <div className="space-y-4">
-                <Label>Project Settings</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-lg border p-4">
-                    <div className="space-y-2">
-                        <Label>Status</Label>
-                        <Select value={status} onValueChange={(value: NoteStatus) => setStatus(value)}>
-                            <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                            <SelectContent>
-                                {Object.entries(KANBAN_COLUMN_TITLES).map(([key, title]) => (
-                                    <SelectItem key={key} value={key}>{title}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                <Label>Task Settings</Label>
+                <div className="space-y-4 rounded-lg border p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Status</Label>
+                            <Select value={status} onValueChange={(value: NoteStatus) => setStatus(value)}>
+                                <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                                <SelectContent>
+                                    {Object.entries(KANBAN_COLUMN_TITLES).map(([key, title]) => (
+                                        <SelectItem key={key} value={key}>{title}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Priority</Label>
+                            <Select value={priority} onValueChange={(value: NotePriority) => setPriority(value)}>
+                                <SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger>
+                                <SelectContent>
+                                    {Object.entries(NOTE_PRIORITY_TITLES).map(([key, title]) => (
+                                        <SelectItem key={key} value={key}>{title}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label>Priority</Label>
-                        <Select value={priority} onValueChange={(value: NotePriority) => setPriority(value)}>
-                            <SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger>
-                            <SelectContent>
-                                {Object.entries(NOTE_PRIORITY_TITLES).map(([key, title]) => (
-                                    <SelectItem key={key} value={key}>{title}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    <div>
+                        <Label>Date & Time</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                            <div className="sm:col-span-1">
+                                <DatePicker date={dueDate} setDate={(d) => setDueDate(d)} />
+                            </div>
+                            <div className="sm:col-span-2 grid grid-cols-2 gap-2">
+                                <Select value={startTime || ''} onValueChange={setStartTime} disabled={!dueDate}>
+                                    <SelectTrigger><SelectValue placeholder="Start time" /></SelectTrigger>
+                                    <SelectContent>
+                                        {timeOptions.map(time => <SelectItem key={`start-${time}`} value={time}>{time}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <Select value={endTime || ''} onValueChange={setEndTime} disabled={!dueDate}>
+                                    <SelectTrigger><SelectValue placeholder="End time" /></SelectTrigger>
+                                    <SelectContent>
+                                        {timeOptions.map(time => <SelectItem key={`end-${time}`} value={time}>{time}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label>Due Date</Label>
-                        <DatePicker date={dueDate} setDate={(d) => setDueDate(d)} />
-                    </div>
-                    <div className="sm:col-span-3 flex items-center space-x-2 pt-2">
+                    <div className="flex items-center space-x-2 pt-2">
                       <Switch id="show-on-board" checked={showOnBoard} onCheckedChange={setShowOnBoard} />
                       <Label htmlFor="show-on-board" className="cursor-pointer">Show on Kanban Board</Label>
                     </div>

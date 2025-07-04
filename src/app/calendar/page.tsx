@@ -12,11 +12,11 @@ import { AppSidebar } from "@/components/app/app-sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useGamification } from "@/contexts/gamification-context";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ListChecks, ChevronDown, ChevronRight } from "lucide-react";
+import { ListChecks, ChevronDown, ChevronRight, Clock, Calendar as CalendarIcon } from "lucide-react";
 import { CalendarPageSkeleton } from "@/components/app/calendar-page-skeleton";
 import { NOTE_PRIORITIES, KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
 import { Separator } from "@/components/ui/separator";
@@ -26,40 +26,22 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 // Lazy load modals
 const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
 const NoteEditor = React.lazy(() => import('@/components/app/note-editor').then(module => ({ default: module.NoteEditor })));
-const ChecklistViewer = React.lazy(() => import('@/components/app/checklist-viewer').then(module => ({ default: module.ChecklistViewer })));
 
-const CalendarTaskItemInner = ({ note, onClick }: { note: Note, onClick: (note: Note) => void }) => {
+const AllDayTaskItem = ({ note, onClick }: { note: Note, onClick: (note: Note) => void }) => {
     const isCompleted = note.status === 'done';
-    const [isOverdue, setIsOverdue] = React.useState(false);
-
-    React.useEffect(() => {
-        if (note.dueDate && !isCompleted) {
-            const dueDate = startOfDay(new Date(note.dueDate));
-            const today = startOfDay(new Date());
-            setIsOverdue(isBefore(dueDate, today));
-        } else {
-            setIsOverdue(false);
-        }
-    }, [note.dueDate, isCompleted]);
     
     return (
         <div 
             onClick={() => onClick(note)} 
-            className={cn(
-                "block p-3 rounded-lg hover:bg-secondary cursor-pointer bg-card/50 border transition-colors", 
-                isCompleted && "opacity-60",
-                isOverdue ? "border-destructive/70 bg-destructive/5 hover:bg-destructive/10" : "border-transparent"
-            )} 
+            className="flex items-center justify-between p-3 rounded-lg hover:bg-secondary cursor-pointer bg-card/50 border border-transparent transition-colors"
         >
-            <h3 className={cn("font-semibold", isCompleted && "line-through")}>{note.title}</h3>
-            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                    {isOverdue && (
-                        <Badge variant="destructive">Overdue</Badge>
-                    )}
-                    {note.priority !== 'none' && <Badge variant={note.priority === 'high' && !isCompleted ? 'destructive' : 'outline'}>{NOTE_PRIORITY_TITLES[note.priority]}</Badge>}
-                    <Badge variant={isCompleted ? "secondary" : "outline"}>{KANBAN_COLUMN_TITLES[note.status]}</Badge>
-                </div>
+            <div className="flex items-center gap-3">
+                 <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: note.color }}></div>
+                 <h3 className={cn("font-semibold", isCompleted && "line-through")}>{note.title}</h3>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {note.priority !== 'none' && <Badge variant={note.priority === 'high' && !isCompleted ? 'destructive' : 'outline'}>{NOTE_PRIORITY_TITLES[note.priority]}</Badge>}
+                <Badge variant={isCompleted ? "secondary" : "outline"}>{KANBAN_COLUMN_TITLES[note.status]}</Badge>
                 {note.checklist.length > 0 && (
                     <div className="flex items-center gap-1">
                         <ListChecks className="h-3 w-3" />
@@ -69,9 +51,7 @@ const CalendarTaskItemInner = ({ note, onClick }: { note: Note, onClick: (note: 
             </div>
         </div>
     );
-}
-
-const CalendarTaskItem = React.memo(CalendarTaskItemInner);
+};
 
 
 export default function CalendarPage() {
@@ -87,8 +67,6 @@ export default function CalendarPage() {
     const [isEditorOpen, setIsEditorOpen] = React.useState(false);
     const [editingNote, setEditingNote] = React.useState<Note | null>(null);
     const [isSaving, setIsSaving] = React.useState(false);
-    const [isChecklistViewerOpen, setIsChecklistViewerOpen] = React.useState(false);
-    const [viewingChecklistNote, setViewingChecklistNote] = React.useState<Note | null>(null);
 
     const notesWithDueDate = React.useMemo(() => {
         return notes.filter(note => 
@@ -106,8 +84,8 @@ export default function CalendarPage() {
         return notesWithDueDate.map(note => new Date(note.dueDate!));
     }, [notesWithDueDate]);
 
-    const { overdueTasks, pendingTasks, completedTasks } = React.useMemo(() => {
-        if (!selectedDate) return { overdueTasks: [], pendingTasks: [], completedTasks: [] };
+    const { overdueTasks, allDayTasks, timedTasks, completedTasks } = React.useMemo(() => {
+        if (!selectedDate) return { overdueTasks: [], allDayTasks: [], timedTasks: [], completedTasks: [] };
         
         const selectedDay = startOfDay(selectedDate);
         
@@ -119,40 +97,31 @@ export default function CalendarPage() {
             .sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
 
         const tasksForDay = notesWithDueDate
-            .filter(note => isSameDay(new Date(note.dueDate!), selectedDay))
-            .sort((a,b) => NOTE_PRIORITIES.indexOf(b.priority) - NOTE_PRIORITIES.indexOf(a.priority));
+            .filter(note => isSameDay(new Date(note.dueDate!), selectedDay));
 
         const pending = tasksForDay.filter(note => note.status !== 'done');
         const completed = tasksForDay.filter(note => note.status === 'done');
         
-        return { overdueTasks: overdue, pendingTasks: pending, completedTasks: completed };
+        const allDay = pending.filter(note => !note.startTime);
+        const timed = pending.filter(note => !!note.startTime)
+            .sort((a,b) => a.startTime!.localeCompare(b.startTime!));
+
+        return { overdueTasks: overdue, allDayTasks: allDay, timedTasks: timed, completedTasks: completed };
     }, [notesWithDueDate, selectedDate]);
     
     const handleCardClick = React.useCallback((note: Note) => {
-        if (note.checklist && note.checklist.length > 0) {
-            setViewingChecklistNote(note);
-            setIsChecklistViewerOpen(true);
-        } else {
-            setViewingNote(note);
-            setIsViewerOpen(true);
-        }
-    }, []);
-
-    const handleViewFullNote = React.useCallback((note: Note) => {
         setViewingNote(note);
         setIsViewerOpen(true);
     }, []);
     
     const handleStartEditing = React.useCallback((note: Note) => {
         setIsViewerOpen(false);
-        setIsChecklistViewerOpen(false);
         setEditingNote(note);
         setIsEditorOpen(true);
     }, []);
 
     const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
         setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
-        setViewingChecklistNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
 
         try {
           const noteRef = doc(db, "notes", noteId);
@@ -234,6 +203,17 @@ export default function CalendarPage() {
         }
     }, [notes, toast]);
 
+    const timeToMinutes = (time: string): number => {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+    };
+    
+    const HOUR_HEIGHT = 56; // in pixels (h-14)
+    const PIXELS_PER_MINUTE = HOUR_HEIGHT / 60;
+    const TIMELINE_START_MINUTE = 6 * 60;
+
+    const hours = Array.from({ length: 17 }, (_, i) => i + 6); // 6 AM to 10 PM
+
     return (
         <>
             <div className="flex h-screen w-full flex-col bg-secondary">
@@ -269,16 +249,21 @@ export default function CalendarPage() {
                                     </Card>
                                     <div className="flex-1 w-full">
                                         <Card className="shadow-soft border-none">
-                                            <ScrollArea className="h-[calc(80vh-120px)] lg:h-[520px]">
+                                            <CardHeader>
+                                                <CardTitle className="font-headline">
+                                                    Schedule for {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : ''}
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <ScrollArea className="h-[calc(80vh-180px)] lg:h-[600px]">
                                                 <CardContent className="p-4">
-                                                    {overdueTasks.length === 0 && pendingTasks.length === 0 && completedTasks.length === 0 ? (
+                                                    {overdueTasks.length === 0 && allDayTasks.length === 0 && timedTasks.length === 0 && completedTasks.length === 0 ? (
                                                         <div className="flex flex-col items-center justify-center text-center p-6 text-muted-foreground h-full">
-                                                            <ListChecks className="h-10 w-10 mb-4" />
-                                                            <p className="font-medium">No tasks for this day.</p>
+                                                            <CalendarIcon className="h-10 w-10 mb-4" />
+                                                            <p className="font-medium">No scheduled events for this day.</p>
                                                         </div>
                                                     ) : (
-                                                        <div className="space-y-4">
-                                                            {overdueTasks.length > 0 && (
+                                                        <div className="space-y-6">
+                                                             {overdueTasks.length > 0 && (
                                                                 <Collapsible defaultOpen>
                                                                     <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg p-3 text-left font-headline text-base font-semibold text-destructive hover:bg-destructive/10">
                                                                         <span>Pending from Previous Days ({overdueTasks.length})</span>
@@ -286,41 +271,82 @@ export default function CalendarPage() {
                                                                     </CollapsibleTrigger>
                                                                     <CollapsibleContent className="pt-3 space-y-3">
                                                                         {overdueTasks.map(note => (
-                                                                            <CalendarTaskItem key={note.id} note={note} onClick={handleCardClick} />
+                                                                            <AllDayTaskItem key={note.id} note={note} onClick={handleCardClick} />
                                                                         ))}
                                                                     </CollapsibleContent>
                                                                 </Collapsible>
                                                             )}
-                                
-                                                            {(pendingTasks.length > 0 || completedTasks.length > 0) && (
-                                                                <div className="space-y-3">
-                                                                    <h4 className="text-base font-semibold text-foreground px-1 font-headline">
-                                                                        Tasks for {selectedDate ? format(selectedDate, 'MMMM d') : ''}
-                                                                    </h4>
-                                                                    {pendingTasks.map(note => (
-                                                                        <CalendarTaskItem key={note.id} note={note} onClick={handleCardClick} />
-                                                                    ))}
-                                                                    
-                                                                    {pendingTasks.length === 0 && completedTasks.length > 0 && (
-                                                                        <p className="px-1 text-sm text-muted-foreground italic">All tasks for this day are complete!</p>
+
+                                                            {(allDayTasks.length > 0 || timedTasks.length > 0) && (
+                                                                <div className="space-y-4">
+                                                                    {allDayTasks.length > 0 && (
+                                                                        <div className="space-y-2">
+                                                                            <h4 className="px-1 font-semibold">All-day</h4>
+                                                                            {allDayTasks.map(note => <AllDayTaskItem key={note.id} note={note} onClick={handleCardClick} />)}
+                                                                        </div>
                                                                     )}
 
-                                                                    {pendingTasks.length > 0 && completedTasks.length > 0 && <Separator className="my-3" />}
-                                                                    
-                                                                    {completedTasks.length > 0 && (
-                                                                        <Collapsible>
-                                                                            <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md p-2 text-md font-semibold text-muted-foreground transition-colors hover:bg-secondary data-[state=open]:bg-secondary">
-                                                                                <ChevronRight className="h-5 w-5 transition-transform [&[data-state=open]]:rotate-90" />
-                                                                                <span>Completed ({completedTasks.length})</span>
-                                                                            </CollapsibleTrigger>
-                                                                            <CollapsibleContent className="pt-3 space-y-3">
-                                                                                {completedTasks.map(note => (
-                                                                                    <CalendarTaskItem key={note.id} note={note} onClick={handleCardClick} />
+                                                                    {timedTasks.length > 0 && (
+                                                                        <div className="relative grid grid-cols-[auto,1fr] gap-x-3">
+                                                                            {/* Timeline Grid */}
+                                                                            <div className="col-start-2">
+                                                                                {hours.map(hour => (
+                                                                                    <div key={hour} className="h-14 border-t border-dashed"></div>
                                                                                 ))}
-                                                                            </CollapsibleContent>
-                                                                        </Collapsible>
+                                                                            </div>
+                                                                            
+                                                                            {/* Hour Labels */}
+                                                                            <div className="col-start-1 row-start-1">
+                                                                                {hours.map(hour => (
+                                                                                    <div key={`label-${hour}`} className="h-14 text-right pr-2">
+                                                                                        <span className="text-xs text-muted-foreground relative -top-2">
+                                                                                            {hour % 12 === 0 ? 12 : hour % 12} {hour < 12 || hour === 24 ? 'AM' : 'PM'}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+
+                                                                            {/* Timed Events */}
+                                                                            <div className="col-start-2 row-start-1 relative">
+                                                                                {timedTasks.map(note => {
+                                                                                    const top = (timeToMinutes(note.startTime!) - TIMELINE_START_MINUTE) * PIXELS_PER_MINUTE;
+                                                                                    const end = note.endTime ? timeToMinutes(note.endTime) : timeToMinutes(note.startTime!) + 60;
+                                                                                    const height = (end - timeToMinutes(note.startTime!)) * PIXELS_PER_MINUTE;
+
+                                                                                    return (
+                                                                                        <div
+                                                                                            key={note.id}
+                                                                                            style={{ top, height: `${height}px` }}
+                                                                                            className="absolute left-0 right-0 z-10 p-2 rounded-lg cursor-pointer overflow-hidden transition-all hover:ring-2 hover:ring-primary/50"
+                                                                                            onClick={() => handleCardClick(note)}
+                                                                                        >
+                                                                                            <div className="absolute inset-0 opacity-20" style={{ backgroundColor: note.color }}></div>
+                                                                                            <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: note.color }}></div>
+                                                                                            <div className="relative pl-2">
+                                                                                                <p className="font-semibold text-xs truncate" style={{ color: note.color }}>{note.title}</p>
+                                                                                                <p className="text-xs text-muted-foreground">{note.startTime} {note.endTime ? `- ${note.endTime}`: ''}</p>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
                                                                     )}
                                                                 </div>
+                                                            )}
+                                                            
+                                                            {completedTasks.length > 0 && (
+                                                                <Collapsible>
+                                                                    <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md p-2 text-md font-semibold text-muted-foreground transition-colors hover:bg-secondary data-[state=open]:bg-secondary">
+                                                                        <ChevronRight className="h-5 w-5 transition-transform [&[data-state=open]]:rotate-90" />
+                                                                        <span>Completed ({completedTasks.length})</span>
+                                                                    </CollapsibleTrigger>
+                                                                    <CollapsibleContent className="pt-3 space-y-3">
+                                                                        {completedTasks.map(note => (
+                                                                            <AllDayTaskItem key={note.id} note={note} onClick={handleCardClick} />
+                                                                        ))}
+                                                                    </CollapsibleContent>
+                                                                </Collapsible>
                                                             )}
                                                         </div>
                                                     )}
@@ -342,16 +368,6 @@ export default function CalendarPage() {
                         note={viewingNote}
                         onEdit={handleStartEditing}
                         onChecklistItemToggle={handleChecklistItemToggle}
-                    />
-                )}
-                {isChecklistViewerOpen && (
-                    <ChecklistViewer
-                        isOpen={isChecklistViewerOpen}
-                        setIsOpen={setIsChecklistViewerOpen}
-                        note={viewingChecklistNote}
-                        onChecklistItemToggle={handleChecklistItemToggle}
-                        onEditNote={handleStartEditing}
-                        onViewFullNote={handleViewFullNote}
                     />
                 )}
                 {isEditorOpen && (
