@@ -64,6 +64,10 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateGoalPlanOutputSchema},
   prompt: `You are an AI-powered project management assistant with expertise in goal decomposition and strategic planning. Your primary function is to transform a user's high-level goal into a detailed, actionable, and realistic project plan.
 
+**CRITICAL CONTEXT: The current date is {{request.time}}.**
+
+**YOUR MOST IMPORTANT RULE: All due dates you generate MUST be in the future, relative to this current date. Do NOT generate dates in the past. For example, if the current date is in July 2025, a due date in 2024 or June 2025 is incorrect and strictly forbidden.**
+
 **User's Goal:**
 "{{{goal}}}"
 
@@ -71,14 +75,14 @@ const prompt = ai.definePrompt({
 1.  **Analyze the Goal:** First, understand the complexity and implied timeline of the user's goal.
 2.  **Decompose into Milestones:** Break the goal down into logical, sequential milestones. Each milestone will become a separate note in the plan.
 3.  **Create Actionable Steps:** For each milestone (note), create a checklist of small, concrete sub-tasks that need to be completed.
-4.  **Assign Realistic Deadlines:**
-    *   **IMPORTANT CONTEXT:** The current date is {{request.time}}. All due dates you generate **MUST** be in the future, relative to this date. For example, if the current date is 2025-07-26, all your dates must be after that. **Do not generate dates in the past (e.g., 2024).**
+4.  **Assign Realistic Future Deadlines:**
     *   **Start Date:** The very first task should be scheduled for tomorrow, relative to the current date.
-    *   **Logical Sequencing:** The milestones you generate should be in a logical order. Ensure that the due dates reflect this sequence (e.g., Task 2's due date is after Task 1's).
+    *   **Logical Sequencing:** The milestones you generate must be in a logical order. Ensure that the due dates reflect this sequence (e.g., Task 2's due date is after Task 1's).
     *   **Realistic Timeframe:** Analyze the user's goal to determine a realistic overall timeframe. A goal like "learn a new programming language" should take weeks or months, not days. A goal like "organize my closet" might only take a day or two.
     *   **Pacing:** Do not cluster all due dates together. Spread them out evenly over the determined timeframe to create a manageable pace and avoid burnout. For long-term goals, this might mean one milestone per week or every two weeks.
     *   **Date Format:** Return all due dates as a full ISO 8601 string (e.g., 'YYYY-MM-DDTHH:mm:ss.sssZ').
 5.  **Generate Relevant Data:** For each note, provide a concise title, a brief content summary, and relevant tags.
+6.  **Final Review:** Before you output the JSON, double-check every \`dueDate\` to ensure it is in the future relative to the current date of {{request.time}}.
 
 Return the entire plan as a JSON object with a "notes" array.
       `,
