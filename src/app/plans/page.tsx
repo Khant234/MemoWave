@@ -2,13 +2,12 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/app/app-header";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useNotes } from "@/contexts/notes-context";
 import { type Note } from "@/lib/types";
-import { Target, Archive, Trash2, ArchiveRestore } from "lucide-react";
+import { Target, Archive, Trash2, ArchiveRestore, BrainCircuit } from "lucide-react";
 import { PlansPageSkeleton } from "./plans-page-skeleton";
 import {
   AlertDialog,
@@ -21,17 +20,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { writeBatch, doc } from "firebase/firestore";
+import { collection, writeBatch, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { PlanCard } from "./plan-card";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion } from "@/components/ui/accordion";
+import { type GenerateGoalPlanOutput } from "@/ai/flows/generate-goal-plan";
+import { NOTE_COLORS } from "@/lib/data";
 
 // Lazy load modals
 const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
-const NoteEditor = React.lazy(() => import('@/components/app/note-editor').then(module => ({ default: module.NoteEditor })));
+const GoalPlanner = React.lazy(() => import('@/components/app/goal-planner').then(module => ({ default: module.GoalPlanner })));
 
 export type PlanStatus = 'active' | 'archived';
 
@@ -56,6 +57,9 @@ export default function PlansPage() {
 
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
   const [viewingNote, setViewingNote] = React.useState<Note | null>(null);
+  const [isPlannerOpen, setIsPlannerOpen] = React.useState(false);
+
+  const notesCollectionRef = React.useMemo(() => collection(db, "notes"), []);
   
   const allPlans = React.useMemo(() => {
     const groupedByPlanId: Record<string, Note[]> = {};
@@ -95,6 +99,55 @@ export default function PlansPage() {
       )
       .sort((a, b) => new Date(b.notes[0].createdAt).getTime() - new Date(a.notes[0].createdAt).getTime());
   }, [allPlans, activeFilter, searchTerm]);
+
+  const handleSavePlan = React.useCallback(async (planNotes: GenerateGoalPlanOutput['notes'], goal: string) => {
+    if (planNotes.length === 0) return;
+
+    const batch = writeBatch(db);
+    const planId = new Date().toISOString() + Math.random();
+    
+    planNotes.forEach((planNote, index) => {
+        const newNoteData: Omit<Note, 'id'> = {
+            title: planNote.title,
+            content: planNote.content,
+            tags: [...planNote.tags, "goal-plan"],
+            color: NOTE_COLORS[index % NOTE_COLORS.length],
+            isPinned: false,
+            isArchived: false,
+            isTrashed: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            checklist: planNote.checklist.map(item => ({...item, id: new Date().toISOString() + Math.random(), completed: false })),
+            history: [],
+            isDraft: false,
+            status: 'todo',
+            priority: 'medium',
+            dueDate: planNote.dueDate,
+            showOnBoard: true,
+            order: Date.now() + index,
+            planId: planId,
+            planGoal: goal,
+        };
+        const newNoteRef = doc(notesCollectionRef);
+        batch.set(newNoteRef, newNoteData);
+    });
+
+    try {
+      await batch.commit();
+      toast({
+        title: "Plan Created!",
+        description: "Your new plan is now active.",
+      });
+    } catch(err) {
+      console.error("Error saving plan:", err);
+      toast({
+        title: "Error Saving Plan",
+        description: "There was an issue saving your new plan.",
+        variant: "destructive",
+      });
+    }
+  }, [notesCollectionRef, toast]);
+
 
   const handleBatchAction = async () => {
     if (!isConfirmingAction) return;
@@ -212,12 +265,18 @@ export default function PlansPage() {
             <div className="mx-auto max-w-5xl">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold font-headline">My Plans</h1>
-                    <Tabs value={activeFilter} onValueChange={(value) => setActiveFilter(value as PlanStatus)} className="w-[200px]">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="active">Active</TabsTrigger>
-                            <TabsTrigger value="archived">Archived</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
+                    <div className="flex items-center gap-4">
+                        <Button onClick={() => setIsPlannerOpen(true)}>
+                            <BrainCircuit className="mr-2 h-4 w-4" />
+                            New Plan
+                        </Button>
+                        <Tabs value={activeFilter} onValueChange={(value) => setActiveFilter(value as PlanStatus)} className="w-[200px]">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="active">Active</TabsTrigger>
+                                <TabsTrigger value="archived">Archived</TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
                 </div>
                 <div className="flex-1">
                   {renderContent()}
@@ -261,6 +320,13 @@ export default function PlansPage() {
                 note={viewingNote}
                 onEdit={() => {}}
                 onChecklistItemToggle={() => {}}
+            />
+        )}
+        {isPlannerOpen && (
+            <GoalPlanner
+                open={isPlannerOpen}
+                setOpen={setIsPlannerOpen}
+                onSavePlan={handleSavePlan}
             />
         )}
       </React.Suspense>
