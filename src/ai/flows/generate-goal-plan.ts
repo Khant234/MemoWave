@@ -9,6 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {add, differenceInMilliseconds, isBefore, parseISO} from 'date-fns';
 
 const GenerateGoalPlanInputSchema = z.object({
   goal: z.string().describe("The user's goal to be planned."),
@@ -64,25 +65,18 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateGoalPlanOutputSchema},
   prompt: `You are an AI-powered project management assistant with expertise in goal decomposition and strategic planning. Your primary function is to transform a user's high-level goal into a detailed, actionable, and realistic project plan.
 
-**CRITICAL CONTEXT: The current date is {{request.time}}.**
-
-**YOUR MOST IMPORTANT RULE: All due dates you generate MUST be in the future, relative to this current date. Do NOT generate dates in the past. For example, if the current date is in July 2025, a due date in 2024 or June 2025 is incorrect and strictly forbidden.**
-
 **User's Goal:**
 "{{{goal}}}"
 
 **Your Task:**
-1.  **Analyze the Goal:** First, understand the complexity and implied timeline of the user's goal.
+1.  **Analyze the Goal:** First, understand the complexity and implied timeline of the user's goal. A goal like "learn a new programming language" should take weeks or months, not days. A goal like "organize my closet" might only take a day or two.
 2.  **Decompose into Milestones:** Break the goal down into logical, sequential milestones. Each milestone will become a separate note in the plan.
 3.  **Create Actionable Steps:** For each milestone (note), create a checklist of small, concrete sub-tasks that need to be completed.
-4.  **Assign Realistic Future Deadlines:**
-    *   **Start Date:** The very first task should be scheduled for tomorrow, relative to the current date.
+4.  **Assign Due Dates:**
     *   **Logical Sequencing:** The milestones you generate must be in a logical order. Ensure that the due dates reflect this sequence (e.g., Task 2's due date is after Task 1's).
-    *   **Realistic Timeframe:** Analyze the user's goal to determine a realistic overall timeframe. A goal like "learn a new programming language" should take weeks or months, not days. A goal like "organize my closet" might only take a day or two.
     *   **Pacing:** Do not cluster all due dates together. Spread them out evenly over the determined timeframe to create a manageable pace and avoid burnout. For long-term goals, this might mean one milestone per week or every two weeks.
     *   **Date Format:** Return all due dates as a full ISO 8601 string (e.g., 'YYYY-MM-DDTHH:mm:ss.sssZ').
 5.  **Generate Relevant Data:** For each note, provide a concise title, a brief content summary, and relevant tags.
-6.  **Final Review:** Before you output the JSON, double-check every \`dueDate\` to ensure it is in the future relative to the current date of {{request.time}}.
 
 Return the entire plan as a JSON object with a "notes" array.
       `,
@@ -96,6 +90,33 @@ const generateGoalPlanFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
+    
+    if (!output || output.notes.length === 0) {
+      return output!;
+    }
+    
+    const now = new Date();
+    const firstNoteDate = parseISO(output.notes[0].dueDate);
+
+    // If the model generated dates in the past, remap them to the future
+    // while preserving the relative intervals between tasks.
+    if (isBefore(firstNoteDate, now)) {
+        const modelDates = output.notes.map(note => parseISO(note.dueDate));
+        let currentDate = add(now, { days: 1 }); // Start the plan tomorrow.
+
+        for (let i = 0; i < output.notes.length; i++) {
+            if (i === 0) {
+                output.notes[i].dueDate = currentDate.toISOString();
+            } else {
+                const interval = differenceInMilliseconds(modelDates[i], modelDates[i - 1]);
+                // Ensure interval is at least one day to prevent tasks from clustering on the same day.
+                const safeInterval = Math.max(interval, 24 * 60 * 60 * 1000); 
+                currentDate = add(currentDate, { milliseconds: safeInterval });
+                output.notes[i].dueDate = currentDate.toISOString();
+            }
+        }
+    }
+    
     return output!;
   }
 );
