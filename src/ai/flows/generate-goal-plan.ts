@@ -62,20 +62,19 @@ const prompt = ai.definePrompt({
   name: 'generateGoalPlanPrompt',
   input: {schema: GenerateGoalPlanInputSchema},
   output: {schema: GenerateGoalPlanOutputSchema},
-  prompt: `You are an expert life coach and project planner. Your task is to take a user's goal and break it down into a series of actionable notes.
+  prompt: `You are an AI-powered project management assistant with expertise in goal decomposition and strategic planning. Your primary function is to transform a user's high-level goal into a detailed, actionable, and realistic project plan.
 
-      Goal: "{{{goal}}}"
+**User's Goal:**
+"{{{goal}}}"
 
-      Based on this goal, create a comprehensive plan consisting of several notes. Each note should represent a major task or milestone.
+**Your Task:**
+1.  **Analyze the Goal:** First, understand the complexity and implied timeline of the user's goal.
+2.  **Decompose into Milestones:** Break the goal down into logical, sequential milestones. Each milestone will become a separate note in the plan.
+3.  **Create Actionable Steps:** For each milestone (note), create a checklist of small, concrete sub-tasks that need to be completed.
+4.  **Assign Realistic Deadlines:** The current date is {{request.time}}. Starting from tomorrow, intelligently schedule due dates for each milestone. Distribute the tasks logically over a timeframe appropriate for the goal. Avoid clustering all tasks at the beginning. For a multi-month goal, ensure tasks are spread across the entire period.
+5.  **Generate Relevant Data:** For each note, provide a concise title, a brief content summary, and relevant tags.
 
-      For each note in the plan, you must provide:
-      1.  **title**: A clear, concise title for the task.
-      2.  **content**: A brief description of what the task involves.
-      3.  **tags**: A few relevant, single-word or two-word tags.
-      4.  **checklist**: A list of smaller, actionable sub-tasks (as an array of objects with a 'text' field).
-      5.  **dueDate**: A realistic due date for completing the task. The current date is {{request.time}}. Schedule the tasks appropriately, starting from tomorrow and spreading them out logically over the next few weeks or months, depending on the goal's complexity. The due date must be a full ISO 8601 string.
-
-      Return the entire plan as a JSON object with a "notes" array.
+Return the entire plan as a JSON object with a "notes" array.
       `,
 });
 
