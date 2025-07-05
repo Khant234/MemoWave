@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Archive, MoreVertical, Trash2, ChevronRight, CheckSquare, Clock } from "lucide-react";
+import { Archive, MoreVertical, Trash2, ChevronRight, CheckSquare, Clock, ArchiveRestore } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { KANBAN_COLUMN_TITLES } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
@@ -17,10 +17,11 @@ type PlanCardProps = {
   plan: Plan;
   onArchive: () => void;
   onDelete: () => void;
+  onRestore: () => void;
   onViewNote: (note: Note) => void;
 };
 
-export function PlanCard({ plan, onArchive, onDelete, onViewNote }: PlanCardProps) {
+export function PlanCard({ plan, onArchive, onDelete, onRestore, onViewNote }: PlanCardProps) {
 
   const NoteItem = ({ note }: { note: Note }) => (
     <div 
@@ -69,9 +70,15 @@ export function PlanCard({ plan, onArchive, onDelete, onViewNote }: PlanCardProp
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onArchive}>
-                        <Archive className="mr-2 h-4 w-4" /> Archive Plan
-                    </DropdownMenuItem>
+                    {plan.status === 'active' ? (
+                        <DropdownMenuItem onClick={onArchive}>
+                            <Archive className="mr-2 h-4 w-4" /> Archive Plan
+                        </DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem onClick={onRestore}>
+                            <ArchiveRestore className="mr-2 h-4 w-4" /> Restore Plan
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" /> Delete Plan
                     </DropdownMenuItem>
