@@ -26,7 +26,6 @@ import { PlanCard } from "./plan-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Accordion } from "@/components/ui/accordion";
 import { type GenerateGoalPlanOutput } from "@/ai/flows/generate-goal-plan";
 import { NOTE_COLORS } from "@/lib/data";
 
@@ -231,7 +230,7 @@ export default function PlansPage() {
     }
     
     return (
-      <Accordion type="multiple" className="space-y-4">
+      <div className="space-y-4">
         {filteredPlans.map(plan => (
           <PlanCard 
             key={plan.id}
@@ -242,7 +241,7 @@ export default function PlansPage() {
             onViewNote={handleViewNote}
           />
         ))}
-      </Accordion>
+      </div>
     );
   }
 
