@@ -37,7 +37,7 @@ const PlannedNoteSchema = z.object({
   dueDate: z
     .string()
     .describe(
-      "A realistic due date for this task, formatted as an ISO 8601 string (e.g., 'YYYY-MM-DDTHH:mm:ss.sssZ'). Schedule tasks starting from tomorrow and spread them out over a reasonable timeframe."
+      "A realistic future due date for this task, formatted as an ISO 8601 string (e.g., 'YYYY-MM-DDTHH:mm:ss.sssZ'). Due dates should be sequential and logically spaced out over a realistic timeframe for the goal."
     ),
 });
 
@@ -71,7 +71,13 @@ const prompt = ai.definePrompt({
 1.  **Analyze the Goal:** First, understand the complexity and implied timeline of the user's goal.
 2.  **Decompose into Milestones:** Break the goal down into logical, sequential milestones. Each milestone will become a separate note in the plan.
 3.  **Create Actionable Steps:** For each milestone (note), create a checklist of small, concrete sub-tasks that need to be completed.
-4.  **Assign Realistic Deadlines:** The current date is {{request.time}}. Starting from tomorrow, intelligently schedule due dates for each milestone. Distribute the tasks logically over a timeframe appropriate for the goal. Avoid clustering all tasks at the beginning. For a multi-month goal, ensure tasks are spread across the entire period.
+4.  **Assign Realistic Deadlines:**
+    *   **Context:** The current date is {{request.time}}. All dates you generate must be in the future.
+    *   **Start Date:** The first task should be scheduled for tomorrow.
+    *   **Logical Sequencing:** The milestones you generate should be in a logical order. Ensure that the due dates reflect this sequence (e.g., Task 2's due date is after Task 1's).
+    *   **Realistic Timeframe:** Analyze the user's goal to determine a realistic overall timeframe. A goal like "learn a new programming language" should take weeks or months, not days. A goal like "organize my closet" might only take a day or two.
+    *   **Pacing:** Do not cluster all due dates together. Spread them out evenly over the determined timeframe to create a manageable pace and avoid burnout. For long-term goals, this might mean one milestone per week or every two weeks.
+    *   **Date Format:** Return all due dates as a full ISO 8601 string (e.g., 'YYYY-MM-DDTHH:mm:ss.sssZ').
 5.  **Generate Relevant Data:** For each note, provide a concise title, a brief content summary, and relevant tags.
 
 Return the entire plan as a JSON object with a "notes" array.
