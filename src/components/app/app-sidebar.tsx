@@ -5,10 +5,10 @@ import * as React from "react";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button, buttonVariants } from "@/components/ui/button";
-import { NotepadText, Archive, Trash2, Tag, ChevronDown, ListTodo, LayoutGrid, CalendarDays, Target } from "lucide-react";
+import { NotepadText, Archive, Trash2, Tag, ListTodo, LayoutGrid, CalendarDays, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
   TooltipContent,
@@ -120,51 +120,54 @@ const AppSidebarComponent = ({
 
       {tags.length > 0 && (
         <>
-          <Separator className={cn("my-1", isCollapsed && "hidden")} />
-           <Collapsible defaultOpen className="p-2">
-            <CollapsibleTrigger asChild>
-                <button className={cn("flex w-full items-center justify-between p-2 hover:bg-secondary rounded-md", isCollapsed && "hidden")}>
-                    <h3 className="text-sm font-semibold text-muted-foreground tracking-tight whitespace-nowrap">Tags</h3>
-                    <ChevronDown className="h-4 w-4 transition-transform [&[data-state=open]]:rotate-180" />
-                </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="flex flex-col gap-1 pt-2">
-              {tags.map(tag => {
-                const searchString = tag.includes(' ') ? `"#${tag}"` : `#${tag}`;
-                const isActive = pathname === '/' && activeTag === searchString;
-                return (
-                  <Tooltip key={tag} delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={isActive ? "secondary" : "ghost"}
-                        className={cn(
-                          "w-full h-10 px-3 group",
-                          !isMobile && isCollapsed ? "justify-center" : "justify-start"
-                        )}
-                        aria-label={tag}
-                        onClick={() => handleTagClick(tag)}
-                      >
-                        <Tag className={cn(
-                          "h-5 w-5 shrink-0 transition-all duration-200",
-                          isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
-                          "group-hover:-translate-y-0.5"
-                        )} />
-                        <span className={cn(
-                          "truncate whitespace-nowrap transition-opacity",
-                          !isMobile && isCollapsed && "hidden"
-                        )}>{tag}</span>
-                      </Button>
-                    </TooltipTrigger>
-                    {isCollapsed && !isMobile && (
-                      <TooltipContent side="right">
-                        <p>{tag}</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                )
-              })}
-            </CollapsibleContent>
-           </Collapsible>
+          <Separator className={cn("my-2", isCollapsed ? 'mx-auto w-12' : 'mx-2' )} />
+          <div className="flex-1 flex flex-col min-h-0">
+            {!isCollapsed && (
+              <div className={cn("p-2 pt-0", isCollapsed && 'hidden')}>
+                <h3 className="text-sm font-semibold text-muted-foreground tracking-tight whitespace-nowrap px-2">
+                  Tags
+                </h3>
+              </div>
+            )}
+            <ScrollArea className="flex-grow">
+              <nav className="flex flex-col gap-1 px-2">
+                {tags.map(tag => {
+                  const searchString = tag.includes(' ') ? `"#${tag}"` : `#${tag}`;
+                  const isActive = pathname === '/' && activeTag === searchString;
+                  return (
+                    <Tooltip key={tag} delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={isActive ? "secondary" : "ghost"}
+                          className={cn(
+                            "w-full h-10 px-3 group",
+                            !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                          )}
+                          aria-label={tag}
+                          onClick={() => handleTagClick(tag)}
+                        >
+                          <Tag className={cn(
+                            "h-5 w-5 shrink-0 transition-all duration-200",
+                            isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
+                            "group-hover:-translate-y-0.5"
+                          )} />
+                          <span className={cn(
+                            "truncate whitespace-nowrap transition-opacity",
+                            !isMobile && isCollapsed && "hidden"
+                          )}>{tag}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      {isCollapsed && !isMobile && (
+                        <TooltipContent side="right">
+                          <p>{tag}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  )
+                })}
+              </nav>
+            </ScrollArea>
+          </div>
         </>
       )}
     </div>
