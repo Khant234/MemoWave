@@ -27,6 +27,7 @@ import { PlanCard } from "./plan-card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion } from "@/components/ui/accordion";
 
 // Lazy load modals
 const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
@@ -177,7 +178,7 @@ export default function PlansPage() {
     }
     
     return (
-      <div className="space-y-6">
+      <Accordion type="single" collapsible className="space-y-4">
         {filteredPlans.map(plan => (
           <PlanCard 
             key={plan.id}
@@ -188,7 +189,7 @@ export default function PlansPage() {
             onViewNote={handleViewNote}
           />
         ))}
-      </div>
+      </Accordion>
     );
   }
 
