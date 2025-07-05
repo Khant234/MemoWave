@@ -231,7 +231,7 @@ export default function PlansPage() {
     }
     
     return (
-      <Accordion type="single" collapsible className="space-y-4">
+      <Accordion type="multiple" className="space-y-4">
         {filteredPlans.map(plan => (
           <PlanCard 
             key={plan.id}
