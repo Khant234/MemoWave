@@ -72,8 +72,8 @@ const prompt = ai.definePrompt({
 2.  **Decompose into Milestones:** Break the goal down into logical, sequential milestones. Each milestone will become a separate note in the plan.
 3.  **Create Actionable Steps:** For each milestone (note), create a checklist of small, concrete sub-tasks that need to be completed.
 4.  **Assign Realistic Deadlines:**
-    *   **Context:** The current date is {{request.time}}. All dates you generate must be in the future.
-    *   **Start Date:** The first task should be scheduled for tomorrow.
+    *   **IMPORTANT CONTEXT:** The current date is {{request.time}}. All due dates you generate **MUST** be in the future, relative to this date. For example, if the current date is 2025-07-26, all your dates must be after that. **Do not generate dates in the past (e.g., 2024).**
+    *   **Start Date:** The very first task should be scheduled for tomorrow, relative to the current date.
     *   **Logical Sequencing:** The milestones you generate should be in a logical order. Ensure that the due dates reflect this sequence (e.g., Task 2's due date is after Task 1's).
     *   **Realistic Timeframe:** Analyze the user's goal to determine a realistic overall timeframe. A goal like "learn a new programming language" should take weeks or months, not days. A goal like "organize my closet" might only take a day or two.
     *   **Pacing:** Do not cluster all due dates together. Spread them out evenly over the determined timeframe to create a manageable pace and avoid burnout. For long-term goals, this might mean one milestone per week or every two weeks.
