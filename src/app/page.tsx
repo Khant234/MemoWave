@@ -510,7 +510,10 @@ export default function Home() {
         const searchInput = searchTerm.toLowerCase();
         if (searchInput.startsWith('#')) {
             const searchTag = searchInput.substring(1).replace(/"/g, '');
-            return matchesFilter && note.tags.some(tag => tag.toLowerCase().includes(searchTag));
+            return matchesFilter && note.tags.some(tag => 
+              tag.toLowerCase() === searchTag || 
+              tag.toLowerCase().startsWith(searchTag + '/')
+            );
         }
 
         const matchesSearch =
