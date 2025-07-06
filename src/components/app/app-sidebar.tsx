@@ -5,7 +5,7 @@ import * as React from "react";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button, buttonVariants } from "@/components/ui/button";
-import { NotepadText, Archive, Trash2, Tag, ListTodo, LayoutGrid, CalendarDays, Target, ChevronRight } from "lucide-react";
+import { NotepadText, Archive, Trash2, Tag, ListTodo, LayoutGrid, CalendarDays, Target, ChevronRight, Folder, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -83,9 +83,23 @@ const TagNodeDisplay: React.FC<{
 }> = ({ node, level, handleTagClick, activeTag, isMobile, isCollapsed }) => {
   const searchString = node.path.includes(' ') ? `"#${node.path}"` : `#${node.path}`;
   const isExactActive = activeTag === searchString;
-  // A tag is considered "active" if it's the one selected, or if the selected tag is one of its children.
   const isActive = activeTag ? activeTag.startsWith(searchString) : false;
   const hasChildren = node.children.length > 0;
+
+  const [isOpen, setIsOpen] = React.useState(isActive && !isExactActive);
+
+  React.useEffect(() => {
+    if (isActive && !isExactActive) {
+      setIsOpen(true);
+    }
+  }, [isActive, isExactActive]);
+
+  const Icon = React.useMemo(() => {
+    if (isCollapsed || !hasChildren) {
+      return Tag;
+    }
+    return isOpen ? FolderOpen : Folder;
+  }, [isCollapsed, hasChildren, isOpen]);
 
   const button = (
     <Button
@@ -99,7 +113,7 @@ const TagNodeDisplay: React.FC<{
       onClick={() => handleTagClick(node.path)}
     >
         <div className="flex items-center gap-2 flex-1 overflow-hidden">
-            <Tag className={cn("h-5 w-5 shrink-0 transition-all duration-200 text-muted-foreground", isActive && "text-primary")} />
+            <Icon className={cn("h-5 w-5 shrink-0 transition-all duration-200", isActive ? "text-primary" : "text-muted-foreground")} />
             
             <span className={cn("truncate whitespace-nowrap transition-opacity", !isMobile && isCollapsed && "hidden")}>
                 {node.name}
@@ -111,7 +125,7 @@ const TagNodeDisplay: React.FC<{
         </div>
     </Button>
   );
-
+  
   const getButton = () => {
     if (hasChildren && !isCollapsed) {
         return <CollapsibleTrigger asChild>{button}</CollapsibleTrigger>
@@ -130,7 +144,7 @@ const TagNodeDisplay: React.FC<{
       </Tooltip>
   );
 
-  if (!hasChildren) {
+  if (!hasChildren || (isCollapsed && !isMobile)) {
     return (
         <div style={{ paddingLeft: !isMobile && isCollapsed ? 0 : `${level * 1}rem`}}>
           {content}
@@ -139,7 +153,7 @@ const TagNodeDisplay: React.FC<{
   }
 
   return (
-    <Collapsible className="group/collapsible">
+    <Collapsible className="group/collapsible" open={isOpen} onOpenChange={setIsOpen}>
         <div style={{ paddingLeft: !isMobile && isCollapsed ? 0 : `${level * 1}rem` }}>
           {content}
         </div>
