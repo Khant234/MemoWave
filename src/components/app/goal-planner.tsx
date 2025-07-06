@@ -57,11 +57,6 @@ const PlanPreview = ({ plan }: { plan: GenerateGoalPlanOutput['notes'] }) => (
                                             ))}
                                         </div>
                                     )}
-                                    {note.tags.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5 pt-2">
-                                            {note.tags.map(tag => <Badge key={tag} variant="outline">{tag}</Badge>)}
-                                        </div>
-                                    )}
                                 </div>
                             </AccordionContent>
                         </div>
