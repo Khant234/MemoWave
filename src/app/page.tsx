@@ -70,6 +70,7 @@ export default function Home() {
     type: 'trash' | 'permanent';
   } | null>(null);
   const [isEmptryTrashConfirmOpen, setIsEmptyTrashConfirmOpen] = React.useState(false);
+  const [tagToDeleteFromAll, setTagToDeleteFromAll] = React.useState<string | null>(null);
 
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
   const searchParams = useSearchParams();
@@ -455,6 +456,43 @@ export default function Home() {
     }
   }, [notes, toast, updateNoteField]);
 
+  const handleDeleteTagFromAll = React.useCallback((tag: string) => {
+    setTagToDeleteFromAll(tag);
+  }, []);
+
+  const handleConfirmDeleteTagFromAll = React.useCallback(async () => {
+    if (!tagToDeleteFromAll) return;
+
+    const batch = writeBatch(db);
+
+    const notesToUpdate = notes.filter(note => 
+        note.tags.some(t => t === tagToDeleteFromAll || t.startsWith(`${tagToDeleteFromAll}/`))
+    );
+    
+    notesToUpdate.forEach(note => {
+        const noteRef = doc(db, "notes", note.id);
+        const newTags = note.tags.filter(t => t !== tagToDeleteFromAll && !t.startsWith(`${tagToDeleteFromAll}/`));
+        batch.update(noteRef, { tags: newTags });
+    });
+
+    try {
+        await batch.commit();
+        toast({
+            title: "Tag Deleted",
+            description: `The tag "${tagToDeleteFromAll}" and its sub-tags have been removed from all notes.`,
+        });
+    } catch (error) {
+        console.error("Error deleting tag from all notes:", error);
+        toast({
+            title: "Error Deleting Tag",
+            description: "Could not remove the tag. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setTagToDeleteFromAll(null);
+    }
+  }, [notes, tagToDeleteFromAll, toast]);
+
   const handleConfirmDelete = React.useCallback(async () => {
     if (!deleteConfirmation) return;
     const { noteId, type } = deleteConfirmation;
@@ -616,6 +654,7 @@ export default function Home() {
                 onCopyNote={handleCopyNote}
                 onTagClick={handleTagClick}
                 onRemoveTagFromNote={handleRemoveTagFromNote}
+                onDeleteTagFromAll={handleDeleteTagFromAll}
                 onEmptyTrash={handleEmptyTrash}
                 activeFilter={activeFilter}
               />
@@ -703,6 +742,25 @@ export default function Home() {
               onClick={handleConfirmEmptyTrash}
             >
               Empty Trash
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!tagToDeleteFromAll} onOpenChange={(open) => !open && setTagToDeleteFromAll(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Tag Everywhere?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the tag &quot;{tagToDeleteFromAll}&quot; and all its nested sub-tags from every note where it appears. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTagToDeleteFromAll(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={handleConfirmDeleteTagFromAll}
+            >
+              Delete from All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

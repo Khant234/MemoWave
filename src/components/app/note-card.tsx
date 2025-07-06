@@ -50,6 +50,7 @@ type NoteCardProps = {
   onCopyNote: (noteId: string) => void;
   onTagClick: (tag: string) => void;
   onRemoveTagFromNote: (noteId: string, tag: string) => void;
+  onDeleteTagFromAll: (tag: string) => void;
 };
 
 const priorityIcons: Record<Note['priority'], React.ReactNode> = {
@@ -76,6 +77,7 @@ const NoteCardComponent = ({
   onCopyNote,
   onTagClick,
   onRemoveTagFromNote,
+  onDeleteTagFromAll,
 }: NoteCardProps) => {
   const [formattedDate, setFormattedDate] = React.useState("");
 
@@ -105,11 +107,6 @@ const NoteCardComponent = ({
       e.stopPropagation();
       onTagClick(tag);
   }, [onTagClick]);
-
-  const handleRemoveTag = React.useCallback((e: React.MouseEvent, tag: string) => {
-    e.stopPropagation();
-    onRemoveTagFromNote(note.id, tag);
-  }, [onRemoveTagFromNote, note.id]);
 
   return (
     <Card
@@ -252,29 +249,44 @@ const NoteCardComponent = ({
               <Badge
                 key={tag}
                 variant="secondary"
-                className="text-xs"
+                className="group/tag inline-flex items-center p-0 pr-1"
               >
                 <span
-                  className="cursor-pointer hover:underline"
+                  className="cursor-pointer hover:underline py-0.5 pl-2.5 pr-1"
                   onClick={(e) => handleTagClick(e, tag)}
                 >
                   {tag}
                 </span>
                 {!note.isTrashed && (
-                  <Tooltip>
-                      <TooltipTrigger asChild>
-                          <button
-                          onClick={(e) => handleRemoveTag(e, tag)}
-                          className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
-                          aria-label={`Remove tag ${tag}`}
-                          >
-                          <X className="h-2.5 w-2.5" />
-                          </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          <p>Remove Tag</p>
-                      </TooltipContent>
-                  </Tooltip>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
+                        aria-label={`Options for tag ${tag}`}
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <DropdownMenuItem
+                        onClick={() => onRemoveTagFromNote(note.id, tag)}
+                      >
+                        Remove from this note
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        onClick={() => onDeleteTagFromAll(tag)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete from all notes
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </Badge>
             ))}
