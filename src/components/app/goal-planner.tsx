@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -13,13 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { generateGoalPlan, type GenerateGoalPlanOutput } from "@/ai/flows/generate-goal-plan";
-import { Loader2, BrainCircuit, Calendar, CheckSquare } from "lucide-react";
+import { Loader2, BrainCircuit, Calendar, CheckSquare, Languages } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 type GoalPlannerProps = {
   open: boolean;
@@ -179,30 +180,13 @@ export function GoalPlanner({ open, setOpen, onSavePlan }: GoalPlannerProps) {
           ) : generatedPlan ? (
             <PlanPreview plan={generatedPlan} />
           ) : (
-            <div className="space-y-4">
-                <Textarea
-                  placeholder="e.g., 'Run a marathon in 6 months' or 'Launch a new podcast'"
-                  value={goal}
-                  onChange={(e) => setGoal(e.target.value)}
-                  className="min-h-[120px] text-base"
-                  disabled={isLoading}
-                />
-                 <div>
-                    <Label htmlFor="language-select">Language</Label>
-                    <Select value={language} onValueChange={setLanguage}>
-                        <SelectTrigger id="language-select" className="mt-2">
-                            <SelectValue placeholder="Select language..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="English">English</SelectItem>
-                            <SelectItem value="Burmese">Burmese</SelectItem>
-                            <SelectItem value="Spanish">Spanish</SelectItem>
-                            <SelectItem value="French">French</SelectItem>
-                            <SelectItem value="Japanese">Japanese</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
+            <Textarea
+              placeholder="e.g., 'Run a marathon in 6 months' or 'Launch a new podcast'"
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              className="min-h-[120px] text-base"
+              disabled={isLoading}
+            />
           )}
         </div>
         <DialogFooter>
@@ -227,16 +211,38 @@ export function GoalPlanner({ open, setOpen, onSavePlan }: GoalPlannerProps) {
               <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
                 Cancel
               </Button>
-              <Button onClick={handleGeneratePlan} disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  "Generate Plan"
-                )}
-              </Button>
+              <div className="flex w-full sm:w-auto">
+                <Select value={language} onValueChange={setLanguage}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <SelectTrigger id="language-select" className="w-14 justify-center rounded-r-none border-r-0 focus:ring-offset-0 focus:ring-0">
+                                <Languages className="h-4 w-4" />
+                                <span className="sr-only">Select Language</span>
+                            </SelectTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Select Language</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <SelectContent>
+                        <SelectItem value="English">English</SelectItem>
+                        <SelectItem value="Burmese">Burmese</SelectItem>
+                        <SelectItem value="Spanish">Spanish</SelectItem>
+                        <SelectItem value="French">French</SelectItem>
+                        <SelectItem value="Japanese">Japanese</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Button onClick={handleGeneratePlan} disabled={isLoading} className="w-full rounded-l-none">
+                    {isLoading ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                    </>
+                    ) : (
+                    "Generate Plan"
+                    )}
+                </Button>
+              </div>
             </>
           )}
         </DialogFooter>
