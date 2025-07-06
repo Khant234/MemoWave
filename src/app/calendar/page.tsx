@@ -55,7 +55,7 @@ const AllDayTaskItem = ({ note, onClick, isOverdue }: { note: Note, onClick: (no
 
 
 export default function CalendarPage() {
-    const { notes, isLoading, allTags } = useNotes();
+    const { notes, isLoading } = useNotes();
     const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
     const [searchTerm, setSearchTerm] = React.useState("");
     const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
@@ -75,8 +75,7 @@ export default function CalendarPage() {
             !note.isArchived &&
             (searchTerm.trim() === "" ||
                 note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
+                note.content.toLowerCase().includes(searchTerm.toLowerCase()))
         );
     }, [notes, searchTerm]);
     
@@ -222,13 +221,12 @@ export default function CalendarPage() {
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
                     onToggleSidebar={toggleSidebar}
-                    tags={allTags}
                 />
                 <div className="flex flex-1 overflow-hidden">
                     <AppSidebar
                         isCollapsed={isSidebarCollapsed}
-                        tags={allTags}
-                        setSearchTerm={setSearchTerm}
+                        activeCategory={null}
+                        setActiveCategory={() => {}}
                     />
                     <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 transition-all duration-300 ease-in-out">
                         <div className="mx-auto max-w-7xl">

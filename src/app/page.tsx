@@ -16,7 +16,7 @@ import { db } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppHeader } from "@/components/app/app-header";
 import { NoteList } from "@/components/app/note-list";
-import { type Note, type NoteVersion } from "@/lib/types";
+import { type Note, type NoteVersion, type NoteCategory } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -47,11 +47,12 @@ const GoalPlanner = React.lazy(() => import('@/components/app/goal-planner').the
 
 
 export default function Home() {
-  const { notes, isLoading, allTags } = useNotes();
+  const { notes, isLoading } = useNotes();
   const [isSaving, setIsSaving] = React.useState(false);
   const [activeFilter, setActiveFilter] = React.useState<"all" | "archived" | "trash">(
     "all"
   );
+  const [activeCategory, setActiveCategory] = React.useState<NoteCategory | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [layout, setLayout] = React.useState<"grid" | "list">("grid");
   const { toast } = useToast();
@@ -70,7 +71,6 @@ export default function Home() {
     type: 'trash' | 'permanent';
   } | null>(null);
   const [isEmptryTrashConfirmOpen, setIsEmptyTrashConfirmOpen] = React.useState(false);
-  const [tagToDeleteFromAll, setTagToDeleteFromAll] = React.useState<string | null>(null);
 
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
   const searchParams = useSearchParams();
@@ -84,12 +84,16 @@ export default function Home() {
     const filter = searchParams.get('filter');
     if (filter === 'archived' || filter === 'trash') {
       setActiveFilter(filter);
+      setActiveCategory(null);
     } else {
       setActiveFilter('all');
+      const category = searchParams.get('category');
+      setActiveCategory(category as NoteCategory || null);
     }
 
     const q = searchParams.get('q');
     setSearchTerm(q || '');
+
   }, [searchParams]);
 
   const handleViewNote = React.useCallback((note: Note) => {
@@ -150,7 +154,6 @@ export default function Home() {
       const newNoteData: Omit<Note, 'id'> = {
         title: newTitle,
         content: transcription,
-        tags: ["voice-note"],
         color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
         isPinned: false,
         isArchived: false,
@@ -162,7 +165,7 @@ export default function Home() {
         isDraft: false,
         status: 'todo',
         priority: 'none',
-        category: 'uncategorized',
+        category: 'personal',
         dueDate: null,
         showOnBoard: true,
         order: Date.now(),
@@ -260,7 +263,6 @@ export default function Home() {
         const newNoteData: Omit<Note, 'id'> = {
             title: planNote.title,
             content: planNote.content,
-            tags: [...planNote.tags, "goal-plan"],
             color: NOTE_COLORS[index % NOTE_COLORS.length],
             isPinned: false,
             isArchived: false,
@@ -440,59 +442,6 @@ export default function Home() {
     }
   }, [notes, toast, notesCollectionRef]);
 
-  const handleTagClick = React.useCallback((tag: string) => {
-    router.push(`/?q=${tag}`);
-  }, [router]);
-  
-  const handleRemoveTagFromNote = React.useCallback(async (noteId: string, tagToRemove: string) => {
-    const note = notes.find((n) => n.id === noteId);
-    if (note) {
-      const updatedTags = note.tags.filter((tag) => tag !== tagToRemove);
-      await updateNoteField(noteId, { tags: updatedTags });
-      toast({
-        title: "Tag removed",
-        description: `The tag "${tagToRemove}" has been removed from the note.`,
-      });
-    }
-  }, [notes, toast, updateNoteField]);
-
-  const handleDeleteTagFromAll = React.useCallback((tag: string) => {
-    setTagToDeleteFromAll(tag);
-  }, []);
-
-  const handleConfirmDeleteTagFromAll = React.useCallback(async () => {
-    if (!tagToDeleteFromAll) return;
-
-    const batch = writeBatch(db);
-
-    const notesToUpdate = notes.filter(note => 
-        note.tags.some(t => t === tagToDeleteFromAll || t.startsWith(`${tagToDeleteFromAll}/`))
-    );
-    
-    notesToUpdate.forEach(note => {
-        const noteRef = doc(db, "notes", note.id);
-        const newTags = note.tags.filter(t => t !== tagToDeleteFromAll && !t.startsWith(`${tagToDeleteFromAll}/`));
-        batch.update(noteRef, { tags: newTags });
-    });
-
-    try {
-        await batch.commit();
-        toast({
-            title: "Tag Deleted",
-            description: `The tag "${tagToDeleteFromAll}" and its sub-tags have been removed from all notes.`,
-        });
-    } catch (error) {
-        console.error("Error deleting tag from all notes:", error);
-        toast({
-            title: "Error Deleting Tag",
-            description: "Could not remove the tag. Please try again.",
-            variant: "destructive",
-        });
-    } finally {
-        setTagToDeleteFromAll(null);
-    }
-  }, [notes, tagToDeleteFromAll, toast]);
-
   const handleConfirmDelete = React.useCallback(async () => {
     if (!deleteConfirmation) return;
     const { noteId, type } = deleteConfirmation;
@@ -546,23 +495,18 @@ export default function Home() {
           default:
             matchesFilter = true;
         }
+
+        if (activeCategory && note.category !== activeCategory) {
+          return false;
+        }
         
         const searchInput = searchTerm.toLowerCase();
-        if (searchInput.startsWith('#')) {
-            const searchTag = searchInput.substring(1).replace(/"/g, '');
-            return matchesFilter && note.tags.some(tag => 
-              tag.toLowerCase() === searchTag || 
-              tag.toLowerCase().startsWith(searchTag + '/')
-            );
-        }
-
         const matchesSearch =
           searchTerm.trim() === "" ||
           note.title.toLowerCase().includes(searchInput) ||
           note.content.toLowerCase().includes(searchInput) ||
-          note.tags.some((tag) =>
-            tag.toLowerCase().includes(searchInput)
-          );
+          note.category.toLowerCase().includes(searchInput);
+
         return matchesFilter && matchesSearch;
       })
       .sort((a, b) => {
@@ -574,10 +518,10 @@ export default function Home() {
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
         );
       });
-  }, [notes, activeFilter, searchTerm]);
+  }, [notes, activeFilter, searchTerm, activeCategory]);
 
   const groupedNotes = React.useMemo(() => {
-    if (activeFilter !== 'all' || searchTerm.trim() !== '') {
+    if (activeFilter !== 'all' || searchTerm.trim() !== '' || activeCategory) {
       if (filteredNotes.length === 0) return {};
       return { 'Results': filteredNotes };
     }
@@ -609,7 +553,7 @@ export default function Home() {
 
     return groups;
 
-  }, [filteredNotes, activeFilter, searchTerm]);
+  }, [filteredNotes, activeFilter, searchTerm, activeCategory]);
 
   return (
     <>
@@ -624,20 +568,14 @@ export default function Home() {
           onNewPlan={handleNewPlan}
           onToggleSidebar={toggleSidebar}
           activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
-          tags={allTags}
-          onTagClick={handleTagClick}
-          activeTag={searchTerm}
         />
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar
             isCollapsed={isSidebarCollapsed}
             activeFilter={activeFilter}
             setActiveFilter={setActiveFilter}
-            setSearchTerm={setSearchTerm}
-            tags={allTags}
-            onTagClick={handleTagClick}
-            activeTag={searchTerm}
+            activeCategory={activeCategory}
+            setActiveCategory={setActiveCategory}
           />
           <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
             <div className="mx-auto max-w-7xl">
@@ -652,9 +590,6 @@ export default function Home() {
                 onRestoreNote={handleRestoreNote}
                 onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
                 onCopyNote={handleCopyNote}
-                onTagClick={handleTagClick}
-                onRemoveTagFromNote={handleRemoveTagFromNote}
-                onDeleteTagFromAll={handleDeleteTagFromAll}
                 onEmptyTrash={handleEmptyTrash}
                 activeFilter={activeFilter}
               />
@@ -742,25 +677,6 @@ export default function Home() {
               onClick={handleConfirmEmptyTrash}
             >
               Empty Trash
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog open={!!tagToDeleteFromAll} onOpenChange={(open) => !open && setTagToDeleteFromAll(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Tag Everywhere?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the tag &quot;{tagToDeleteFromAll}&quot; and all its nested sub-tags from every note where it appears. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setTagToDeleteFromAll(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className={buttonVariants({ variant: 'destructive' })}
-              onClick={handleConfirmDeleteTagFromAll}
-            >
-              Delete from All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

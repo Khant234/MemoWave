@@ -13,7 +13,6 @@ export type Note = {
   id: string;
   title: string;
   content: string;
-  tags: string[];
   color: string;
   isPinned: boolean;
   isArchived: boolean;

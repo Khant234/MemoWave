@@ -20,7 +20,6 @@ import {
   Undo,
   MoreVertical,
   Copy,
-  X,
   CheckSquare,
   Flag,
   Sparkles,
@@ -48,9 +47,6 @@ type NoteCardProps = {
   onRestoreNote: (noteId: string) => void;
   onPermanentlyDeleteNote: (noteId:string) => void;
   onCopyNote: (noteId: string) => void;
-  onTagClick: (tag: string) => void;
-  onRemoveTagFromNote: (noteId: string, tag: string) => void;
-  onDeleteTagFromAll: (tag: string) => void;
 };
 
 const priorityIcons: Record<Note['priority'], React.ReactNode> = {
@@ -75,9 +71,6 @@ const NoteCardComponent = ({
   onRestoreNote,
   onPermanentlyDeleteNote,
   onCopyNote,
-  onTagClick,
-  onRemoveTagFromNote,
-  onDeleteTagFromAll,
 }: NoteCardProps) => {
   const [formattedDate, setFormattedDate] = React.useState("");
 
@@ -102,11 +95,6 @@ const NoteCardComponent = ({
   const handleDropdownClick = React.useCallback((e: React.MouseEvent) => {
       e.stopPropagation();
   }, []);
-
-  const handleTagClick = React.useCallback((e: React.MouseEvent, tag: string) => {
-      e.stopPropagation();
-      onTagClick(tag);
-  }, [onTagClick]);
 
   return (
     <Card
@@ -243,55 +231,6 @@ const NoteCardComponent = ({
         </div>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 px-4 pb-3 pt-0">
-        {note.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {note.tags.map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="group/tag inline-flex items-center p-0 pr-1"
-              >
-                <span
-                  className="cursor-pointer hover:underline py-0.5 pl-2.5 pr-1"
-                  onClick={(e) => handleTagClick(e, tag)}
-                >
-                  {tag}
-                </span>
-                {!note.isTrashed && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        onClick={(e) => e.stopPropagation()}
-                        className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"
-                        aria-label={`Options for tag ${tag}`}
-                      >
-                        <X className="h-2.5 w-2.5" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <DropdownMenuItem
-                        onClick={() => onRemoveTagFromNote(note.id, tag)}
-                      >
-                        Remove from this note
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                        onClick={() => onDeleteTagFromAll(tag)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete from all notes
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </Badge>
-            ))}
-          </div>
-        )}
         <div className="flex w-full items-center justify-between pt-2">
             <p className="text-xs text-muted-foreground">
               {formattedDate}

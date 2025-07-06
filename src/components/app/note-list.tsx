@@ -21,9 +21,6 @@ type NoteListProps = {
   onRestoreNote: (noteId: string) => void;
   onPermanentlyDeleteNote: (noteId: string) => void;
   onCopyNote: (noteId: string) => void;
-  onTagClick: (tag: string) => void;
-  onRemoveTagFromNote: (noteId: string, tag: string) => void;
-  onDeleteTagFromAll: (tag: string) => void;
   onEmptyTrash: () => void;
   activeFilter: "all" | "archived" | "trash";
 };
@@ -39,9 +36,6 @@ const NoteListComponent = ({
   onRestoreNote,
   onPermanentlyDeleteNote,
   onCopyNote,
-  onTagClick,
-  onRemoveTagFromNote,
-  onDeleteTagFromAll,
   onEmptyTrash,
   activeFilter,
 }: NoteListProps) => {
@@ -106,9 +100,6 @@ const NoteListComponent = ({
       onRestoreNote={onRestoreNote}
       onPermanentlyDeleteNote={onPermanentlyDeleteNote}
       onCopyNote={onCopyNote}
-      onTagClick={onTagClick}
-      onRemoveTagFromNote={onRemoveTagFromNote}
-      onDeleteTagFromAll={onDeleteTagFromAll}
     />
   );
   

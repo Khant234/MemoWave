@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered goal planner that breaks down a user's goal into actionable notes with checklists and due dates.
@@ -28,9 +29,6 @@ const PlannedNoteSchema = z.object({
   content: z
     .string()
     .describe('A brief summary of this part of the plan.'),
-  tags: z
-    .array(z.string())
-    .describe('An array of relevant tags for this note.'),
   checklist: z
     .array(ChecklistItemSchema)
     .describe(
@@ -67,9 +65,9 @@ const prompt = ai.definePrompt({
   prompt: `You are an AI-powered project management assistant with expertise in goal decomposition and strategic planning. Your primary function is to transform a user's high-level goal into a detailed, actionable, and realistic project plan.
 
 {{#if targetLanguage}}
-**IMPORTANT: Generate the entire plan—including titles, content, checklist items, and tags—in the following language: {{targetLanguage}}.**
+**IMPORTANT: Generate the entire plan—including titles, content, and checklist items—in the following language: {{targetLanguage}}.**
 {{else}}
-**IMPORTANT: Generate the entire plan—including titles, content, checklist items, and tags—in English.**
+**IMPORTANT: Generate the entire plan—including titles, content, and checklist items—in English.**
 {{/if}}
 
 **User's Goal:**
@@ -83,7 +81,7 @@ const prompt = ai.definePrompt({
     *   **Logical Sequencing:** The milestones you generate must be in a logical order. Ensure that the due dates reflect this sequence (e.g., Task 2's due date is after Task 1's).
     *   **Pacing:** Do not cluster all due dates together. Spread them out evenly over the determined timeframe to create a manageable pace and avoid burnout. For long-term goals, this might mean one milestone per week or every two weeks.
     *   **Date Format:** Return all due dates as a full ISO 8601 string (e.g., 'YYYY-MM-DDTHH:mm:ss.sssZ').
-5.  **Generate Relevant Data:** For each note, provide a concise title, a brief content summary, and relevant tags.
+5.  **Generate Relevant Data:** For each note, provide a concise title and a brief content summary.
 
 Return the entire plan as a JSON object with a "notes" array.
       `,

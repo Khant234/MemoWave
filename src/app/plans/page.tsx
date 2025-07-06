@@ -44,7 +44,7 @@ export type Plan = {
 };
 
 export default function PlansPage() {
-  const { notes, isLoading, allTags } = useNotes();
+  const { notes, isLoading } = useNotes();
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
   const [searchTerm, setSearchTerm] = React.useState("");
   const { toast } = useToast();
@@ -96,7 +96,7 @@ export default function PlansPage() {
       .filter(plan => 
         searchTerm.trim() === "" || plan.goal.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      .sort((a, b) => new Date(b.notes[0].createdAt).getTime() - new Date(a.notes[0].createdAt).getTime());
+      .sort((a, b) => new Date(b.notes[0].createdAt).getTime() - new Date(b.notes[0].createdAt).getTime());
   }, [allPlans, activeFilter, searchTerm]);
 
   const handleSavePlan = React.useCallback(async (planNotes: GenerateGoalPlanOutput['notes'], goal: string) => {
@@ -109,7 +109,6 @@ export default function PlansPage() {
         const newNoteData: Omit<Note, 'id'> = {
             title: planNote.title,
             content: planNote.content,
-            tags: [...planNote.tags, "goal-plan"],
             color: NOTE_COLORS[index % NOTE_COLORS.length],
             isPinned: false,
             isArchived: false,
@@ -253,13 +252,12 @@ export default function PlansPage() {
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           onToggleSidebar={toggleSidebar}
-          tags={allTags}
         />
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar
             isCollapsed={isSidebarCollapsed}
-            tags={allTags}
-            setSearchTerm={setSearchTerm}
+            activeCategory={null}
+            setActiveCategory={() => {}}
           />
           <main className="flex-1 flex flex-col overflow-y-auto bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
             <div className="mx-auto max-w-5xl">

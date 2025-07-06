@@ -14,7 +14,6 @@ import { useToast } from '@/hooks/use-toast';
 type NotesContextType = {
   notes: Note[];
   isLoading: boolean;
-  allTags: string[];
 };
 
 const NotesContext = React.createContext<NotesContextType | undefined>(undefined);
@@ -51,18 +50,8 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [toast]);
 
-  const allTags = React.useMemo(() => {
-    const tagsSet = new Set<string>();
-    notes.forEach((note) => {
-      if (!note.isTrashed) {
-        note.tags.forEach((tag) => tagsSet.add(tag));
-      }
-    });
-    return Array.from(tagsSet).sort();
-  }, [notes]);
-
   return (
-    <NotesContext.Provider value={{ notes, isLoading, allTags }}>
+    <NotesContext.Provider value={{ notes, isLoading }}>
       {children}
     </NotesContext.Provider>
   );

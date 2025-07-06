@@ -26,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { type Note, type NoteVersion, type NoteStatus, type NotePriority, type NoteCategory } from "@/lib/types";
@@ -55,7 +54,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { suggestTags } from "@/ai/flows/suggest-tags";
 import { generateTitle } from "@/ai/flows/title-generation";
 import { summarizeNote } from "@/ai/flows/note-summarization";
 import { burmeseTextToVoice } from "@/ai/flows/burmese-text-to-voice";
@@ -92,8 +90,6 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
-  const [tags, setTags] = React.useState<string[]>([]);
-  const [tagInput, setTagInput] = React.useState("");
   const [color, setColor] = React.useState(NOTE_COLORS[0]);
   const [checklist, setChecklist] = React.useState<{ id: string; text: string; completed: boolean }[]>([]);
   const [newChecklistItem, setNewChecklistItem] = React.useState("");
@@ -165,7 +161,6 @@ export function NoteEditor({
   const loadStateFromData = React.useCallback((data: Note | NoteDraft) => {
     setTitle(data.title || '');
     setContent(data.content || '');
-    setTags(data.tags || []);
     setColor(data.color || NOTE_COLORS[0]);
     setChecklist(data.checklist || []);
     setImageUrl(data.imageUrl);
@@ -194,7 +189,6 @@ export function NoteEditor({
       } else {
         setTitle('');
         setContent('');
-        setTags([]);
         setColor(NOTE_COLORS[0]);
         setChecklist([]);
         setImageUrl(undefined);
@@ -216,14 +210,14 @@ export function NoteEditor({
   React.useEffect(() => {
     if (isOpen) {
       const draftNote: NoteDraft = {
-        title, content, tags, color, checklist, imageUrl, 
+        title, content, color, checklist, imageUrl, 
         audioUrl: generatedAudio, status, priority, category,
         dueDate: dueDate ? dueDate.toISOString() : null, 
         startTime, endTime, showOnBoard,
       };
       saveDraft(draftNote);
     }
-  }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, saveDraft]);
+  }, [isOpen, title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, saveDraft]);
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -232,7 +226,7 @@ export function NoteEditor({
     }
   
     const currentState = {
-      title, content, tags, color, checklist, imageUrl,
+      title, content, color, checklist, imageUrl,
       audioUrl: generatedAudio || undefined, status, priority,
       category,
       dueDate: dueDate ? dueDate.toISOString() : undefined,
@@ -243,7 +237,7 @@ export function NoteEditor({
   
     if (note) {
       const noteState = {
-        title: note.title, content: note.content, tags: note.tags, color: note.color,
+        title: note.title, content: note.content, color: note.color,
         checklist: note.checklist, imageUrl: note.imageUrl, audioUrl: note.audioUrl,
         status: note.status, priority: note.priority, category: note.category,
         dueDate: note.dueDate || undefined,
@@ -253,10 +247,10 @@ export function NoteEditor({
       };
       setIsDirty(JSON.stringify(currentState) !== JSON.stringify(noteState));
     } else {
-      const isEmpty = !title && !content && tags.length === 0 && checklist.length === 0 && !imageUrl && !generatedAudio && !showOnBoard && !dueDate;
+      const isEmpty = !title && !content && checklist.length === 0 && !imageUrl && !generatedAudio && !showOnBoard && !dueDate;
       setIsDirty(!isEmpty);
     }
-  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard]);
+  }, [isOpen, note, title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard]);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -325,7 +319,7 @@ export function NoteEditor({
     }
 
     const newNote: Note = {
-      id: note?.id || new Date().toISOString(), title, content, tags, color,
+      id: note?.id || new Date().toISOString(), title, content, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
@@ -339,7 +333,7 @@ export function NoteEditor({
     if (generatedAudio) newNote.audioUrl = generatedAudio;
 
     onSave(newNote);
-  }, [title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, note, onSave, toast]);
+  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, note, onSave, toast]);
   
   const handleDiscardChanges = React.useCallback(() => {
     if (note) {
@@ -359,7 +353,7 @@ export function NoteEditor({
 
   const handleSaveAsDraftAndClose = React.useCallback(() => {
     const draftNote: Note = {
-      id: note?.id || new Date().toISOString(), title, content, tags, color,
+      id: note?.id || new Date().toISOString(), title, content, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
@@ -374,24 +368,13 @@ export function NoteEditor({
     
     onSave(draftNote);
     setIsCloseConfirmOpen(false);
-  }, [title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, note, onSave]);
+  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, note, onSave]);
 
   const handleDiscardAndClose = React.useCallback(() => {
     clearDraft();
     setIsCloseConfirmOpen(false);
     setIsOpen(false);
   }, [clearDraft, setIsOpen]);
-
-  const handleTagAdd = React.useCallback(() => {
-    if (tagInput && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
-    }
-    setTagInput("");
-  }, [tagInput, tags]);
-
-  const handleTagRemove = React.useCallback((tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
-  }, [tags]);
   
   const handleAddChecklistItem = React.useCallback(() => {
     if (newChecklistItem.trim()) {
@@ -429,12 +412,6 @@ export function NoteEditor({
     }
     setIsAiLoading(false);
   }, [toast]);
-
-  const handleSuggestTags = React.useCallback(() => runAiAction(async () => {
-    if(!content) throw new Error("Please write some content to suggest tags.");
-    const result = await suggestTags({ noteContent: content });
-    if (result.tags) setTags(prev => [...new Set([...prev, ...result.tags])]);
-  }, { success: "Tags Suggested!", error: "Could not suggest tags." }), [content, runAiAction]);
   
   const handleGenerateTitle = React.useCallback(() => runAiAction(async () => {
     if(!content) throw new Error("Please write some content to generate a title.");
@@ -691,20 +668,7 @@ export function NoteEditor({
                       <Tooltip><TooltipTrigger asChild><Button onClick={handleAddChecklistItem}><Plus className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent><p>Add Item</p></TooltipContent></Tooltip>
                   </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tags">Tags</Label>
-                <div className="flex gap-2">
-                  <Input id="tags" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleTagAdd()} placeholder="Add a tag and press Enter"/>
-                  <Button onClick={handleTagAdd}>Add</Button>
-                  <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={handleSuggestTags} disabled={isAiLoading || !content}><Sparkles className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent><p>Suggest Tags with AI</p></TooltipContent></Tooltip>
-                </div>
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">{tag}<Tooltip><TooltipTrigger asChild><button onClick={() => handleTagRemove(tag)} className="ml-1 rounded-full p-0.5 hover:bg-destructive/20"><X className="h-3 w-3" /></button></TooltipTrigger><TooltipContent><p>Remove Tag</p></TooltipContent></Tooltip></Badge>
-                  ))}
-                </div>
-              </div>
+              
               <div className="space-y-2">
                 <Label>Color</Label>
                 <div className="flex flex-wrap gap-2">

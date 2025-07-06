@@ -5,23 +5,21 @@ import * as React from "react";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, Trash2, Tag, ListTodo, LayoutGrid, CalendarDays, Target } from "lucide-react";
+import { NotepadText, Archive, Trash2, ListTodo, LayoutGrid, CalendarDays, Target, Briefcase, User, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { type NoteCategory } from "@/lib/types";
 
 type AppSidebarProps = {
   activeFilter?: "all" | "archived" | "trash";
   setActiveFilter?: React.Dispatch<React.SetStateAction<"all" | "archived" | "trash">>;
-  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
-  tags: string[];
-  onTagClick?: (tag: string) => void;
-  activeTag?: string;
+  activeCategory: NoteCategory | null;
+  setActiveCategory: React.Dispatch<React.SetStateAction<NoteCategory | null>>;
   isMobile?: boolean;
   isCollapsed?: boolean;
 };
@@ -29,10 +27,8 @@ type AppSidebarProps = {
 const AppSidebarComponent = ({
   activeFilter,
   setActiveFilter,
-  setSearchTerm,
-  tags,
-  onTagClick,
-  activeTag,
+  activeCategory,
+  setActiveCategory,
   isMobile,
   isCollapsed: isCollapsedFromProp,
 }: AppSidebarProps) => {
@@ -42,17 +38,32 @@ const AppSidebarComponent = ({
   const isLoading = isCollapsedFromProp === undefined;
   const isCollapsed = isLoading ? true : isCollapsedFromProp;
 
-  const handleTagClick = (tag: string) => {
-    const searchString = tag.includes(' ') ? `"#${tag}"` : `#${tag}`;
-    if (pathname === '/') {
-        onTagClick?.(searchString);
+  const handleFilterClick = (filter: "all" | "archived" | "trash", path: string) => {
+    setActiveCategory(null);
+    if (isMobile && setActiveFilter) {
+      setActiveFilter(filter);
+      router.push(path);
     } else {
-      router.push(`/?q=${encodeURIComponent(searchString)}`);
+      router.push(path);
     }
+  };
+  
+  const handleCategoryClick = (category: NoteCategory | null) => {
+    setActiveCategory(category);
+    if (activeFilter !== 'all' && setActiveFilter) {
+      setActiveFilter('all');
+    }
+
+    const params = new URLSearchParams();
+    if (category) {
+      params.set('category', category);
+    }
+    
+    router.push(`/?${params.toString()}`);
   }
 
   const navItems = [
-    { name: "All Notes", path: "/", icon: NotepadText, filter: "all" },
+    { name: "All Notes", path: "/", icon: NotepadText, filter: "all", category: null },
     { name: "To-do List", path: "/todos", icon: ListTodo },
     { name: "Kanban Board", path: "/board", icon: LayoutGrid },
     { name: "Calendar", path: "/calendar", icon: CalendarDays },
@@ -61,35 +72,36 @@ const AppSidebarComponent = ({
     { name: "Trash", path: "/?filter=trash", icon: Trash2, filter: "trash" },
   ];
 
+  const categoryItems: { name: string, category: NoteCategory, icon: React.ElementType }[] = [
+    { name: "Personal", category: 'personal', icon: User },
+    { name: "Professional", category: 'professional', icon: Briefcase },
+    { name: "Business", category: 'business', icon: Building2 },
+  ];
+
   const NavContent = () => (
     <div className="flex flex-col h-full">
       <nav className="flex flex-col gap-1 p-2 pt-4">
         {navItems.map(({ name, path, icon: Icon, filter }) => {
           let isActive = false;
           if (filter) {
-            const searchParams = new URLSearchParams(path.split('?')[1]);
-            const filterParam = searchParams.get('filter') || 'all';
-            isActive = pathname === '/' && activeFilter === filterParam && !activeTag;
+            isActive = pathname === '/' && activeFilter === filter && !activeCategory;
           } else {
             isActive = pathname.startsWith(path);
           }
           
-          const handleClick = (e: React.MouseEvent) => {
-            e.preventDefault();
-            if (isMobile) {
-                if (filter) setActiveFilter?.(filter as any);
-                router.push(path);
-            } else {
-                router.push(path);
-            }
-          };
-
           return (
             <Tooltip key={name} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
                   href={path}
-                  onClick={handleClick}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (filter) {
+                      handleFilterClick(filter as any, path);
+                    } else {
+                      router.push(path);
+                    }
+                  }}
                   className={cn(
                     "flex h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors group",
                     isActive ? "bg-secondary text-primary" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
@@ -118,54 +130,48 @@ const AppSidebarComponent = ({
         })}
       </nav>
 
-      {tags.length > 0 && (
         <>
           <Separator className={cn("my-2", isCollapsed ? 'mx-auto w-12' : 'mx-2' )} />
           <div className="flex-1 flex flex-col min-h-0">
             {!isCollapsed && (
               <div className={cn("p-2 pt-0", isCollapsed && 'hidden')}>
                 <h3 className="text-sm font-semibold text-muted-foreground tracking-tight whitespace-nowrap px-2">
-                  Tags
+                  Categories
                 </h3>
               </div>
             )}
-            <ScrollArea className="flex-grow">
-              <nav className="flex flex-col gap-1 px-2">
-                {tags.map(tag => {
-                  const searchString = tag.includes(' ') ? `"#${tag}"` : `#${tag}`;
-                  const isActive = activeTag === searchString;
-
-                  return (
-                    <Tooltip key={tag} delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={isActive ? "secondary" : "ghost"}
-                          className={cn(
-                            "h-10 px-3 w-full text-left font-normal",
-                            !isMobile && isCollapsed ? "justify-center" : "justify-start"
-                          )}
-                          aria-label={tag}
-                          onClick={() => handleTagClick(tag)}
-                        >
-                          <div className="flex items-center gap-2 flex-1 overflow-hidden">
-                            <Tag className={cn("h-5 w-5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
-                            <span className={cn("truncate whitespace-nowrap transition-opacity", !isMobile && isCollapsed && "hidden")}>
-                              {tag}
-                            </span>
-                          </div>
-                        </Button>
-                      </TooltipTrigger>
-                      {isCollapsed && !isMobile && (
-                        <TooltipContent side="right"><p>{tag}</p></TooltipContent>
-                      )}
-                    </Tooltip>
-                  );
-                })}
-              </nav>
-            </ScrollArea>
+            <nav className="flex flex-col gap-1 px-2">
+              {categoryItems.map(({ name, category, icon: Icon }) => {
+                const isActive = activeCategory === category;
+                return (
+                  <Tooltip key={name} delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={isActive ? "secondary" : "ghost"}
+                        className={cn(
+                          "h-10 px-3 w-full text-left font-normal",
+                          !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                        )}
+                        aria-label={name}
+                        onClick={() => handleCategoryClick(category)}
+                      >
+                        <div className="flex items-center gap-2 flex-1 overflow-hidden">
+                          <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
+                          <span className={cn("truncate whitespace-nowrap transition-opacity", !isMobile && isCollapsed && "hidden")}>
+                            {name}
+                          </span>
+                        </div>
+                      </Button>
+                    </TooltipTrigger>
+                    {isCollapsed && !isMobile && (
+                      <TooltipContent side="right"><p>{name}</p></TooltipContent>
+                    )}
+                  </Tooltip>
+                );
+              })}
+            </nav>
           </div>
         </>
-      )}
     </div>
   );
 

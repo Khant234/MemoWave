@@ -46,10 +46,6 @@ type AppHeaderProps = {
   onNewPlan?: () => void;
   onToggleSidebar: () => void;
   activeFilter?: "all" | "archived" | "trash";
-  setActiveFilter?: Dispatch<SetStateAction<"all" | "archived" | "trash">>;
-  tags: string[];
-  onTagClick?: (tag: string) => void;
-  activeTag?: string;
 };
 
 const AppHeaderComponent = ({
@@ -62,10 +58,6 @@ const AppHeaderComponent = ({
   onNewPlan,
   onToggleSidebar,
   activeFilter,
-  setActiveFilter,
-  tags,
-  onTagClick,
-  activeTag,
 }: AppHeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false);
@@ -129,20 +121,8 @@ const AppHeaderComponent = ({
             <AppSidebar
               isMobile
               activeFilter={activeFilter}
-              setActiveFilter={(filter) => {
-                setActiveFilter?.(filter);
-                setIsMobileMenuOpen(false);
-              }}
-              setSearchTerm={(term) => {
-                setSearchTerm(term);
-                setIsMobileMenuOpen(false);
-              }}
-              tags={tags}
-              onTagClick={(tag) => {
-                onTagClick?.(tag);
-                setIsMobileMenuOpen(false);
-              }}
-              activeTag={activeTag}
+              activeCategory={null}
+              setActiveCategory={() => {}}
             />
           </SheetContent>
         </Sheet>
@@ -203,7 +183,7 @@ const AppHeaderComponent = ({
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search notes, or type # for tags..."
+              placeholder="Search notes..."
               className={cn(
                 "w-full rounded-full bg-secondary pl-11 h-10 border-transparent transition-all duration-200 ease-in-out",
                 "focus-visible:bg-background focus-visible:shadow-inner"

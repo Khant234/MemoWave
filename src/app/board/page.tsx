@@ -49,7 +49,7 @@ type GroupedRenderData = {
 };
 
 export default function BoardPage() {
-  const { notes, isLoading, allTags } = useNotes();
+  const { notes, isLoading } = useNotes();
   const [containers, setContainers] = React.useState<NoteContainers>({});
   const [groupedRenderData, setGroupedRenderData] = React.useState<GroupedRenderData[]>([]);
 
@@ -65,7 +65,7 @@ export default function BoardPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const isBoardUpdating = React.useRef(false);
   const [activeNote, setActiveNote] = React.useState<Note | null>(null);
-  const [groupBy, setGroupBy] = React.useState<'none' | 'tag' | 'priority' | 'category'>('none');
+  const [groupBy, setGroupBy] = React.useState<'none' | 'priority' | 'category'>('none');
   const [isChecklistViewerOpen, setIsChecklistViewerOpen] = React.useState(false);
   const [viewingChecklistNote, setViewingChecklistNote] = React.useState<Note | null>(null);
 
@@ -80,8 +80,7 @@ export default function BoardPage() {
         !note.isTrashed &&
         (searchTerm.trim() === "" ||
             note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
+            note.content.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const newContainers: NoteContainers = {};
@@ -96,24 +95,6 @@ export default function BoardPage() {
         for (const note of filteredNotes) {
             const status = note.status || 'todo';
             const containerId = `all-${status}`;
-            if (newContainers[containerId]) {
-                newContainers[containerId].push(note);
-            }
-        }
-    } else if (groupBy === 'tag') {
-        const uniqueTags = ['untagged', ...allTags];
-        uniqueTags.forEach(tag => {
-            const title = tag === 'untagged' ? 'Untagged' : tag;
-            groupKeys[tag] = title;
-            KANBAN_COLUMNS.forEach(status => {
-                newContainers[`${tag}-${status}`] = [];
-            });
-        });
-        
-        for (const note of filteredNotes) {
-            const status = note.status || 'todo';
-            const tag = note.tags[0] || 'untagged';
-            const containerId = `${tag}-${status}`;
             if (newContainers[containerId]) {
                 newContainers[containerId].push(note);
             }
@@ -178,17 +159,12 @@ export default function BoardPage() {
             if (groupBy === 'category') {
                 return NOTE_CATEGORIES.indexOf(a.groupKey as NoteCategory) - NOTE_CATEGORIES.indexOf(b.groupKey as NoteCategory);
             }
-            if (groupBy === 'tag') {
-                if (a.groupKey === 'untagged') return 1;
-                if (b.groupKey === 'untagged') return -1;
-                return a.groupTitle.localeCompare(b.groupTitle);
-            }
             return 0;
         });
 
     setGroupedRenderData(newGroupedRenderData);
 
-  }, [notes, searchTerm, groupBy, allTags]);
+  }, [notes, searchTerm, groupBy]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -273,12 +249,6 @@ export default function BoardPage() {
     const groupKeys: Record<string, string> = {}; 
     if (groupBy === 'none') {
         groupKeys['all'] = 'All Tasks';
-    } else if (groupBy === 'tag') {
-        const uniqueTags = ['untagged', ...allTags];
-        uniqueTags.forEach(tag => {
-            const title = tag === 'untagged' ? 'Untagged' : tag;
-            groupKeys[tag] = title;
-        });
     } else if (groupBy === 'priority') {
         NOTE_PRIORITIES.forEach(priority => {
             groupKeys[priority] = NOTE_PRIORITY_TITLES[priority];
@@ -311,11 +281,6 @@ export default function BoardPage() {
              if (groupBy === 'category') {
                 return NOTE_CATEGORIES.indexOf(a.groupKey as NoteCategory) - NOTE_CATEGORIES.indexOf(b.groupKey as NoteCategory);
             }
-            if (groupBy === 'tag') {
-                if (a.groupKey === 'untagged') return 1;
-                if (b.groupKey === 'untagged') return -1;
-                return a.groupTitle.localeCompare(b.groupTitle);
-            }
             return 0;
         });
     setGroupedRenderData(newGroupedRenderData);
@@ -336,15 +301,6 @@ export default function BoardPage() {
                 updates.priority = groupKey as NotePriority;
             } else if (groupBy === 'category' && originalNote.category !== groupKey) {
                 updates.category = groupKey as NoteCategory;
-            } else if (groupBy === 'tag') {
-                const originalGroupKey = originalNote.tags[0] || 'untagged';
-                if (originalGroupKey !== groupKey) {
-                    let newTags = originalNote.tags.filter(t => t !== originalGroupKey);
-                    if (groupKey !== 'untagged') {
-                        newTags.unshift(groupKey);
-                    }
-                    updates.tags = [...new Set(newTags)];
-                }
             }
         }
         batch.update(noteRef, updates);
@@ -367,7 +323,7 @@ export default function BoardPage() {
     } finally {
         isBoardUpdating.current = false;
     }
-  }, [containers, findContainer, groupBy, allTags, notes, toast]);
+  }, [containers, findContainer, groupBy, notes, toast]);
 
   const handleCardClick = React.useCallback((note: Note) => {
     setViewingChecklistNote(note);
@@ -543,13 +499,12 @@ export default function BoardPage() {
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           onToggleSidebar={toggleSidebar}
-          tags={allTags}
         />
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar
             isCollapsed={isSidebarCollapsed}
-            tags={allTags}
-            setSearchTerm={setSearchTerm}
+            activeCategory={null}
+            setActiveCategory={() => {}}
           />
           <main className="flex-1 flex flex-col overflow-hidden bg-background p-4 sm:p-6 transition-all duration-300 ease-in-out">
             <div className="flex items-center justify-between flex-shrink-0 mb-6">
@@ -562,7 +517,6 @@ export default function BoardPage() {
                         <SelectItem value="none">No Grouping</SelectItem>
                         <SelectItem value="category">By Category</SelectItem>
                         <SelectItem value="priority">By Priority</SelectItem>
-                        <SelectItem value="tag">By Tag</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
