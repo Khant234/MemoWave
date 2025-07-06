@@ -90,7 +90,10 @@ const TagNodeDisplay: React.FC<{
   const button = (
     <Button
       variant={isExactActive ? "secondary" : "ghost"}
-      className="h-10 px-2 justify-start flex-1 text-left w-full"
+      className={cn(
+        "h-10 px-2 flex-1 text-left w-full",
+        !isMobile && isCollapsed ? "justify-center" : "justify-start"
+      )}
       aria-label={node.name}
       onClick={(e) => {
         e.stopPropagation();
@@ -116,7 +119,10 @@ const TagNodeDisplay: React.FC<{
     return (
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
-            <div className="flex items-center" style={{ paddingLeft: `${level * 1.5}rem`}}>
+            <div 
+              className="flex items-center" 
+              style={{ paddingLeft: !isMobile && isCollapsed ? 0 : `${level * 1.5}rem`}}
+            >
               {button}
             </div>
           </TooltipTrigger>
@@ -131,7 +137,7 @@ const TagNodeDisplay: React.FC<{
     <Collapsible>
       <div 
         className="flex items-center group/menu-item"
-        style={{ paddingLeft: `${level * 1}rem` }}
+        style={{ paddingLeft: !isMobile && isCollapsed ? 0 : `${level * 1}rem` }}
       >
         {!isCollapsed && trigger}
         <Tooltip delayDuration={0}>
