@@ -39,6 +39,8 @@ const PlannedNoteSchema = z.object({
     .describe(
       "A realistic future due date for this task, formatted as an ISO 8601 string (e.g., 'YYYY-MM-DDTHH:mm:ss.sssZ'). Due dates should be sequential and logically spaced out over a realistic timeframe for the goal."
     ),
+  category: z.enum(['personal', 'professional', 'business'])
+    .describe("The most relevant category for this task based on the overall goal. Choose from 'personal', 'professional', or 'business'. Apply the same category to all notes in the plan.")
 });
 
 const GenerateGoalPlanOutputSchema = z.object({
@@ -77,11 +79,12 @@ const prompt = ai.definePrompt({
 1.  **Analyze the Goal:** First, understand the complexity and implied timeline of the user's goal. A goal like "learn a new programming language" should take weeks or months, not days. A goal like "organize my closet" might only take a day or two.
 2.  **Decompose into Milestones:** Break the goal down into logical, sequential milestones. Each milestone will become a separate note in the plan.
 3.  **Create Actionable Steps:** For each milestone (note), create a checklist of small, concrete sub-tasks that need to be completed.
-4.  **Assign Due Dates:**
+4.  **Assign a Category:** Based on the user's goal, determine the most appropriate category from the following options: 'personal', 'professional', or 'business'. Assign this same category to every note in the plan.
+5.  **Assign Due Dates:**
     *   **Logical Sequencing:** The milestones you generate must be in a logical order. Ensure that the due dates reflect this sequence (e.g., Task 2's due date is after Task 1's).
     *   **Pacing:** Do not cluster all due dates together. Spread them out evenly over the determined timeframe to create a manageable pace and avoid burnout. For long-term goals, this might mean one milestone per week or every two weeks.
     *   **Date Format:** Return all due dates as a full ISO 8601 string (e.g., 'YYYY-MM-DDTHH:mm:ss.sssZ').
-5.  **Generate Relevant Data:** For each note, provide a concise title and a brief content summary.
+6.  **Generate Relevant Data:** For each note, provide a concise title and a brief content summary.
 
 Return the entire plan as a JSON object with a "notes" array.
       `,

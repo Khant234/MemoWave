@@ -274,7 +274,7 @@ export default function Home() {
             isDraft: false,
             status: 'todo',
             priority: 'medium',
-            category: 'professional',
+            category: planNote.category,
             dueDate: planNote.dueDate,
             showOnBoard: true,
             order: Date.now() + index,
