@@ -82,86 +82,80 @@ const TagNodeDisplay: React.FC<{
   isCollapsed?: boolean;
 }> = ({ node, level, handleTagClick, activeTag, isMobile, isCollapsed }) => {
   const searchString = node.path.includes(' ') ? `"#${node.path}"` : `#${node.path}`;
-  const isActive = activeTag ? activeTag.startsWith(searchString) : false;
   const isExactActive = activeTag === searchString;
-
+  // A tag is considered "active" if it's the one selected, or if the selected tag is one of its children.
+  const isActive = activeTag ? activeTag.startsWith(searchString) : false;
   const hasChildren = node.children.length > 0;
 
   const button = (
     <Button
       variant={isExactActive ? "secondary" : "ghost"}
       className={cn(
-        "h-10 px-2 flex-1 text-left w-full",
-        !isMobile && isCollapsed ? "justify-center" : "justify-start"
+        "h-10 px-2 w-full text-left font-normal",
+        !isMobile && isCollapsed ? "justify-center" : "justify-start",
+        isActive && !isExactActive && "bg-accent/50"
       )}
       aria-label={node.name}
-      onClick={(e) => {
-        e.stopPropagation();
-        handleTagClick(node.path);
-      }}
+      onClick={() => handleTagClick(node.path)}
     >
-      <Tag className={cn("h-5 w-5 shrink-0 transition-all duration-200 text-muted-foreground", isActive && "text-primary")} />
-      <span className={cn("truncate whitespace-nowrap transition-opacity", !isMobile && isCollapsed && "hidden")}>
-        {node.name}
-      </span>
+        <div className="flex items-center gap-2 flex-1 overflow-hidden">
+            <Tag className={cn("h-5 w-5 shrink-0 transition-all duration-200 text-muted-foreground", isActive && "text-primary")} />
+            
+            <span className={cn("truncate whitespace-nowrap transition-opacity", !isMobile && isCollapsed && "hidden")}>
+                {node.name}
+            </span>
+
+            {hasChildren && !isCollapsed && (
+                <ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200 ml-auto group-data-[state=open]/collapsible:rotate-90" />
+            )}
+        </div>
     </Button>
   );
 
-  const trigger = (
-    <CollapsibleTrigger asChild>
-      <button className={cn("p-1 rounded-sm hover:bg-accent", isCollapsed && "hidden")}>
-        <ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200 data-[state=open]:rotate-90" />
-      </button>
-    </CollapsibleTrigger>
-  );
+  const getButton = () => {
+    if (hasChildren && !isCollapsed) {
+        return <CollapsibleTrigger asChild>{button}</CollapsibleTrigger>
+    }
+    return button;
+  }
   
-  if (!hasChildren) {
-    return (
-        <Tooltip delayDuration={0}>
+  const content = (
+      <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
-            <div 
-              className="flex items-center" 
-              style={{ paddingLeft: !isMobile && isCollapsed ? 0 : `${level * 1.5}rem`}}
-            >
-              {button}
-            </div>
+            {getButton()}
           </TooltipTrigger>
           {isCollapsed && !isMobile && (
-            <TooltipContent side="right"><p>{node.path}</p></TooltipContent>
+              <TooltipContent side="right"><p>{node.path}</p></TooltipContent>
           )}
-        </Tooltip>
+      </Tooltip>
+  );
+
+  if (!hasChildren) {
+    return (
+        <div style={{ paddingLeft: !isMobile && isCollapsed ? 0 : `${level * 1}rem`}}>
+          {content}
+        </div>
     );
   }
 
   return (
-    <Collapsible>
-      <div 
-        className="flex items-center group/menu-item"
-        style={{ paddingLeft: !isMobile && isCollapsed ? 0 : `${level * 1}rem` }}
-      >
-        {!isCollapsed && trigger}
-        <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-                <div className="flex-1">{button}</div>
-            </TooltipTrigger>
-            {isCollapsed && !isMobile && (
-                <TooltipContent side="right"><p>{node.path}</p></TooltipContent>
-            )}
-        </Tooltip>
-      </div>
-      <CollapsibleContent>
-        {node.children.map(child => (
-          <TagNodeDisplay
-            key={child.path}
-            node={child}
-            level={level + 1}
-            handleTagClick={handleTagClick}
-            activeTag={activeTag}
-            isMobile={isMobile}
-            isCollapsed={isCollapsed}
-          />
-        ))}
-      </CollapsibleContent>
+    <Collapsible className="group/collapsible">
+        <div style={{ paddingLeft: !isMobile && isCollapsed ? 0 : `${level * 1}rem` }}>
+          {content}
+        </div>
+        <CollapsibleContent>
+            {node.children.map(child => (
+            <TagNodeDisplay
+                key={child.path}
+                node={child}
+                level={level + 1}
+                handleTagClick={handleTagClick}
+                activeTag={activeTag}
+                isMobile={isMobile}
+                isCollapsed={isCollapsed}
+            />
+            ))}
+        </CollapsibleContent>
     </Collapsible>
   );
 };
