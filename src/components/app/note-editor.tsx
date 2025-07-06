@@ -48,6 +48,7 @@ import {
   History,
   Pencil,
   Languages,
+  ScanText,
 } from "lucide-react";
 import {
   Tooltip,
@@ -60,6 +61,7 @@ import { summarizeNote } from "@/ai/flows/note-summarization";
 import { burmeseTextToVoice } from "@/ai/flows/burmese-text-to-voice";
 import { translateNote } from "@/ai/flows/translate-note";
 import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
+import { extractTextFromImage } from "@/ai/flows/extract-text-from-image";
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
@@ -441,6 +443,20 @@ export function NoteEditor({
     if (result.summary) setContent(prev => `${prev}\n\n**Summary:**\n${result.summary}`);
   }, { success: "Note Summarized!", error: "Could not summarize note." }), [content, runAiAction]);
 
+  const handleExtractText = React.useCallback(() => runAiAction(async () => {
+    if(!imageUrl) throw new Error("Please attach an image first.");
+    const result = await extractTextFromImage({ imageDataUri: imageUrl });
+    if (result.extractedText && result.extractedText.trim()) {
+      setContent(prev => `${prev}\n\n--- Extracted Text ---\n${result.extractedText}`.trim());
+    } else {
+      toast({
+          title: "No Text Found",
+          description: "The AI could not find any text in the image.",
+      });
+      return false; // prevent success toast
+    }
+  }, { success: "Text Extracted!", error: "Could not extract text from the image." }), [imageUrl, content, runAiAction, toast]);
+
   const handleGenerateAudio = React.useCallback(() => runAiAction(async () => {
     if(!content) throw new Error("Please write some content to generate audio.");
     const result = await burmeseTextToVoice(content);
@@ -609,6 +625,20 @@ export function NoteEditor({
                             <TooltipContent><p>Remove Image</p></TooltipContent>
                         </Tooltip>
                     </div>
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={handleExtractText}
+                        disabled={isAiLoading}
+                    >
+                        {isAiLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                        <ScanText className="mr-2 h-4 w-4" />
+                        )}
+                        Extract Text from Image (OCR)
+                    </Button>
                 </div>
               )}
 
