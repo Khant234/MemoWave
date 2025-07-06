@@ -161,6 +161,7 @@ export default function Home() {
         isDraft: false,
         status: 'todo',
         priority: 'none',
+        category: 'uncategorized',
         dueDate: null,
         showOnBoard: true,
         order: Date.now(),
@@ -270,6 +271,7 @@ export default function Home() {
             isDraft: false,
             status: 'todo',
             priority: 'medium',
+            category: 'professional',
             dueDate: planNote.dueDate,
             showOnBoard: true,
             order: Date.now() + index,
@@ -612,10 +614,10 @@ export default function Home() {
                 onRestoreNote={handleRestoreNote}
                 onPermanentlyDeleteNote={handlePermanentlyDeleteNote}
                 onCopyNote={handleCopyNote}
-                activeFilter={activeFilter}
                 onTagClick={handleTagClick}
                 onRemoveTagFromNote={handleRemoveTagFromNote}
                 onEmptyTrash={handleEmptyTrash}
+                activeFilter={activeFilter}
               />
             </div>
           </main>

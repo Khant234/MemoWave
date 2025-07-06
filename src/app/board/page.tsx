@@ -21,8 +21,8 @@ import { AppHeader } from "@/components/app/app-header";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { KanbanColumn } from "@/components/app/kanban-column";
-import { type Note, type NoteStatus, type NoteVersion, type NotePriority } from "@/lib/types";
-import { KANBAN_COLUMNS, KANBAN_COLUMN_TITLES, NOTE_PRIORITIES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
+import { type Note, type NoteStatus, type NoteVersion, type NotePriority, type NoteCategory } from "@/lib/types";
+import { KANBAN_COLUMNS, KANBAN_COLUMN_TITLES, NOTE_PRIORITIES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEGORY_TITLES } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 import { KanbanBoardSkeleton } from "@/components/app/kanban-board-skeleton";
 import { LayoutGrid } from "lucide-react";
@@ -65,7 +65,7 @@ export default function BoardPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const isBoardUpdating = React.useRef(false);
   const [activeNote, setActiveNote] = React.useState<Note | null>(null);
-  const [groupBy, setGroupBy] = React.useState<'none' | 'tag' | 'priority'>('none');
+  const [groupBy, setGroupBy] = React.useState<'none' | 'tag' | 'priority' | 'category'>('none');
   const [isChecklistViewerOpen, setIsChecklistViewerOpen] = React.useState(false);
   const [viewingChecklistNote, setViewingChecklistNote] = React.useState<Note | null>(null);
 
@@ -134,6 +134,22 @@ export default function BoardPage() {
                 newContainers[containerId].push(note);
             }
         }
+    } else if (groupBy === 'category') {
+        NOTE_CATEGORIES.forEach(category => {
+            groupKeys[category] = NOTE_CATEGORY_TITLES[category];
+            KANBAN_COLUMNS.forEach(status => {
+                newContainers[`${category}-${status}`] = [];
+            });
+        });
+
+        for (const note of filteredNotes) {
+            const category = note.category || 'uncategorized';
+            const status = note.status || 'todo';
+            const containerId = `${category}-${status}`;
+            if (newContainers[containerId]) {
+                newContainers[containerId].push(note);
+            }
+        }
     }
 
     Object.values(newContainers).forEach(column => column.sort((a, b) => a.order - b.order));
@@ -158,6 +174,9 @@ export default function BoardPage() {
         .sort((a, b) => {
             if (groupBy === 'priority') {
                 return NOTE_PRIORITIES.indexOf(a.groupKey as NotePriority) - NOTE_PRIORITIES.indexOf(b.groupKey as NotePriority);
+            }
+            if (groupBy === 'category') {
+                return NOTE_CATEGORIES.indexOf(a.groupKey as NoteCategory) - NOTE_CATEGORIES.indexOf(b.groupKey as NoteCategory);
             }
             if (groupBy === 'tag') {
                 if (a.groupKey === 'untagged') return 1;
@@ -264,6 +283,10 @@ export default function BoardPage() {
         NOTE_PRIORITIES.forEach(priority => {
             groupKeys[priority] = NOTE_PRIORITY_TITLES[priority];
         });
+    } else if (groupBy === 'category') {
+        NOTE_CATEGORIES.forEach(category => {
+            groupKeys[category] = NOTE_CATEGORY_TITLES[category];
+        });
     }
 
     const newGroupedRenderData = Object.entries(groupKeys)
@@ -284,6 +307,9 @@ export default function BoardPage() {
         .sort((a, b) => {
             if (groupBy === 'priority') {
                 return NOTE_PRIORITIES.indexOf(a.groupKey as NotePriority) - NOTE_PRIORITIES.indexOf(b.groupKey as NotePriority);
+            }
+             if (groupBy === 'category') {
+                return NOTE_CATEGORIES.indexOf(a.groupKey as NoteCategory) - NOTE_CATEGORIES.indexOf(b.groupKey as NoteCategory);
             }
             if (groupBy === 'tag') {
                 if (a.groupKey === 'untagged') return 1;
@@ -308,6 +334,8 @@ export default function BoardPage() {
         if (originalNote) {
             if (groupBy === 'priority' && originalNote.priority !== groupKey) {
                 updates.priority = groupKey as NotePriority;
+            } else if (groupBy === 'category' && originalNote.category !== groupKey) {
+                updates.category = groupKey as NoteCategory;
             } else if (groupBy === 'tag') {
                 const originalGroupKey = originalNote.tags[0] || 'untagged';
                 if (originalGroupKey !== groupKey) {
@@ -532,6 +560,7 @@ export default function BoardPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="none">No Grouping</SelectItem>
+                        <SelectItem value="category">By Category</SelectItem>
                         <SelectItem value="priority">By Priority</SelectItem>
                         <SelectItem value="tag">By Tag</SelectItem>
                     </SelectContent>

@@ -121,6 +121,7 @@ export default function PlansPage() {
             isDraft: false,
             status: 'todo',
             priority: 'medium',
+            category: 'professional',
             dueDate: planNote.dueDate,
             showOnBoard: true,
             order: Date.now() + index,

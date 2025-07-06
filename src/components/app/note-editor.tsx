@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { type Note, type NoteVersion, type NoteStatus, type NotePriority } from "@/lib/types";
+import { type Note, type NoteVersion, type NoteStatus, type NotePriority, type NoteCategory } from "@/lib/types";
 import { NOTE_COLORS } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import {
@@ -64,7 +64,7 @@ import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
 import { extractTextFromImage } from "@/ai/flows/extract-text-from-image";
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES } from "@/lib/constants";
+import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEGORY_TITLES } from "@/lib/constants";
 import { Switch } from "@/components/ui/switch";
 
 // Lazy load dialogs
@@ -110,6 +110,7 @@ export function NoteEditor({
 
   const [status, setStatus] = React.useState<NoteStatus>('todo');
   const [priority, setPriority] = React.useState<NotePriority>('none');
+  const [category, setCategory] = React.useState<NoteCategory>('uncategorized');
   const [dueDate, setDueDate] = React.useState<Date | null | undefined>(null);
   const [startTime, setStartTime] = React.useState<string | null>(null);
   const [endTime, setEndTime] = React.useState<string | null>(null);
@@ -171,6 +172,7 @@ export function NoteEditor({
     setGeneratedAudio('audioUrl' in data ? data.audioUrl || null : null);
     setStatus(data.status || 'todo');
     setPriority(data.priority || 'none');
+    setCategory(data.category || 'uncategorized');
     setDueDate(data.dueDate ? new Date(data.dueDate) : null);
     setStartTime(data.startTime || null);
     setEndTime(data.endTime || null);
@@ -199,6 +201,7 @@ export function NoteEditor({
         setGeneratedAudio(null);
         setStatus('todo');
         setPriority('none');
+        setCategory('uncategorized');
         setDueDate(null);
         setStartTime(null);
         setEndTime(null);
@@ -214,13 +217,13 @@ export function NoteEditor({
     if (isOpen) {
       const draftNote: NoteDraft = {
         title, content, tags, color, checklist, imageUrl, 
-        audioUrl: generatedAudio, status, priority, 
+        audioUrl: generatedAudio, status, priority, category,
         dueDate: dueDate ? dueDate.toISOString() : null, 
         startTime, endTime, showOnBoard,
       };
       saveDraft(draftNote);
     }
-  }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, startTime, endTime, showOnBoard, saveDraft]);
+  }, [isOpen, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, saveDraft]);
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -231,6 +234,7 @@ export function NoteEditor({
     const currentState = {
       title, content, tags, color, checklist, imageUrl,
       audioUrl: generatedAudio || undefined, status, priority,
+      category,
       dueDate: dueDate ? dueDate.toISOString() : undefined,
       startTime: startTime || undefined,
       endTime: endTime || undefined,
@@ -241,7 +245,8 @@ export function NoteEditor({
       const noteState = {
         title: note.title, content: note.content, tags: note.tags, color: note.color,
         checklist: note.checklist, imageUrl: note.imageUrl, audioUrl: note.audioUrl,
-        status: note.status, priority: note.priority, dueDate: note.dueDate || undefined,
+        status: note.status, priority: note.priority, category: note.category,
+        dueDate: note.dueDate || undefined,
         startTime: note.startTime || undefined,
         endTime: note.endTime || undefined,
         showOnBoard: note.showOnBoard || false,
@@ -251,7 +256,7 @@ export function NoteEditor({
       const isEmpty = !title && !content && tags.length === 0 && checklist.length === 0 && !imageUrl && !generatedAudio && !showOnBoard && !dueDate;
       setIsDirty(!isEmpty);
     }
-  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, startTime, endTime, showOnBoard]);
+  }, [isOpen, note, title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard]);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -324,7 +329,7 @@ export function NoteEditor({
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
-      isDraft: false, status, priority, 
+      isDraft: false, status, priority, category,
       dueDate: dueDate ? dueDate.toISOString() : null,
       startTime: dueDate ? startTime : null,
       endTime: dueDate ? endTime : null,
@@ -334,7 +339,7 @@ export function NoteEditor({
     if (generatedAudio) newNote.audioUrl = generatedAudio;
 
     onSave(newNote);
-  }, [title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, startTime, endTime, showOnBoard, note, onSave, toast]);
+  }, [title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, note, onSave, toast]);
   
   const handleDiscardChanges = React.useCallback(() => {
     if (note) {
@@ -358,7 +363,7 @@ export function NoteEditor({
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
-      isDraft: true, status, priority, 
+      isDraft: true, status, priority, category,
       dueDate: dueDate ? dueDate.toISOString() : null,
       startTime: dueDate ? startTime : null,
       endTime: dueDate ? endTime : null,
@@ -369,7 +374,7 @@ export function NoteEditor({
     
     onSave(draftNote);
     setIsCloseConfirmOpen(false);
-  }, [title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, dueDate, startTime, endTime, showOnBoard, note, onSave]);
+  }, [title, content, tags, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, note, onSave]);
 
   const handleDiscardAndClose = React.useCallback(() => {
     clearDraft();
@@ -558,7 +563,7 @@ export function NoteEditor({
               <div className="space-y-4">
                 <Label>Task Settings</Label>
                 <div className="space-y-4 rounded-lg border p-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <Label>Status</Label>
                             <Select value={status} onValueChange={(value: NoteStatus) => setStatus(value)}>
@@ -577,6 +582,17 @@ export function NoteEditor({
                                 <SelectContent>
                                     {Object.entries(NOTE_PRIORITY_TITLES).map(([key, title]) => (
                                         <SelectItem key={key} value={key}>{title}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Category</Label>
+                            <Select value={category} onValueChange={(value: NoteCategory) => setCategory(value)}>
+                                <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                                <SelectContent>
+                                    {NOTE_CATEGORIES.map((key) => (
+                                        <SelectItem key={key} value={key}>{NOTE_CATEGORY_TITLES[key]}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>

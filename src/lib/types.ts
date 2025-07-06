@@ -7,6 +7,7 @@ export type NoteVersion = {
 
 export type NoteStatus = 'todo' | 'inprogress' | 'done';
 export type NotePriority = 'none' | 'low' | 'medium' | 'high';
+export type NoteCategory = 'personal' | 'professional' | 'business' | 'uncategorized';
 
 export type Note = {
   id: string;
@@ -28,6 +29,7 @@ export type Note = {
   // Project management fields
   status: NoteStatus;
   priority: NotePriority;
+  category: NoteCategory;
   dueDate?: string | null;
   startTime?: string | null; // e.g., "14:30"
   endTime?: string | null;   // e.g., "15:30"
