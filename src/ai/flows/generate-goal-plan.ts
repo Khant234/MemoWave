@@ -13,6 +13,7 @@ import {add, differenceInMilliseconds, isBefore, parseISO} from 'date-fns';
 
 const GenerateGoalPlanInputSchema = z.object({
   goal: z.string().describe("The user's goal to be planned."),
+  targetLanguage: z.string().optional().describe("The language to generate the plan in (e.g., 'English', 'Burmese'). Defaults to English if not provided."),
 });
 export type GenerateGoalPlanInput = z.infer<typeof GenerateGoalPlanInputSchema>;
 
@@ -64,6 +65,12 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateGoalPlanInputSchema},
   output: {schema: GenerateGoalPlanOutputSchema},
   prompt: `You are an AI-powered project management assistant with expertise in goal decomposition and strategic planning. Your primary function is to transform a user's high-level goal into a detailed, actionable, and realistic project plan.
+
+{{#if targetLanguage}}
+**IMPORTANT: Generate the entire plan—including titles, content, checklist items, and tags—in the following language: {{targetLanguage}}.**
+{{else}}
+**IMPORTANT: Generate the entire plan—including titles, content, checklist items, and tags—in English.**
+{{/if}}
 
 **User's Goal:**
 "{{{goal}}}"

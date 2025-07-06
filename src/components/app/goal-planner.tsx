@@ -18,6 +18,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "../ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 type GoalPlannerProps = {
   open: boolean;
@@ -83,6 +85,7 @@ const LoadingSkeleton = () => (
 
 export function GoalPlanner({ open, setOpen, onSavePlan }: GoalPlannerProps) {
   const [goal, setGoal] = React.useState("");
+  const [language, setLanguage] = React.useState("English");
   const [isLoading, setIsLoading] = React.useState(false);
   const [generatedPlan, setGeneratedPlan] = React.useState<GenerateGoalPlanOutput['notes'] | null>(null);
   const { toast } = useToast();
@@ -91,6 +94,7 @@ export function GoalPlanner({ open, setOpen, onSavePlan }: GoalPlannerProps) {
     if (!open) {
       setTimeout(() => {
         setGoal("");
+        setLanguage("English");
         setIsLoading(false);
         setGeneratedPlan(null);
       }, 300);
@@ -110,7 +114,7 @@ export function GoalPlanner({ open, setOpen, onSavePlan }: GoalPlannerProps) {
     setIsLoading(true);
     setGeneratedPlan(null);
     try {
-      const result = await generateGoalPlan({ goal });
+      const result = await generateGoalPlan({ goal, targetLanguage: language });
       if (!result.notes || result.notes.length === 0) {
         throw new Error("The AI could not generate a plan for this goal.");
       }
@@ -175,13 +179,30 @@ export function GoalPlanner({ open, setOpen, onSavePlan }: GoalPlannerProps) {
           ) : generatedPlan ? (
             <PlanPreview plan={generatedPlan} />
           ) : (
-            <Textarea
-              placeholder="e.g., 'Run a marathon in 6 months' or 'Launch a new podcast'"
-              value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              className="min-h-[120px] text-base"
-              disabled={isLoading}
-            />
+            <div className="space-y-4">
+                <Textarea
+                  placeholder="e.g., 'Run a marathon in 6 months' or 'Launch a new podcast'"
+                  value={goal}
+                  onChange={(e) => setGoal(e.target.value)}
+                  className="min-h-[120px] text-base"
+                  disabled={isLoading}
+                />
+                 <div>
+                    <Label htmlFor="language-select">Language</Label>
+                    <Select value={language} onValueChange={setLanguage}>
+                        <SelectTrigger id="language-select" className="mt-2">
+                            <SelectValue placeholder="Select language..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="English">English</SelectItem>
+                            <SelectItem value="Burmese">Burmese</SelectItem>
+                            <SelectItem value="Spanish">Spanish</SelectItem>
+                            <SelectItem value="French">French</SelectItem>
+                            <SelectItem value="Japanese">Japanese</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
           )}
         </div>
         <DialogFooter>
