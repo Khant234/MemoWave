@@ -149,22 +149,36 @@ const AppSidebarComponent = ({
                       <Button
                         variant={isActive ? "secondary" : "ghost"}
                         className={cn(
-                          "h-10 px-3 w-full text-left font-normal",
-                          !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                          "h-10 w-full font-normal gap-2",
+                          !isMobile && isCollapsed
+                            ? "justify-center px-0"
+                            : "justify-start px-3"
                         )}
                         aria-label={name}
                         onClick={() => handleCategoryClick(category)}
                       >
-                        <div className="flex items-center gap-2 flex-1 overflow-hidden">
-                          <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
-                          <span className={cn("truncate whitespace-nowrap transition-opacity", !isMobile && isCollapsed && "hidden")}>
-                            {name}
-                          </span>
-                        </div>
+                        <Icon
+                          className={cn(
+                            "h-5 w-5 shrink-0",
+                            isActive
+                              ? "text-primary"
+                              : "text-muted-foreground"
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            "truncate whitespace-nowrap transition-opacity",
+                            !isMobile && isCollapsed && "hidden"
+                          )}
+                        >
+                          {name}
+                        </span>
                       </Button>
                     </TooltipTrigger>
                     {isCollapsed && !isMobile && (
-                      <TooltipContent side="right"><p>{name}</p></TooltipContent>
+                      <TooltipContent side="right">
+                        <p>{name}</p>
+                      </TooltipContent>
                     )}
                   </Tooltip>
                 );
