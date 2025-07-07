@@ -118,8 +118,8 @@ const AppSidebarComponent = ({
                       "group-hover:-translate-y-0.5"
                   )} />
                   <span className={cn(
-                      "whitespace-nowrap transition-opacity",
-                      !isMobile && isCollapsed && "hidden"
+                      "whitespace-nowrap transition-opacity duration-200",
+                      !isMobile && isCollapsed && "opacity-0 pointer-events-none"
                   )}>{name}</span>
                 </Link>
               </TooltipTrigger>
@@ -134,15 +134,13 @@ const AppSidebarComponent = ({
       </nav>
 
         <>
-          <Separator className={cn("my-2", isCollapsed ? 'mx-auto w-12' : '' )} />
+          <Separator className={cn("my-2 w-auto", isCollapsed ? 'mx-auto w-12' : '' )} />
           <div className="flex-1 flex flex-col min-h-0">
-            {!isCollapsed && (
-              <div className={cn("p-2 pt-0", isCollapsed && 'hidden')}>
+            <div className={cn("p-2 pt-0 transition-opacity duration-200", isCollapsed && 'opacity-0 pointer-events-none')}>
                 <h3 className="text-sm font-semibold text-muted-foreground tracking-tight whitespace-nowrap px-2">
                   Categories
                 </h3>
-              </div>
-            )}
+            </div>
             <nav className="flex flex-col gap-1 px-2">
               {categoryItems.map(({ name, category, icon: Icon }) => {
                 const isActive = activeCategory === category;
@@ -165,8 +163,8 @@ const AppSidebarComponent = ({
                         )} />
                         <span
                           className={cn(
-                            "truncate whitespace-nowrap transition-opacity",
-                            !isMobile && isCollapsed && "hidden"
+                            "truncate whitespace-nowrap transition-opacity duration-200",
+                            !isMobile && isCollapsed && "opacity-0 pointer-events-none"
                           )}
                         >
                           {name}
