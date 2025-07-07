@@ -5,7 +5,7 @@ import * as React from "react";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, Trash2, ListTodo, LayoutGrid, CalendarDays, Target, Briefcase, User, Building2 } from "lucide-react";
+import { NotepadText, Archive, Trash2, ListTodo, LayoutGrid, CalendarDays, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -72,10 +72,10 @@ const AppSidebarComponent = ({
     { name: "Trash", path: "/?filter=trash", icon: Trash2, filter: "trash" },
   ];
 
-  const categoryItems: { name: string, category: NoteCategory, icon: React.ElementType }[] = [
-    { name: "Personal", category: 'personal', icon: User },
-    { name: "Professional", category: 'professional', icon: Briefcase },
-    { name: "Business", category: 'business', icon: Building2 },
+  const categoryItems: { name: string, category: NoteCategory, color: string }[] = [
+    { name: "Personal", category: 'personal', color: 'bg-sky-500' },
+    { name: "Professional", category: 'professional', color: 'bg-emerald-500' },
+    { name: "Business", category: 'business', color: 'bg-purple-500' },
   ];
 
   const NavContent = () => (
@@ -141,7 +141,7 @@ const AppSidebarComponent = ({
               </div>
             )}
             <nav className="flex flex-col gap-1 px-2">
-              {categoryItems.map(({ name, category, icon: Icon }) => {
+              {categoryItems.map(({ name, category, color }) => {
                 const isActive = activeCategory === category;
                 return (
                   <Tooltip key={name} delayDuration={0}>
@@ -149,7 +149,7 @@ const AppSidebarComponent = ({
                       <Button
                         variant={isActive ? "secondary" : "ghost"}
                         className={cn(
-                          "h-10 w-full font-normal gap-2",
+                          "h-10 w-full font-normal gap-3",
                           !isMobile && isCollapsed
                             ? "justify-center px-0"
                             : "justify-start px-3"
@@ -157,14 +157,7 @@ const AppSidebarComponent = ({
                         aria-label={name}
                         onClick={() => handleCategoryClick(category)}
                       >
-                        <Icon
-                          className={cn(
-                            "h-5 w-5 shrink-0",
-                            isActive
-                              ? "text-primary"
-                              : "text-muted-foreground"
-                          )}
-                        />
+                        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", color)} />
                         <span
                           className={cn(
                             "truncate whitespace-nowrap transition-opacity",
