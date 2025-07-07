@@ -134,7 +134,7 @@ const AppSidebarComponent = ({
       </nav>
 
         <>
-          <Separator className={cn("my-2", isCollapsed ? 'mx-auto w-12' : 'mx-2' )} />
+          <Separator className={cn("my-2", isCollapsed ? 'mx-auto w-12' : '' )} />
           <div className="flex-1 flex flex-col min-h-0">
             {!isCollapsed && (
               <div className={cn("p-2 pt-0", isCollapsed && 'hidden')}>
