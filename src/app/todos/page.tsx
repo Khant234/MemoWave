@@ -44,7 +44,7 @@ type GroupedChecklist = {
 };
 
 export default function TodosPage() {
-  const { notes, isLoading, allTags } = useNotes();
+  const { notes, isLoading } = useNotes();
   const [searchTerm, setSearchTerm] = React.useState("");
   const { toast } = useToast();
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
@@ -246,13 +246,12 @@ export default function TodosPage() {
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           onToggleSidebar={toggleSidebar}
-          tags={allTags}
         />
         <div className="flex flex-1 overflow-hidden">
           <AppSidebar
             isCollapsed={isSidebarCollapsed}
-            tags={allTags}
-            setSearchTerm={setSearchTerm}
+            activeCategory={null}
+            setActiveCategory={() => {}}
           />
           <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 transition-all duration-300 ease-in-out">
             <div className="mx-auto max-w-4xl">

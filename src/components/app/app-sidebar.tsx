@@ -18,8 +18,8 @@ import { type NoteCategory } from "@/lib/types";
 type AppSidebarProps = {
   activeFilter?: "all" | "archived" | "trash";
   setActiveFilter?: React.Dispatch<React.SetStateAction<"all" | "archived" | "trash">>;
-  activeCategory: NoteCategory | null;
-  setActiveCategory: React.Dispatch<React.SetStateAction<NoteCategory | null>>;
+  activeCategory?: NoteCategory | null;
+  setActiveCategory?: React.Dispatch<React.SetStateAction<NoteCategory | null>>;
   isMobile?: boolean;
   isCollapsed?: boolean;
 };
@@ -39,7 +39,7 @@ const AppSidebarComponent = ({
   const isCollapsed = isLoading ? true : isCollapsedFromProp;
 
   const handleFilterClick = (filter: "all" | "archived" | "trash", path: string) => {
-    setActiveCategory(null);
+    setActiveCategory?.(null);
     if (isMobile && setActiveFilter) {
       setActiveFilter(filter);
       router.push(path);
@@ -49,7 +49,7 @@ const AppSidebarComponent = ({
   };
   
   const handleCategoryClick = (category: NoteCategory | null) => {
-    setActiveCategory(category);
+    setActiveCategory?.(category);
     if (activeFilter !== 'all' && setActiveFilter) {
       setActiveFilter('all');
     }
@@ -119,7 +119,7 @@ const AppSidebarComponent = ({
                   )} />
                   <span className={cn(
                       "whitespace-nowrap transition-opacity duration-200",
-                      !isMobile && isCollapsed && "hidden"
+                      isCollapsed && "hidden"
                   )}>{name}</span>
                 </Link>
               </TooltipTrigger>
@@ -164,7 +164,7 @@ const AppSidebarComponent = ({
                         <span
                           className={cn(
                             "truncate whitespace-nowrap transition-opacity duration-200",
-                            !isMobile && isCollapsed && "hidden"
+                            isCollapsed && "hidden"
                           )}
                         >
                           {name}
