@@ -48,18 +48,26 @@ import {
   Pencil,
   Languages,
   ScanText,
+  BookCopy,
 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { generateTitle } from "@/ai/flows/title-generation";
 import { summarizeNote } from "@/ai/flows/note-summarization";
 import { burmeseTextToVoice } from "@/ai/flows/burmese-text-to-voice";
 import { translateNote } from "@/ai/flows/translate-note";
 import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
 import { extractTextFromImage } from "@/ai/flows/extract-text-from-image";
+import { NOTE_TEMPLATES, type NoteTemplate } from '@/lib/templates';
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEGORY_TITLES } from "@/lib/constants";
@@ -103,6 +111,7 @@ export function NoteEditor({
   const [isDirty, setIsDirty] = React.useState(false);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
   const [ignoredChecklistItems, setIgnoredChecklistItems] = React.useState(new Set<string>());
+  const [templateToApply, setTemplateToApply] = React.useState<NoteTemplate | null>(null);
 
   const [status, setStatus] = React.useState<NoteStatus>('todo');
   const [priority, setPriority] = React.useState<NotePriority>('none');
@@ -505,6 +514,33 @@ export function NoteEditor({
     toast({ title: "Version Restored" });
   }, [toast]);
 
+  const applyTemplate = (template: NoteTemplate) => {
+    const today = new Date().toLocaleDateString();
+    if (template.title) {
+        setTitle(template.title.replace(/\[Date\]/g, today));
+    }
+    setContent(template.content);
+    if (template.checklist) {
+        setChecklist(template.checklist.map(item => ({ ...item, id: new Date().toISOString() + Math.random(), completed: false })));
+    }
+    if (template.category) {
+        setCategory(template.category);
+    }
+    toast({
+        title: "Template Applied",
+        description: `The "${template.name}" template has been applied.`,
+    });
+    setTemplateToApply(null);
+  };
+
+  const handleSelectTemplate = (template: NoteTemplate) => {
+      if (title || content || checklist.length > 0) {
+          setTemplateToApply(template);
+      } else {
+          applyTemplate(template);
+      }
+  };
+
   return (
     <>
       <Sheet open={isOpen} onOpenChange={handleOpenChange}>
@@ -689,6 +725,23 @@ export function NoteEditor({
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <DropdownMenu>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline"><BookCopy className="mr-2 h-4 w-4"/>Templates</Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent><p>Apply a note template</p></TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent>
+                      {NOTE_TEMPLATES.map(template => (
+                        <DropdownMenuItem key={template.name} onSelect={() => handleSelectTemplate(template)}>
+                          {template.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
                   <Button variant="outline" disabled={!note} onClick={() => setIsHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>History</Button>
                   <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
@@ -723,6 +776,20 @@ export function NoteEditor({
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Track Tasks on Kanban Board?</AlertDialogTitle><AlertDialogDescription>You've added checklist items. Would you like to add this note to the Kanban board to visualize and track your tasks?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>No, thanks</AlertDialogCancel><AlertDialogAction onClick={() => {setShowOnBoard(true); toast({title: "Added to Kanban", description: "This note will now appear on your board."})}}>Yes, Add to Board</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!templateToApply} onOpenChange={(open) => !open && setTemplateToApply(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Apply Template?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Applying this template will replace the current content of your note. Are you sure you want to continue?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setTemplateToApply(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => applyTemplate(templateToApply!)}>Apply</AlertDialogAction>
+            </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <React.Suspense fallback={null}>
