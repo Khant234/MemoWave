@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -71,7 +72,7 @@ export function TemplateEditor({ isOpen, setIsOpen, template }: TemplateEditorPr
 
     const templateData = { name, description, title, content, checklist, category };
 
-    if (template) {
+    if (template && template.id) {
       updateTemplate({ ...template, ...templateData });
       toast({ title: "Template Updated" });
     } else {
