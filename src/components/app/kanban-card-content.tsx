@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -76,14 +75,6 @@ const KanbanCardContentComponent = ({ note, isOverlay, dragHandleListeners }: Ka
         )}
       </CardHeader>
       <CardContent className="p-3 pt-1">
-        {note.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
-                {note.tags.slice(0, 3).map(tag => (
-                    <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0.5">{tag}</Badge>
-                ))}
-            </div>
-        )}
-
         {checklistItems.length > 0 && (
           <div className="space-y-1.5 mb-3">
             {checklistItems.map(item => (
