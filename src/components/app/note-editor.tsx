@@ -131,13 +131,20 @@ export function NoteEditor({
   const { toast } = useToast();
 
   const timeOptions = React.useMemo(() => {
-    const options = [];
+    const options: { value: string; label: string }[] = [];
     for (let h = 0; h < 24; h++) {
-        for (let m = 0; m < 60; m += 30) {
-            const hour = h.toString().padStart(2, '0');
-            const minute = m.toString().padStart(2, '0');
-            options.push(`${hour}:${minute}`);
-        }
+      for (let m = 0; m < 60; m += 30) {
+        const hour24 = h.toString().padStart(2, '0');
+        const minute = m.toString().padStart(2, '0');
+        const value = `${hour24}:${minute}`;
+
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        let hour12 = h % 12;
+        if (hour12 === 0) hour12 = 12;
+        
+        const label = `${hour12}:${minute} ${ampm}`;
+        options.push({ value, label });
+      }
     }
     return options;
   }, []);
@@ -641,13 +648,13 @@ export function NoteEditor({
                                 <Select value={startTime || ''} onValueChange={setStartTime} disabled={!dueDate}>
                                     <SelectTrigger><SelectValue placeholder="Start time" /></SelectTrigger>
                                     <SelectContent>
-                                        {timeOptions.map(time => <SelectItem key={`start-${time}`} value={time}>{time}</SelectItem>)}
+                                        {timeOptions.map(time => <SelectItem key={`start-${time.value}`} value={time.value}>{time.label}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                                 <Select value={endTime || ''} onValueChange={setEndTime} disabled={!dueDate}>
                                     <SelectTrigger><SelectValue placeholder="End time" /></SelectTrigger>
                                     <SelectContent>
-                                        {timeOptions.map(time => <SelectItem key={`end-${time}`} value={time}>{time}</SelectItem>)}
+                                        {timeOptions.map(time => <SelectItem key={`end-${time.value}`} value={time.value}>{time.label}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>

@@ -26,6 +26,15 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
 const NoteEditor = React.lazy(() => import('@/components/app/note-editor').then(module => ({ default: module.NoteEditor })));
 
+const formatTime = (time24: string | null | undefined): string => {
+    if (!time24) return '';
+    const [h, m] = time24.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    let hour12 = h % 12;
+    if (hour12 === 0) hour12 = 12;
+    return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
+};
+
 const AllDayTaskItem = ({ note, onClick, isOverdue }: { note: Note, onClick: (note: Note) => void, isOverdue?: boolean }) => {
     const isCompleted = note.status === 'done';
     
@@ -410,7 +419,7 @@ export default function CalendarPage() {
                                                                                             <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: event.color }}></div>
                                                                                             <div className="relative pl-2">
                                                                                                 <p className="font-semibold text-xs truncate" style={{ color: event.color }}>{event.title}</p>
-                                                                                                <p className="text-xs text-muted-foreground">{event.startTime} {event.endTime ? `- ${event.endTime}`: ''}</p>
+                                                                                                <p className="text-xs text-muted-foreground">{formatTime(event.startTime)} {event.endTime ? `- ${formatTime(event.endTime)}`: ''}</p>
                                                                                             </div>
                                                                                         </div>
                                                                                     );

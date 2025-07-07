@@ -30,6 +30,15 @@ type NoteViewerProps = {
   onChecklistItemToggle: (noteId: string, checklistItemId: string) => void;
 };
 
+const formatTime = (time24: string | null | undefined): string => {
+    if (!time24) return '';
+    const [h, m] = time24.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    let hour12 = h % 12;
+    if (hour12 === 0) hour12 = 12;
+    return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
+};
+
 // Helper component to render text with clickable links
 const LinkifiedText = ({ text }: { text: string }) => {
   // Regex to find URLs. \S+ matches non-whitespace characters.
@@ -122,7 +131,7 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
             {note.startTime && (
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
-                Scheduled: {note.startTime}{note.endTime ? ` - ${note.endTime}` : ''}
+                Scheduled: {formatTime(note.startTime)}{note.endTime ? ` - ${formatTime(note.endTime)}` : ''}
               </span>
             )}
           </SheetDescription>
