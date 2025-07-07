@@ -1,4 +1,5 @@
 
+
 export type NoteVersion = {
   title: string;
   content: string;

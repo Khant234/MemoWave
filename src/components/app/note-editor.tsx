@@ -189,7 +189,7 @@ export function NoteEditor({
       } else {
         setTitle('');
         setContent('');
-        setColor(NOTE_COLORS[0]);
+        setColor(NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)]);
         setChecklist([]);
         setImageUrl(undefined);
         setGeneratedAudio(null);
@@ -537,6 +537,25 @@ export function NoteEditor({
                 <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Start weaving your thoughts..." className="min-h-[200px]"/>
               </div>
 
+              <div className="space-y-2">
+                <Label>Color</Label>
+                <div className="flex flex-wrap gap-2">
+                  {NOTE_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setColor(c)}
+                      className={cn(
+                        "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110",
+                        color === c
+                          ? "border-primary ring-2 ring-primary ring-offset-2"
+                          : "border-transparent"
+                      )}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <Label>Task Settings</Label>
                 <div className="space-y-4 rounded-lg border p-4">
@@ -667,15 +686,6 @@ export function NoteEditor({
                       <Input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} placeholder="Add a checklist item" onKeyDown={e => e.key === 'Enter' && handleAddChecklistItem()} />
                       <Tooltip><TooltipTrigger asChild><Button onClick={handleAddChecklistItem}><Plus className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent><p>Add Item</p></TooltipContent></Tooltip>
                   </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Color</Label>
-                <div className="flex flex-wrap gap-2">
-                  {NOTE_COLORS.map((c) => (
-                    <button key={c} onClick={() => setColor(c)} className={cn("h-8 w-8 rounded-full border-2 transition-transform hover:scale-110", color === c ? "border-primary ring-2 ring-primary ring-offset-2" : "border-transparent")} style={{ backgroundColor: c }}/>
-                  ))}
-                </div>
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
