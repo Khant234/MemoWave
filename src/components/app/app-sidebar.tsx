@@ -5,7 +5,7 @@ import * as React from "react";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, Trash2, ListTodo, LayoutGrid, CalendarDays, Target, User, Briefcase, Building2 } from "lucide-react";
+import { NotepadText, Archive, Trash2, ListTodo, LayoutGrid, CalendarDays, Target, User, Briefcase, Building2, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -36,7 +36,7 @@ const AppSidebarComponent = ({
   const router = useRouter();
 
   const isLoading = isCollapsedFromProp === undefined;
-  const isCollapsed = isLoading ? true : isCollapsedFromProp;
+  const isCollapsed = isLoading ? false : isCollapsedFromProp;
 
   const handleFilterClick = (filter: "all" | "archived" | "trash", path: string) => {
     setActiveCategory?.(null);
@@ -68,6 +68,7 @@ const AppSidebarComponent = ({
     { name: "Kanban Board", path: "/board", icon: LayoutGrid },
     { name: "Calendar", path: "/calendar", icon: CalendarDays },
     { name: "Plans", path: "/plans", icon: Target },
+    { name: "Templates", path: "/templates", icon: FileText },
     { name: "Archived", path: "/?filter=archived", icon: Archive, filter: "archived" },
     { name: "Trash", path: "/?filter=trash", icon: Trash2, filter: "trash" },
   ];
@@ -85,6 +86,8 @@ const AppSidebarComponent = ({
           let isActive = false;
           if (filter) {
             isActive = pathname === '/' && activeFilter === filter && !activeCategory;
+          } else if (path === '/templates') {
+            isActive = pathname.startsWith(path);
           } else {
             isActive = pathname.startsWith(path) && path !== '/';
           }
@@ -108,7 +111,7 @@ const AppSidebarComponent = ({
                   className={cn(
                     "flex h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors group",
                     isActive ? "bg-secondary text-primary" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-                    !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                    isCollapsed ? "justify-center" : "justify-start"
                   )}
                   aria-label={name}
                 >
@@ -119,7 +122,7 @@ const AppSidebarComponent = ({
                   )} />
                   <span className={cn(
                       "whitespace-nowrap transition-opacity duration-200",
-                      isCollapsed && "hidden"
+                      isCollapsed && "opacity-0 hidden"
                   )}>{name}</span>
                 </Link>
               </TooltipTrigger>
@@ -151,7 +154,7 @@ const AppSidebarComponent = ({
                         className={cn(
                             "flex h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors group",
                             isActive ? "bg-secondary text-primary" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-                            !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                            isCollapsed ? "justify-center" : "justify-start"
                           )}
                         aria-label={name}
                         onClick={() => handleCategoryClick(category)}
@@ -164,7 +167,7 @@ const AppSidebarComponent = ({
                         <span
                           className={cn(
                             "truncate whitespace-nowrap transition-opacity duration-200",
-                            isCollapsed && "hidden"
+                            isCollapsed && "opacity-0 hidden"
                           )}
                         >
                           {name}

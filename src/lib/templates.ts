@@ -1,16 +1,9 @@
-import { type NoteCategory } from './types';
-
-export type NoteTemplate = {
-  name: string;
-  description: string;
-  title?: string;
-  content: string;
-  checklist?: { text: string }[];
-  category?: NoteCategory;
-};
+import { type NoteTemplate } from './types';
 
 export const NOTE_TEMPLATES: NoteTemplate[] = [
   {
+    id: 'default-meeting',
+    isCustom: false,
     name: 'Meeting Notes',
     description: 'Structure your meeting minutes effectively.',
     title: 'Meeting Notes - [Date]',
@@ -18,6 +11,8 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     category: 'professional',
   },
   {
+    id: 'default-project-plan',
+    isCustom: false,
     name: 'Project Plan',
     description: 'Outline the key components of a new project.',
     title: 'Project Plan: [Project Name]',
@@ -31,6 +26,8 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     category: 'business',
   },
   {
+    id: 'default-standup',
+    isCustom: false,
     name: 'Daily Stand-up',
     description: 'A quick template for daily agile stand-ups.',
     title: 'Daily Stand-up - [Date]',
@@ -38,6 +35,8 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
     category: 'professional',
   },
     {
+    id: 'default-todo',
+    isCustom: false,
     name: 'To-Do List',
     description: 'A simple to-do list to get things done.',
     title: 'My To-Do List',

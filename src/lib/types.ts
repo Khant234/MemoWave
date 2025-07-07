@@ -1,5 +1,6 @@
 
 
+
 export type NoteVersion = {
   title: string;
   content: string;
@@ -39,4 +40,15 @@ export type Note = {
   // AI Goal Plan fields
   planId?: string;
   planGoal?: string;
+};
+
+export type NoteTemplate = {
+  id: string;
+  name: string;
+  description: string;
+  title?: string;
+  content: string;
+  checklist?: { text: string }[];
+  category?: NoteCategory;
+  isCustom?: boolean;
 };

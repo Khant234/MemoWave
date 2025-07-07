@@ -28,7 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { type Note, type NoteVersion, type NoteStatus, type NotePriority, type NoteCategory } from "@/lib/types";
+import { type Note, type NoteVersion, type NoteStatus, type NotePriority, type NoteCategory, type NoteTemplate } from "@/lib/types";
 import { NOTE_COLORS } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import {
@@ -67,11 +67,11 @@ import { burmeseTextToVoice } from "@/ai/flows/burmese-text-to-voice";
 import { translateNote } from "@/ai/flows/translate-note";
 import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
 import { extractTextFromImage } from "@/ai/flows/extract-text-from-image";
-import { NOTE_TEMPLATES, type NoteTemplate } from '@/lib/templates';
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEGORY_TITLES } from "@/lib/constants";
 import { Switch } from "@/components/ui/switch";
+import { useTemplates } from "@/contexts/templates-context";
 
 // Lazy load dialogs
 const AudioTranscriber = React.lazy(() => import('./audio-transcriber').then(module => ({ default: module.AudioTranscriber })));
@@ -112,6 +112,7 @@ export function NoteEditor({
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
   const [ignoredChecklistItems, setIgnoredChecklistItems] = React.useState(new Set<string>());
   const [templateToApply, setTemplateToApply] = React.useState<NoteTemplate | null>(null);
+  const { templates } = useTemplates();
 
   const [status, setStatus] = React.useState<NoteStatus>('todo');
   const [priority, setPriority] = React.useState<NotePriority>('none');
@@ -735,8 +736,8 @@ export function NoteEditor({
                       <TooltipContent><p>Apply a note template</p></TooltipContent>
                     </Tooltip>
                     <DropdownMenuContent>
-                      {NOTE_TEMPLATES.map(template => (
-                        <DropdownMenuItem key={template.name} onSelect={() => handleSelectTemplate(template)}>
+                      {templates.map(template => (
+                        <DropdownMenuItem key={template.id} onSelect={() => handleSelectTemplate(template)}>
                           {template.name}
                         </DropdownMenuItem>
                       ))}

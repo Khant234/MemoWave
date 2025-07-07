@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { NotesProvider } from '@/contexts/notes-context';
 import { GamificationProvider } from '@/contexts/gamification-context';
+import { TemplatesProvider } from '@/contexts/templates-context';
 import { ConfettiCelebration } from '@/components/app/confetti-celebration';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
@@ -32,15 +33,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <GamificationProvider>
-            <NotesProvider>
-              <TooltipProvider>
-                <ConfettiCelebration />
-                {children}
-              </TooltipProvider>
-              <Toaster />
-            </NotesProvider>
-          </GamificationProvider>
+          <TemplatesProvider>
+            <GamificationProvider>
+              <NotesProvider>
+                <TooltipProvider>
+                  <ConfettiCelebration />
+                  {children}
+                </TooltipProvider>
+                <Toaster />
+              </NotesProvider>
+            </GamificationProvider>
+          </TemplatesProvider>
         </ThemeProvider>
       </body>
     </html>
