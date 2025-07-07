@@ -190,16 +190,6 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
                   {allItemsComplete && <ChecklistCompleteMessage />}
               </div>
             )}
-
-            {note.tags && note.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {note.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </div>
         </ScrollArea>
         <SheetFooter className="p-6 bg-background border-t flex items-center justify-between">
