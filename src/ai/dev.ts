@@ -9,3 +9,4 @@ import '@/ai/flows/extract-checklist-items.ts';
 import '@/ai/flows/translate-note.ts';
 import '@/ai/flows/generate-goal-plan.ts';
 import '@/ai/flows/extract-text-from-image.ts';
+import '@/ai/flows/generate-template.ts';

@@ -7,7 +7,7 @@ import { useSidebar } from "@/hooks/use-sidebar";
 import { useTemplates } from "@/contexts/templates-context";
 import { type NoteTemplate } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Sparkles } from "lucide-react";
 import { TemplateEditor } from "./template-editor";
 import { TemplateList } from "./template-list";
 import {
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { TemplatesPageSkeleton } from "./templates-page-skeleton";
+import { AiTemplateGenerator } from "./ai-template-generator";
 
 export default function TemplatesPage() {
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
@@ -31,10 +32,15 @@ export default function TemplatesPage() {
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingTemplate, setEditingTemplate] = React.useState<NoteTemplate | null>(null);
   const [deletingTemplateId, setDeletingTemplateId] = React.useState<string | null>(null);
+  const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false);
 
   const handleNewTemplate = () => {
     setEditingTemplate(null);
     setIsEditorOpen(true);
+  };
+
+  const handleAiGenerate = () => {
+    setIsAiGeneratorOpen(true);
   };
 
   const handleEditTemplate = (template: NoteTemplate) => {
@@ -67,10 +73,16 @@ export default function TemplatesPage() {
             <div className="mx-auto max-w-5xl">
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold font-headline">Manage Templates</h1>
-                <Button onClick={handleNewTemplate}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  New Template
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleAiGenerate}>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate with AI
+                  </Button>
+                  <Button onClick={handleNewTemplate}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    New Template
+                  </Button>
+                </div>
               </div>
               
               {isLoading ? (
@@ -92,6 +104,12 @@ export default function TemplatesPage() {
         isOpen={isEditorOpen}
         setIsOpen={setIsEditorOpen}
         template={editingTemplate}
+      />
+
+      <AiTemplateGenerator
+        open={isAiGeneratorOpen}
+        setOpen={setIsAiGeneratorOpen}
+        onEdit={handleEditTemplate}
       />
 
       <AlertDialog open={!!deletingTemplateId} onOpenChange={(open) => !open && setDeletingTemplateId(null)}>
