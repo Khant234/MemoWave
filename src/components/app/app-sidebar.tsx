@@ -5,7 +5,7 @@ import * as React from "react";
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { NotepadText, Archive, Trash2, ListTodo, LayoutGrid, CalendarDays, Target } from "lucide-react";
+import { NotepadText, Archive, Trash2, ListTodo, LayoutGrid, CalendarDays, Target, User, Briefcase, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -72,10 +72,10 @@ const AppSidebarComponent = ({
     { name: "Trash", path: "/?filter=trash", icon: Trash2, filter: "trash" },
   ];
 
-  const categoryItems: { name: string, category: NoteCategory, color: string }[] = [
-    { name: "Personal", category: 'personal', color: 'bg-sky-500' },
-    { name: "Professional", category: 'professional', color: 'bg-emerald-500' },
-    { name: "Business", category: 'business', color: 'bg-purple-500' },
+  const categoryItems: { name: string, category: NoteCategory, icon: React.ElementType }[] = [
+    { name: "Personal", category: 'personal', icon: User },
+    { name: "Professional", category: 'professional', icon: Briefcase },
+    { name: "Business", category: 'business', icon: Building2 },
   ];
 
   const NavContent = () => (
@@ -86,7 +86,10 @@ const AppSidebarComponent = ({
           if (filter) {
             isActive = pathname === '/' && activeFilter === filter && !activeCategory;
           } else {
-            isActive = pathname.startsWith(path);
+            isActive = pathname.startsWith(path) && path !== '/';
+          }
+          if (path === '/') {
+            isActive = pathname === '/' && activeFilter === 'all' && !activeCategory;
           }
           
           return (
@@ -141,23 +144,25 @@ const AppSidebarComponent = ({
               </div>
             )}
             <nav className="flex flex-col gap-1 px-2">
-              {categoryItems.map(({ name, category, color }) => {
+              {categoryItems.map(({ name, category, icon: Icon }) => {
                 const isActive = activeCategory === category;
                 return (
                   <Tooltip key={name} delayDuration={0}>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant={isActive ? "secondary" : "ghost"}
+                      <button
                         className={cn(
-                          "h-10 w-full font-normal gap-3",
-                          !isMobile && isCollapsed
-                            ? "justify-center px-0"
-                            : "justify-start px-3"
-                        )}
+                            "flex h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors group",
+                            isActive ? "bg-secondary text-primary" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                            !isMobile && isCollapsed ? "justify-center" : "justify-start"
+                          )}
                         aria-label={name}
                         onClick={() => handleCategoryClick(category)}
                       >
-                        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", color)} />
+                         <Icon className={cn(
+                          "h-5 w-5 shrink-0 transition-all duration-200",
+                          isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
+                          "group-hover:-translate-y-0.5"
+                        )} />
                         <span
                           className={cn(
                             "truncate whitespace-nowrap transition-opacity",
@@ -166,7 +171,7 @@ const AppSidebarComponent = ({
                         >
                           {name}
                         </span>
-                      </Button>
+                      </button>
                     </TooltipTrigger>
                     {isCollapsed && !isMobile && (
                       <TooltipContent side="right">
