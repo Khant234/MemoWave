@@ -119,7 +119,7 @@ const AppSidebarComponent = ({
                   )} />
                   <span className={cn(
                       "whitespace-nowrap transition-opacity duration-200",
-                      !isMobile && isCollapsed && "opacity-0 pointer-events-none"
+                      !isMobile && isCollapsed && "hidden"
                   )}>{name}</span>
                 </Link>
               </TooltipTrigger>
@@ -134,9 +134,9 @@ const AppSidebarComponent = ({
       </nav>
 
         <>
-          <Separator className={cn("my-2 w-auto", isCollapsed ? 'mx-auto w-12' : '' )} />
+          <Separator className="my-2" />
           <div className="flex-1 flex flex-col min-h-0">
-            <div className={cn("p-2 pt-0 transition-opacity duration-200", isCollapsed && 'opacity-0 pointer-events-none')}>
+            <div className={cn("p-2 pt-0", isCollapsed && "hidden")}>
                 <h3 className="text-sm font-semibold text-muted-foreground tracking-tight whitespace-nowrap px-2">
                   Categories
                 </h3>
@@ -164,7 +164,7 @@ const AppSidebarComponent = ({
                         <span
                           className={cn(
                             "truncate whitespace-nowrap transition-opacity duration-200",
-                            !isMobile && isCollapsed && "opacity-0 pointer-events-none"
+                            !isMobile && isCollapsed && "hidden"
                           )}
                         >
                           {name}
