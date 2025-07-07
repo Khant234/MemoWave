@@ -83,6 +83,11 @@ export default function CalendarPage() {
         return notesWithDueDate.map(note => new Date(note.dueDate!));
     }, [notesWithDueDate]);
 
+    const timeToMinutes = (time: string): number => {
+        const [hours, minutes] = time.split(':').map(Number);
+        return hours * 60 + minutes;
+    };
+
     const { overdueTasks, allDayTasks, timedTasks, completedTasks } = React.useMemo(() => {
         if (!selectedDate) return { overdueTasks: [], allDayTasks: [], timedTasks: [], completedTasks: [] };
         
@@ -109,6 +114,98 @@ export default function CalendarPage() {
         return { overdueTasks: overdue, allDayTasks: allDay, timedTasks: timed, completedTasks: completed };
     }, [notesWithDueDate, selectedDate]);
     
+    const { timelineStartHour, timelineHours } = React.useMemo(() => {
+        if (timedTasks.length === 0) {
+            return { timelineStartHour: 8, timelineHours: Array.from({ length: 11 }, (_, i) => i + 8) }; // Default 8am to 6pm
+        }
+        
+        const allTimes = timedTasks.flatMap(note => [
+            timeToMinutes(note.startTime!),
+            note.endTime ? timeToMinutes(note.endTime) : timeToMinutes(note.startTime!) + 60
+        ]);
+        const minTime = Math.min(...allTimes);
+        const maxTime = Math.max(...allTimes);
+
+        const startHour = Math.max(0, Math.floor(minTime / 60) - 1);
+        const endHour = Math.min(24, Math.ceil(maxTime / 60) + 1);
+        
+        const duration = endHour - startHour;
+        if (duration < 8) {
+            const newEndHour = Math.min(24, startHour + 8);
+            return { timelineStartHour: startHour, timelineHours: Array.from({ length: newEndHour - startHour }, (_, i) => i + startHour) };
+        }
+
+        const hours = Array.from({ length: endHour - startHour }, (_, i) => i + startHour);
+        return { timelineStartHour: startHour, timelineHours: hours };
+    }, [timedTasks]);
+    
+    const HOUR_HEIGHT = 64; // h-16
+    const PIXELS_PER_MINUTE = HOUR_HEIGHT / 60;
+    
+    const laidOutTimedTasks = React.useMemo(() => {
+        const events = timedTasks.map(note => ({
+            ...note,
+            start: timeToMinutes(note.startTime!),
+            end: note.endTime ? timeToMinutes(note.endTime) : timeToMinutes(note.startTime!) + 60,
+        }));
+    
+        const groups: (typeof events[0])[][] = [];
+        events.sort((a, b) => a.start - b.start).forEach(event => {
+            let placed = false;
+            for (const group of groups) {
+                if (group.some(e => e.start < event.end && e.end > event.start)) {
+                    group.push(event);
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) {
+                groups.push([event]);
+            }
+        });
+    
+        const finalLayout: (typeof events[0] & { layout: { top: number; height: number; left: string; width: string; } })[] = [];
+
+        for (const group of groups) {
+            const columns: (typeof events[0])[][] = [];
+            group.sort((a,b) => a.start - b.start);
+
+            for (const event of group) {
+                let placed = false;
+                for (const col of columns) {
+                    if (col[col.length - 1].end <= event.start) {
+                        col.push(event);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    columns.push([event]);
+                }
+            }
+            
+            const numColumns = columns.length;
+            columns.forEach((col, colIndex) => {
+                col.forEach(event => {
+                    const width = 100 / numColumns;
+                    finalLayout.push({
+                        ...event,
+                        layout: {
+                            top: (event.start - timelineStartHour * 60) * PIXELS_PER_MINUTE,
+                            height: (event.end - event.start) * PIXELS_PER_MINUTE,
+                            width: `calc(${width}% - 4px)`,
+                            left: `calc(${width * colIndex}%)`
+                        }
+                    });
+                });
+            });
+        }
+        
+        return finalLayout;
+    
+    }, [timedTasks, timelineStartHour]);
+
+
     const handleCardClick = React.useCallback((note: Note) => {
         setViewingNote(note);
         setIsViewerOpen(true);
@@ -203,17 +300,6 @@ export default function CalendarPage() {
         }
     }, [notes, toast]);
 
-    const timeToMinutes = (time: string): number => {
-        const [hours, minutes] = time.split(':').map(Number);
-        return hours * 60 + minutes;
-    };
-    
-    const HOUR_HEIGHT = 56; // in pixels (h-14)
-    const PIXELS_PER_MINUTE = HOUR_HEIGHT / 60;
-    const TIMELINE_START_MINUTE = 6 * 60;
-
-    const hours = Array.from({ length: 17 }, (_, i) => i + 6); // 6 AM to 10 PM
-
     return (
         <>
             <div className="flex h-screen w-full flex-col bg-secondary">
@@ -289,15 +375,15 @@ export default function CalendarPage() {
                                                                         <div className="relative grid grid-cols-[auto,1fr] gap-x-3">
                                                                             {/* Timeline Grid */}
                                                                             <div className="col-start-2">
-                                                                                {hours.map(hour => (
-                                                                                    <div key={hour} className="h-14 border-t border-dashed"></div>
+                                                                                {timelineHours.map(hour => (
+                                                                                    <div key={hour} className="h-16 border-t border-dashed"></div>
                                                                                 ))}
                                                                             </div>
                                                                             
                                                                             {/* Hour Labels */}
                                                                             <div className="col-start-1 row-start-1">
-                                                                                {hours.map(hour => (
-                                                                                    <div key={`label-${hour}`} className="h-14 text-right pr-2">
+                                                                                {timelineHours.map(hour => (
+                                                                                    <div key={`label-${hour}`} className="h-16 text-right pr-2">
                                                                                         <span className="text-xs text-muted-foreground relative -top-2">
                                                                                             {hour % 12 === 0 ? 12 : hour % 12} {hour < 12 || hour === 24 ? 'AM' : 'PM'}
                                                                                         </span>
@@ -307,23 +393,24 @@ export default function CalendarPage() {
 
                                                                             {/* Timed Events */}
                                                                             <div className="col-start-2 row-start-1 relative">
-                                                                                {timedTasks.map(note => {
-                                                                                    const top = (timeToMinutes(note.startTime!) - TIMELINE_START_MINUTE) * PIXELS_PER_MINUTE;
-                                                                                    const end = note.endTime ? timeToMinutes(note.endTime) : timeToMinutes(note.startTime!) + 60;
-                                                                                    const height = (end - timeToMinutes(note.startTime!)) * PIXELS_PER_MINUTE;
-
+                                                                                {laidOutTimedTasks.map(event => {
                                                                                     return (
                                                                                         <div
-                                                                                            key={note.id}
-                                                                                            style={{ top, height: `${height}px` }}
-                                                                                            className="absolute left-0 right-0 z-10 p-2 rounded-lg cursor-pointer overflow-hidden transition-all hover:ring-2 hover:ring-primary/50"
-                                                                                            onClick={() => handleCardClick(note)}
+                                                                                            key={event.id}
+                                                                                            style={{ 
+                                                                                                top: event.layout.top, 
+                                                                                                height: `${event.layout.height}px`,
+                                                                                                width: event.layout.width,
+                                                                                                left: event.layout.left
+                                                                                            }}
+                                                                                            className="absolute z-10 p-1 rounded cursor-pointer overflow-hidden transition-all hover:ring-2 hover:ring-primary/50"
+                                                                                            onClick={() => handleCardClick(event)}
                                                                                         >
-                                                                                            <div className="absolute inset-0 opacity-20" style={{ backgroundColor: note.color }}></div>
-                                                                                            <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: note.color }}></div>
+                                                                                            <div className="absolute inset-0 opacity-20" style={{ backgroundColor: event.color }}></div>
+                                                                                            <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: event.color }}></div>
                                                                                             <div className="relative pl-2">
-                                                                                                <p className="font-semibold text-xs truncate" style={{ color: note.color }}>{note.title}</p>
-                                                                                                <p className="text-xs text-muted-foreground">{note.startTime} {note.endTime ? `- ${note.endTime}`: ''}</p>
+                                                                                                <p className="font-semibold text-xs truncate" style={{ color: event.color }}>{event.title}</p>
+                                                                                                <p className="text-xs text-muted-foreground">{event.startTime} {event.endTime ? `- ${event.endTime}`: ''}</p>
                                                                                             </div>
                                                                                         </div>
                                                                                     );
@@ -382,3 +469,4 @@ export default function CalendarPage() {
         </>
     );
 }
+ 
