@@ -109,17 +109,15 @@ const AppSidebarComponent = ({
                     }
                   }}
                   className={cn(
-                    "flex h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors group",
-                    isActive ? "bg-secondary text-primary" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                    "flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                     isCollapsed ? "justify-center" : "justify-start"
                   )}
                   aria-label={name}
                 >
-                  <Icon className={cn(
-                      "h-5 w-5 shrink-0 transition-all duration-200",
-                      isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
-                      "group-hover:-translate-y-0.5"
-                  )} />
+                  <Icon className="h-5 w-5 shrink-0" />
                   <span className={cn(
                       "whitespace-nowrap transition-opacity duration-200",
                       isCollapsed && "opacity-0 hidden"
@@ -140,8 +138,8 @@ const AppSidebarComponent = ({
           <Separator className="my-2" />
           <div className="flex-1 flex flex-col min-h-0">
             <div className={cn("p-2 pt-0", isCollapsed && "hidden")}>
-                <h3 className="text-sm font-semibold text-muted-foreground tracking-tight whitespace-nowrap px-2">
-                  Categories
+                <h3 className="px-2 text-xs font-semibold tracking-tight text-muted-foreground whitespace-nowrap">
+                  CATEGORIES
                 </h3>
             </div>
             <nav className="flex flex-col gap-1 px-2">
@@ -152,18 +150,16 @@ const AppSidebarComponent = ({
                     <TooltipTrigger asChild>
                       <button
                         className={cn(
-                            "flex h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors group",
-                            isActive ? "bg-secondary text-primary" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                            "flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
+                            isActive
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                             isCollapsed ? "justify-center" : "justify-start"
                           )}
                         aria-label={name}
                         onClick={() => handleCategoryClick(category)}
                       >
-                         <Icon className={cn(
-                          "h-5 w-5 shrink-0 transition-all duration-200",
-                          isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary",
-                          "group-hover:-translate-y-0.5"
-                        )} />
+                         <Icon className="h-5 w-5 shrink-0" />
                         <span
                           className={cn(
                             "truncate whitespace-nowrap transition-opacity duration-200",
