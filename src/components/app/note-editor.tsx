@@ -52,6 +52,7 @@ import {
   PenLine,
   Palette,
   Lock,
+  ScanLine,
 } from "lucide-react";
 import {
   Tooltip,
@@ -85,6 +86,7 @@ const AudioRecorder = React.lazy(() => import('./audio-recorder').then(module =>
 const NoteVersionHistory = React.lazy(() => import('./note-version-history').then(module => ({ default: module.NoteVersionHistory })));
 const HandwritingInput = React.lazy(() => import('./handwriting-input').then(module => ({ default: module.HandwritingInput })));
 const SketchInput = React.lazy(() => import('./sketch-input').then(module => ({ default: module.SketchInput })));
+const DocumentScanner = React.lazy(() => import('./document-scanner').then(module => ({ default: module.DocumentScanner })));
 
 
 type NoteEditorProps = {
@@ -128,6 +130,7 @@ export function NoteEditor({
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
   const [isHandwritingOpen, setIsHandwritingOpen] = React.useState(false);
   const [isSketcherOpen, setIsSketcherOpen] = React.useState(false);
+  const [isScannerOpen, setIsScannerOpen] = React.useState(false);
   const [imageUrl, setImageUrl] = React.useState<string | undefined>();
   const [generatedAudio, setGeneratedAudio] = React.useState<string | null>(null);
   const [isDirty, setIsDirty] = React.useState(false);
@@ -374,60 +377,60 @@ export function NoteEditor({
   // Background AI for auto grammar fix and predictive text
   React.useEffect(() => {
     if (!isOpen) return;
-
+  
     const handler = setTimeout(async () => {
-        const textToCheck = content;
-        if (!textToCheck.trim() || isActionLoading) return;
-
-        setIsAutoAiRunning(true);
-        setSuggestion(null);
-
-        const containsBurmese = /[\u1000-\u109F]/.test(textToCheck);
-        const language = containsBurmese ? 'Burmese' : 'English';
-
-        try {
-            // Step 1: Check for grammar and spelling errors
-            const grammarResult = await checkGrammarAndSpelling({ text: textToCheck, language });
-
-            // If user typed while AI was working, abort.
-            if (content !== textToCheck) {
-                setIsAutoAiRunning(false);
-                return;
-            }
-
-            const correctedText = grammarResult.correctedText;
-            let textForCompletion = textToCheck;
-            let grammarCorrectionApplied = false;
-
-            if (correctedText && correctedText !== textToCheck) {
-                setContent(correctedText);
-                textForCompletion = correctedText;
-                grammarCorrectionApplied = true;
-                toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
-            }
-
-            // Step 2: Get predictive text
-            const completionResult = await completeText({ currentText: textForCompletion, language });
-            
-            // If user typed while AI was working, abort.
-            // This needs to check against the potentially corrected text
-            const currentContent = grammarCorrectionApplied ? correctedText : textToCheck;
-            if (content !== currentContent) {
-                setIsAutoAiRunning(false);
-                return;
-            }
-
-            if (completionResult.completion) {
-                setSuggestion(completionResult.completion);
-            }
-
-        } catch (error) {
-            console.error("Background AI task failed:", error);
-        } finally {
-            setIsAutoAiRunning(false);
+      const textToCheck = content;
+      if (!textToCheck.trim() || isActionLoading) return;
+  
+      setIsAutoAiRunning(true);
+      setSuggestion(null);
+  
+      const containsBurmese = /[\u1000-\u109F]/.test(textToCheck);
+      const language = containsBurmese ? 'Burmese' : 'English';
+  
+      try {
+        // Step 1: Check for grammar and spelling errors
+        const grammarResult = await checkGrammarAndSpelling({ text: textToCheck, language });
+  
+        // If user typed while AI was working, abort.
+        if (content !== textToCheck) {
+          setIsAutoAiRunning(false);
+          return;
         }
+  
+        let correctedText = grammarResult.correctedText;
+        let grammarCorrectionApplied = false;
+  
+        if (correctedText && correctedText !== textToCheck) {
+          setContent(correctedText);
+          grammarCorrectionApplied = true;
+          toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
+        } else {
+          // If no corrections, use the original text for completion
+          correctedText = textToCheck;
+        }
+  
+        // Step 2: Get predictive text
+        const completionResult = await completeText({ currentText: correctedText, language });
+        
+        // If user typed while AI was working, abort.
+        // This needs to check against the potentially corrected text
+        if (content !== correctedText) {
+          setIsAutoAiRunning(false);
+          return;
+        }
+  
+        if (completionResult.completion) {
+          setSuggestion(completionResult.completion);
+        }
+  
+      } catch (error) {
+        console.error("Background AI task failed:", error);
+      } finally {
+        setIsAutoAiRunning(false);
+      }
     }, 1500); // 1.5 second debounce
-
+  
     return () => clearTimeout(handler);
   }, [content, isOpen, isActionLoading, toast]);
 
@@ -617,6 +620,10 @@ export function NoteEditor({
   
   const handleHandwritingComplete = React.useCallback((text: string) => {
     setContent(prev => [prev, text].filter(Boolean).join('\n'));
+  }, []);
+  
+  const handleTextScanned = React.useCallback((text: string) => {
+    setContent(prev => `${prev}\n\n--- Scanned Text ---\n${text}`.trim());
   }, []);
 
   const handleSaveSketch = React.useCallback((dataUrl: string) => {
@@ -979,6 +986,7 @@ export function NoteEditor({
                   <Button variant="outline" disabled={isAiLoading || (!content && checklist.length === 0)} onClick={handleTranslate}><Languages className="mr-2 h-4 w-4"/>Translate</Button>
                   
                   <Button variant="outline" onClick={() => setIsHandwritingOpen(true)}><PenLine className="mr-2 h-4 w-4"/>Write</Button>
+                  <Button variant="outline" onClick={() => setIsScannerOpen(true)}><ScanLine className="mr-2 h-4 w-4"/>Scan</Button>
                   <Button variant="outline" onClick={() => setIsSketcherOpen(true)}><Palette className="mr-2 h-4 w-4"/>Sketch</Button>
                   <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
                   <Button variant="outline" disabled={!note} onClick={() => setIsHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>History</Button>
@@ -1067,6 +1075,7 @@ export function NoteEditor({
         {isHistoryOpen && <NoteVersionHistory open={isHistoryOpen} setOpen={setIsHistoryOpen} history={note?.history || []} onRestore={handleRestoreVersion}/>}
         {isHandwritingOpen && <HandwritingInput open={isHandwritingOpen} setOpen={setIsHandwritingOpen} onRecognitionComplete={handleHandwritingComplete} />}
         {isSketcherOpen && <SketchInput open={isSketcherOpen} setOpen={setIsSketcherOpen} onSave={handleSaveSketch}/>}
+        {isScannerOpen && <DocumentScanner open={isScannerOpen} setOpen={setIsScannerOpen} onTextExtracted={handleTextScanned} />}
       </React.Suspense>
     </>
   );
