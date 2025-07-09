@@ -473,13 +473,16 @@ export function NoteEditor({
   }, [isAiLoading, content, toast]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab' && suggestion) {
-        e.preventDefault();
+    if (e.key === 'Tab') {
+      e.preventDefault(); // Prevent default tab behavior (focus change/indent)
+      if (suggestion) {
+        // If there's a suggestion, Tab accepts it
         setContent(currentContent => currentContent + suggestion);
         setSuggestion(null);
-    } else if ((e.ctrlKey || e.metaKey) && e.key === ' ') {
-        e.preventDefault();
+      } else if (content.trim()) {
+        // If no suggestion, Tab requests one
         handleRequestCompletion();
+      }
     }
   };
 
@@ -654,7 +657,7 @@ export function NoteEditor({
                                 bgTextareaRef.current.scrollLeft = fgTextareaRef.current.scrollLeft;
                             }
                         }}
-                        placeholder="Start weaving your thoughts... (Ctrl+Space for AI completion)"
+                        placeholder="Start weaving your thoughts... (Press Tab for AI completion)"
                         className="col-start-1 row-start-1 resize-none whitespace-pre-wrap bg-transparent text-foreground min-h-[200px]"
                     />
                 </div>
