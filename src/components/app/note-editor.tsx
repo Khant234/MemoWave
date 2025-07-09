@@ -399,11 +399,9 @@ export function NoteEditor({
         }
   
         let correctedText = grammarResult.correctedText;
-        let grammarCorrectionApplied = false;
   
         if (correctedText && correctedText !== textToCheck) {
           setContent(correctedText);
-          grammarCorrectionApplied = true;
           toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
         } else {
           // If no corrections, use the original text for completion
@@ -808,9 +806,14 @@ export function NoteEditor({
                         className="col-start-1 row-start-1 resize-none whitespace-pre-wrap bg-transparent text-foreground min-h-[200px]"
                     />
                 </div>
-                 <p className="text-xs text-muted-foreground px-1">
-                    Press <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">Tab</kbd> to accept an AI suggestion.
-                </p>
+                <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground px-1">
+                        Press <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">Tab</kbd> to accept an AI suggestion.
+                    </p>
+                    <p className="text-xs text-muted-foreground px-1">
+                        Math? Use $...$ or $$...$$
+                    </p>
+                </div>
               </div>
 
               <div className="space-y-2">

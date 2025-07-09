@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -22,6 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import { ChecklistCompleteMessage } from "./checklist-complete";
 import { useClickSound } from "@/hooks/use-click-sound";
 import { jsPDF } from "jspdf";
+import Latex from 'react-latex-next';
 
 type NoteViewerProps = {
   isOpen: boolean;
@@ -40,8 +42,8 @@ const formatTime = (time24: string | null | undefined): string => {
     return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
 };
 
-// Helper component to render text with clickable links
-const LinkifiedText = ({ text }: { text: string }) => {
+// Helper component to render text with clickable links and LaTeX
+const FormattedContent = ({ text }: { text: string }) => {
   // Regex to find URLs. \S+ matches non-whitespace characters.
   const urlRegex = /(https?:\/\/\S+)/g;
   const parts = text.split(urlRegex);
@@ -57,13 +59,22 @@ const LinkifiedText = ({ text }: { text: string }) => {
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline decoration-primary/50 underline-offset-4 transition-colors hover:text-primary/80 hover:decoration-primary/80"
-              onClick={(e) => e.stopPropagation()} // Prevent any parent onClick handlers from firing
+              onClick={(e) => e.stopPropagation()}
             >
               {part}
             </a>
           );
         }
-        return <React.Fragment key={index}>{part}</React.Fragment>;
+        return (
+          <Latex key={index} delimiters={[
+              {left: "$$", right: "$$", display: true},
+              {left: "$", right: "$", display: false},
+              {left: "\\(", right: "\\)", display: false},
+              {left: "\\[", right: "\\]", display: true}
+          ]}>
+              {part}
+          </Latex>
+        );
       })}
     </>
   );
@@ -219,7 +230,7 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
             )}
             
             <div className="whitespace-pre-wrap text-base leading-relaxed">
-              <LinkifiedText text={note.content} />
+              <FormattedContent text={note.content} />
             </div>
 
             {note.audioUrl && (
