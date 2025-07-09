@@ -160,6 +160,31 @@ export function NoteEditor({
     return options;
   }, []);
 
+  const syncTextareaHeights = React.useCallback(() => {
+    if (fgTextareaRef.current && bgTextareaRef.current) {
+        const fgTextarea = fgTextareaRef.current;
+        const bgTextarea = bgTextareaRef.current;
+        
+        // Temporarily reset height to allow scrollHeight to be calculated correctly
+        fgTextarea.style.height = 'auto';
+        bgTextarea.style.height = 'auto';
+
+        const scrollHeight = Math.max(fgTextarea.scrollHeight, bgTextarea.scrollHeight);
+        
+        const newHeight = `${scrollHeight}px`;
+
+        fgTextarea.style.height = newHeight;
+        bgTextarea.style.height = newHeight;
+    }
+  }, []);
+
+  React.useEffect(() => {
+    // Sync heights whenever the content or suggestion changes to keep them aligned
+    if (isOpen) {
+      syncTextareaHeights();
+    }
+  }, [isOpen, content, suggestion, syncTextareaHeights]);
+
   const getDrafts = React.useCallback((): Record<string, NoteDraft> => {
     if (typeof window === 'undefined') return {};
     const draftsRaw = localStorage.getItem('noteDrafts');
