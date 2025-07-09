@@ -356,17 +356,17 @@ export function NoteEditor({
   // Background AI for auto grammar fix and predictive text
   React.useEffect(() => {
     if (!isOpen) return;
-    
+
     const handler = setTimeout(async () => {
         const textToCheck = content;
         if (!textToCheck.trim() || isActionLoading) return;
-        
+
         setIsAutoAiRunning(true);
         setSuggestion(null);
 
         const containsBurmese = /[\u1000-\u109F]/.test(textToCheck);
         const language = containsBurmese ? 'Burmese' : 'English';
-        
+
         try {
             // Step 1: Check for grammar and spelling errors
             const grammarResult = await checkGrammarAndSpelling({ text: textToCheck, language });
@@ -382,23 +382,21 @@ export function NoteEditor({
             let grammarCorrectionApplied = false;
 
             if (correctedText && correctedText !== textToCheck) {
+                setContent(correctedText);
                 textForCompletion = correctedText;
                 grammarCorrectionApplied = true;
+                toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
             }
 
             // Step 2: Get predictive text
             const completionResult = await completeText({ currentText: textForCompletion, language });
-
+            
             // If user typed while AI was working, abort.
-            if (content !== textToCheck) {
+            // This needs to check against the potentially corrected text
+            const currentContent = grammarCorrectionApplied ? correctedText : textToCheck;
+            if (content !== currentContent) {
                 setIsAutoAiRunning(false);
                 return;
-            }
-            
-            // Apply changes now
-            if (grammarCorrectionApplied) {
-                setContent(correctedText);
-                toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
             }
 
             if (completionResult.completion) {
