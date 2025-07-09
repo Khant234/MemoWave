@@ -178,7 +178,7 @@ export function NoteEditor({
     }
   }, []);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     // Sync heights whenever the content or suggestion changes to keep them aligned
     if (isOpen) {
       syncTextareaHeights();
