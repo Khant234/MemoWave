@@ -634,7 +634,7 @@ export function NoteEditor({
                         ref={bgTextareaRef}
                         readOnly
                         className="col-start-1 row-start-1 resize-none whitespace-pre-wrap text-muted-foreground [caret-color:transparent] min-h-[200px]"
-                        value={suggestion ? content + suggestion : ''}
+                        value={suggestion ? content + suggestion : content}
                         tabIndex={-1}
                     />
                     <Textarea
