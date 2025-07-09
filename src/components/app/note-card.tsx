@@ -24,6 +24,7 @@ import {
   CheckSquare,
   Flag,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -238,6 +239,14 @@ const NoteCardComponent = ({
             </p>
             
             <div className="flex items-center gap-3 text-muted-foreground">
+                {note.isPasswordProtected && (
+                    <Tooltip>
+                        <TooltipTrigger><Lock className="h-4 w-4" /></TooltipTrigger>
+                        <TooltipContent>
+                            <p>Password protected</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
                 {note.priority && note.priority !== 'none' && (
                     <Tooltip>
                         <TooltipTrigger>{priorityIcons[note.priority]}</TooltipTrigger>

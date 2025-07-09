@@ -51,6 +51,7 @@ import {
   BookCopy,
   PenLine,
   Palette,
+  Lock,
 } from "lucide-react";
 import {
   Tooltip,
@@ -145,6 +146,13 @@ export function NoteEditor({
   const [isKanbanConfirmOpen, setIsKanbanConfirmOpen] = React.useState(false);
   const prevChecklistLength = React.useRef(0);
 
+  // Password state
+  const [isPasswordProtected, setIsPasswordProtected] = React.useState(false);
+  const [password, setPassword] = React.useState<string | undefined>();
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = React.useState(false);
+  const [passwordInput, setPasswordInput] = React.useState({current: "", new: "", confirm: ""});
+  const [passwordError, setPasswordError] = React.useState("");
+
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
   const autoChecklistRunning = React.useRef(false);
@@ -231,6 +239,8 @@ export function NoteEditor({
     setStartTime(data.startTime || null);
     setEndTime(data.endTime || null);
     setShowOnBoard(data.showOnBoard || false);
+    setIsPasswordProtected(data.isPasswordProtected || false);
+    setPassword(data.password || undefined);
   }, []);
 
   React.useEffect(() => {
@@ -260,6 +270,8 @@ export function NoteEditor({
         setStartTime(null);
         setEndTime(null);
         setShowOnBoard(false);
+        setIsPasswordProtected(false);
+        setPassword(undefined);
       }
       
       const currentChecklist = (draft || note)?.checklist || [];
@@ -274,10 +286,11 @@ export function NoteEditor({
         audioUrl: generatedAudio, status, priority, category,
         dueDate: dueDate ? dueDate.toISOString() : null, 
         startTime, endTime, showOnBoard,
+        isPasswordProtected, password,
       };
       saveDraft(draftNote);
     }
-  }, [isOpen, title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, saveDraft]);
+  }, [isOpen, title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, saveDraft]);
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -293,6 +306,8 @@ export function NoteEditor({
       startTime: startTime || undefined,
       endTime: endTime || undefined,
       showOnBoard,
+      isPasswordProtected,
+      password,
     };
   
     if (note) {
@@ -304,13 +319,15 @@ export function NoteEditor({
         startTime: note.startTime || undefined,
         endTime: note.endTime || undefined,
         showOnBoard: note.showOnBoard || false,
+        isPasswordProtected: note.isPasswordProtected || false,
+        password: note.password || undefined,
       };
       setIsDirty(JSON.stringify(currentState) !== JSON.stringify(noteState));
     } else {
-      const isEmpty = !title && !content && checklist.length === 0 && !imageUrl && !generatedAudio && !showOnBoard && !dueDate;
+      const isEmpty = !title && !content && checklist.length === 0 && !imageUrl && !generatedAudio && !showOnBoard && !dueDate && !isPasswordProtected;
       setIsDirty(!isEmpty);
     }
-  }, [isOpen, note, title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard]);
+  }, [isOpen, note, title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password]);
 
   // Background AI task for auto checklist generation
   React.useEffect(() => {
@@ -450,12 +467,13 @@ export function NoteEditor({
       startTime: dueDate ? startTime : null,
       endTime: dueDate ? endTime : null,
       showOnBoard, order: note?.order || Date.now(),
+      isPasswordProtected, password,
     };
     if (imageUrl) newNote.imageUrl = imageUrl;
     if (generatedAudio) newNote.audioUrl = generatedAudio;
 
     onSave(newNote);
-  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, note, onSave, toast]);
+  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, note, onSave, toast]);
   
   const handleDiscardChanges = React.useCallback(() => {
     if (note) {
@@ -484,13 +502,14 @@ export function NoteEditor({
       startTime: dueDate ? startTime : null,
       endTime: dueDate ? endTime : null,
       showOnBoard, order: note?.order || Date.now(),
+      isPasswordProtected, password,
     };
     if (imageUrl) draftNote.imageUrl = imageUrl;
     if (generatedAudio) draftNote.audioUrl = generatedAudio;
     
     onSave(draftNote);
     setIsCloseConfirmOpen(false);
-  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, note, onSave]);
+  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, note, onSave]);
 
   const handleDiscardAndClose = React.useCallback(() => {
     clearDraft();
@@ -671,6 +690,54 @@ export function NoteEditor({
           applyTemplate(template);
       }
   };
+
+  const openPasswordDialog = () => {
+    setPasswordInput({current: "", new: "", confirm: ""});
+    setPasswordError("");
+    setIsPasswordDialogOpen(true);
+  }
+  
+  const handlePasswordSave = () => {
+    setPasswordError("");
+    // Scenario 1: Setting a new password
+    if (!password) {
+      if (!passwordInput.new) {
+        setPasswordError("Password cannot be empty.");
+        return;
+      }
+      if (passwordInput.new !== passwordInput.confirm) {
+        setPasswordError("Passwords do not match.");
+        return;
+      }
+      setPassword(passwordInput.new);
+      setIsPasswordProtected(true);
+      toast({ title: "Password Set" });
+    } else { // Scenario 2: Changing or removing password
+      if (passwordInput.current !== password) {
+        setPasswordError("Incorrect current password.");
+        return;
+      }
+       if (!passwordInput.new && !passwordInput.confirm) { // Removing the password
+        setPassword(undefined);
+        setIsPasswordProtected(false);
+        toast({ title: "Password Removed" });
+      } else { // Changing it
+        if (passwordInput.new !== passwordInput.confirm) {
+          setPasswordError("New passwords do not match.");
+          return;
+        }
+        if (!passwordInput.new) {
+          setPasswordError("New password cannot be empty.");
+          return;
+        }
+        setPassword(passwordInput.new);
+        toast({ title: "Password Changed" });
+      }
+    }
+    setIsPasswordDialogOpen(false);
+    setPasswordInput({current: "", new: "", confirm: ""});
+  };
+
 
   return (
     <>
@@ -916,6 +983,7 @@ export function NoteEditor({
                   <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>
                   <Button variant="outline" onClick={() => setIsTranscriberOpen(true)}><BookText className="mr-2 h-4 w-4" />Transcribe</Button>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateAudio}><Volume2 className="mr-2 h-4 w-4"/>Listen (Burmese)</Button>
+                  <Button variant="outline" onClick={openPasswordDialog}><Lock className="mr-2 h-4 w-4"/>Password</Button>
               </div>
             </div>
           </ScrollArea>
@@ -955,6 +1023,37 @@ export function NoteEditor({
             <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setTemplateToApply(null)}>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={() => applyTemplate(templateToApply!)}>Apply</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{password ? "Change or Remove Password" : "Set Password"}</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {password ? "Enter your current password to make changes, or leave the new password fields blank to remove protection." : "Secure this note with a password. Remember it, as it cannot be recovered."}
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-4 py-2">
+                {password && (
+                     <div className="space-y-1">
+                        <Label htmlFor="current-password">Current Password</Label>
+                        <Input id="current-password" type="password" value={passwordInput.current} onChange={(e) => setPasswordInput(p => ({...p, current: e.target.value}))} />
+                     </div>
+                )}
+                <div className="space-y-1">
+                    <Label htmlFor="new-password">New Password {password ? "(leave blank to remove)" : ""}</Label>
+                    <Input id="new-password" type="password" value={passwordInput.new} onChange={(e) => setPasswordInput(p => ({...p, new: e.target.value}))} />
+                </div>
+                 <div className="space-y-1">
+                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Input id="confirm-password" type="password" value={passwordInput.confirm} onChange={(e) => setPasswordInput(p => ({...p, confirm: e.target.value}))} />
+                </div>
+                {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handlePasswordSave}>Save Changes</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

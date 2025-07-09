@@ -1,6 +1,5 @@
 
 
-
 export type NoteVersion = {
   title: string;
   content: string;
@@ -26,6 +25,10 @@ export type Note = {
   checklist: { id: string; text: string; completed: boolean }[];
   isDraft?: boolean;
   history: NoteVersion[];
+
+  // Password protection
+  isPasswordProtected?: boolean;
+  password?: string; // In a real app, this should be a hash.
 
   // Project management fields
   status: NoteStatus;

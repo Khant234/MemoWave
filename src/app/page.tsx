@@ -44,6 +44,7 @@ const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(
 const NoteEditor = React.lazy(() => import('@/components/app/note-editor').then(module => ({ default: module.NoteEditor })));
 const AudioTranscriber = React.lazy(() => import('@/components/app/audio-transcriber').then(module => ({ default: module.AudioTranscriber })));
 const GoalPlanner = React.lazy(() => import('@/components/app/goal-planner').then(module => ({ default: module.GoalPlanner })));
+const UnlockNoteDialog = React.lazy(() => import('@/components/app/unlock-note-dialog').then(module => ({ default: module.UnlockNoteDialog })));
 
 
 export default function Home() {
@@ -64,6 +65,10 @@ export default function Home() {
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
   const [isTranscriberOpen, setIsTranscriberOpen] = React.useState(false);
   const [isPlannerOpen, setIsPlannerOpen] = React.useState(false);
+
+  // State for password protection
+  const [unlockingNote, setUnlockingNote] = React.useState<Note | null>(null);
+  const [unlockedNoteIds, setUnlockedNoteIds] = React.useState<Set<string>>(new Set());
 
 
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
@@ -97,6 +102,17 @@ export default function Home() {
   }, [searchParams]);
 
   const handleViewNote = React.useCallback((note: Note) => {
+    if (note.isPasswordProtected && !unlockedNoteIds.has(note.id)) {
+      setUnlockingNote(note);
+    } else {
+      setViewingNote(note);
+      setIsViewerOpen(true);
+    }
+  }, [unlockedNoteIds]);
+
+  const handleNoteUnlock = React.useCallback((note: Note) => {
+    setUnlockedNoteIds(prev => new Set(prev).add(note.id));
+    setUnlockingNote(null);
     setViewingNote(note);
     setIsViewerOpen(true);
   }, []);
@@ -634,6 +650,13 @@ export default function Home() {
                 setOpen={setIsPlannerOpen}
                 onSavePlan={handleSavePlan}
             />
+        )}
+        {unlockingNote && (
+          <UnlockNoteDialog
+            note={unlockingNote}
+            onUnlock={handleNoteUnlock}
+            onClose={() => setUnlockingNote(null)}
+          />
         )}
       </React.Suspense>
 
