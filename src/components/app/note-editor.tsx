@@ -51,7 +51,6 @@ import {
   BookCopy,
   PenLine,
   Palette,
-  Wand2,
 } from "lucide-react";
 import {
   Tooltip,
@@ -94,6 +93,15 @@ type NoteEditorProps = {
 };
 
 type NoteDraft = Partial<Omit<Note, 'id' | 'isPinned' | 'isArchived' | 'isTrashed' | 'createdAt' | 'updatedAt'>>;
+
+const formatTime = (time24: string | null | undefined): string => {
+    if (!time24) return '';
+    const [h, m] = time24.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    let hour12 = h % 12;
+    if (hour12 === 0) hour12 = 12;
+    return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
+};
 
 export function NoteEditor({
   isOpen,
@@ -148,12 +156,7 @@ export function NoteEditor({
         const hour24 = h.toString().padStart(2, '0');
         const minute = m.toString().padStart(2, '0');
         const value = `${hour24}:${minute}`;
-
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        let hour12 = h % 12;
-        if (hour12 === 0) hour12 = 12;
-        
-        const label = `${hour12}:${minute} ${ampm}`;
+        const label = formatTime(value);
         options.push({ value, label });
       }
     }
