@@ -28,7 +28,7 @@ export type Note = {
 
   // Password protection
   isPasswordProtected?: boolean;
-  password?: string; // In a real app, this should be a hash.
+  password?: string; // HASHED password. Never store plaintext.
 
   // Project management fields
   status: NoteStatus;

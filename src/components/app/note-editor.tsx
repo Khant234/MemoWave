@@ -77,6 +77,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEGORY_TITLES } from "@/lib/constants";
 import { Switch } from "@/components/ui/switch";
 import { useTemplates } from "@/contexts/templates-context";
+import { hashText } from "@/lib/crypto";
 
 // Lazy load dialogs
 const AudioTranscriber = React.lazy(() => import('./audio-transcriber').then(module => ({ default: module.AudioTranscriber })));
@@ -148,7 +149,7 @@ export function NoteEditor({
 
   // Password state
   const [isPasswordProtected, setIsPasswordProtected] = React.useState(false);
-  const [password, setPassword] = React.useState<string | undefined>();
+  const [password, setPassword] = React.useState<string | undefined>(); // This now stores the HASH
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = React.useState(false);
   const [passwordInput, setPasswordInput] = React.useState({current: "", new: "", confirm: ""});
   const [passwordError, setPasswordError] = React.useState("");
@@ -697,7 +698,7 @@ export function NoteEditor({
     setIsPasswordDialogOpen(true);
   }
   
-  const handlePasswordSave = () => {
+  const handlePasswordSave = async () => {
     setPasswordError("");
     // Scenario 1: Setting a new password
     if (!password) {
@@ -709,11 +710,13 @@ export function NoteEditor({
         setPasswordError("Passwords do not match.");
         return;
       }
-      setPassword(passwordInput.new);
+      const newPasswordHash = await hashText(passwordInput.new);
+      setPassword(newPasswordHash);
       setIsPasswordProtected(true);
       toast({ title: "Password Set" });
     } else { // Scenario 2: Changing or removing password
-      if (passwordInput.current !== password) {
+      const currentPasswordHash = await hashText(passwordInput.current);
+      if (currentPasswordHash !== password) {
         setPasswordError("Incorrect current password.");
         return;
       }
@@ -730,7 +733,8 @@ export function NoteEditor({
           setPasswordError("New password cannot be empty.");
           return;
         }
-        setPassword(passwordInput.new);
+        const newPasswordHash = await hashText(passwordInput.new);
+        setPassword(newPasswordHash);
         toast({ title: "Password Changed" });
       }
     }

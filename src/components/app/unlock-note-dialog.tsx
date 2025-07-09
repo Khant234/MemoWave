@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { type Note } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { KeyRound } from "lucide-react";
+import { hashText } from "@/lib/crypto";
 
 type UnlockNoteDialogProps = {
   note: Note | null;
@@ -35,8 +36,9 @@ export function UnlockNoteDialog({ note, onUnlock, onClose }: UnlockNoteDialogPr
 
   if (!note) return null;
 
-  const handleUnlock = () => {
-    if (password === note.password) {
+  const handleUnlock = async () => {
+    const enteredPasswordHash = await hashText(password);
+    if (enteredPasswordHash === note.password) {
       toast({
         title: "Note Unlocked",
         description: `"${note.title || 'Untitled Note'}" is now accessible.`,
