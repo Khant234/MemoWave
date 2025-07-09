@@ -29,17 +29,22 @@ const prompt = ai.definePrompt({
   name: 'completeTextPrompt',
   input: {schema: CompleteTextInputSchema},
   output: {schema: CompleteTextOutputSchema},
-  prompt: `You are an intelligent writing assistant. Your task is to act like a text completion feature and continue the text provided by the user.
+  prompt: `You are an AI writing assistant. Your primary function is to continue the text provided by the user.
+Act as a text completion feature.
+Your response must be a direct continuation of the user's text, as if you are completing their sentence or starting the next one.
+
+**ABSOLUTELY DO NOT:**
+- Define the user's text.
+- Explain the user's text.
+- Translate the user's text.
+- Repeat the user's text.
 
 {{#if language}}
-**IMPORTANT: The completion must be in {{language}}.**
-When the language is specified, your primary goal is to **continue the sentence or paragraph**. Do **NOT** define, translate, or explain the input text. Just continue writing from where the user left off.
+The completion must be in **{{language}}**.
 {{/if}}
 
-Provide only the next few words, a sentence, or a short paragraph that logically follows the input text.
-Your response should be a direct continuation of the user's text.
-Do not repeat the original text in your response.
-The completion should start with a space if it is intended to be appended directly to the existing text.
+Your response should only contain the new text to be appended.
+If it should be appended to the user's text, it must start with a space.
 
 User's text to continue:
 "{{{currentText}}}"`,
