@@ -239,8 +239,16 @@ export default function Home() {
 
       } else {
         const { id, ...noteData } = noteToSave;
-        const finalNoteData = { ...noteData, history: [] };
-        await addDoc(notesCollectionRef, finalNoteData as any);
+        
+        // Firestore doesn't allow 'undefined' fields during document creation.
+        const noteDataForFirestore: { [key: string]: any } = { ...noteData, history: [] };
+        Object.keys(noteDataForFirestore).forEach(key => {
+          if (noteDataForFirestore[key] === undefined) {
+            delete noteDataForFirestore[key];
+          }
+        });
+        
+        await addDoc(notesCollectionRef, noteDataForFirestore);
       }
 
       setIsEditorOpen(false);
@@ -441,9 +449,17 @@ export default function Home() {
       showOnBoard: noteToCopy.showOnBoard,
       order: Date.now(),
     };
+    
+    // Firestore doesn't allow 'undefined' fields during document creation.
+    const noteDataForFirestore: { [key: string]: any } = { ...newNoteData };
+    Object.keys(noteDataForFirestore).forEach(key => {
+        if (noteDataForFirestore[key] === undefined) {
+            delete noteDataForFirestore[key];
+        }
+    });
 
     try {
-      await addDoc(notesCollectionRef, newNoteData);
+      await addDoc(notesCollectionRef, noteDataForFirestore);
       toast({
         title: "Note Copied",
         description: `A copy of "${noteToCopy.title || 'Untitled'}" has been created.`,
