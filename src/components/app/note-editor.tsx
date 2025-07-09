@@ -50,6 +50,7 @@ import {
   ScanText,
   BookCopy,
   PenLine,
+  Palette,
 } from "lucide-react";
 import {
   Tooltip,
@@ -79,6 +80,7 @@ const AudioTranscriber = React.lazy(() => import('./audio-transcriber').then(mod
 const AudioRecorder = React.lazy(() => import('./audio-recorder').then(module => ({ default: module.AudioRecorder })));
 const NoteVersionHistory = React.lazy(() => import('./note-version-history').then(module => ({ default: module.NoteVersionHistory })));
 const HandwritingInput = React.lazy(() => import('./handwriting-input').then(module => ({ default: module.HandwritingInput })));
+const SketchInput = React.lazy(() => import('./sketch-input').then(module => ({ default: module.SketchInput })));
 
 
 type NoteEditorProps = {
@@ -109,6 +111,7 @@ export function NoteEditor({
   const [isRecorderOpen, setIsRecorderOpen] = React.useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
   const [isHandwritingOpen, setIsHandwritingOpen] = React.useState(false);
+  const [isSketcherOpen, setIsSketcherOpen] = React.useState(false);
   const [imageUrl, setImageUrl] = React.useState<string | undefined>();
   const [generatedAudio, setGeneratedAudio] = React.useState<string | null>(null);
   const [isDirty, setIsDirty] = React.useState(false);
@@ -488,6 +491,11 @@ export function NoteEditor({
     setContent(prev => `${prev}\n${text}`.trim());
   }, []);
 
+  const handleSaveSketch = React.useCallback((dataUrl: string) => {
+    setImageUrl(dataUrl);
+    toast({ title: "Sketch Attached" });
+  }, [toast]);
+
   const handleAttachImage = React.useCallback(() => imageInputRef.current?.click(), []);
   const handleImageUpload = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -760,6 +768,7 @@ export function NoteEditor({
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
                   <Button variant="outline" disabled={!note} onClick={() => setIsHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>History</Button>
                   <Button variant="outline" onClick={() => setIsHandwritingOpen(true)}><PenLine className="mr-2 h-4 w-4"/>Write</Button>
+                  <Button variant="outline" onClick={() => setIsSketcherOpen(true)}><Palette className="mr-2 h-4 w-4"/>Sketch</Button>
                   <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
                   <Button variant="outline" onClick={() => setIsRecorderOpen(true)}><Mic className="mr-2 h-4 w-4"/>Record Audio</Button>
                   <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>
@@ -813,6 +822,7 @@ export function NoteEditor({
         {isRecorderOpen && <AudioRecorder open={isRecorderOpen} setOpen={setIsRecorderOpen} onSave={handleSaveRecording}/>}
         {isHistoryOpen && <NoteVersionHistory open={isHistoryOpen} setOpen={setIsHistoryOpen} history={note?.history || []} onRestore={handleRestoreVersion}/>}
         {isHandwritingOpen && <HandwritingInput open={isHandwritingOpen} setOpen={setIsHandwritingOpen} onRecognitionComplete={handleHandwritingComplete} />}
+        {isSketcherOpen && <SketchInput open={isSketcherOpen} setOpen={setIsSketcherOpen} onSave={handleSaveSketch}/>}
       </React.Suspense>
     </>
   );
