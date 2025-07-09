@@ -484,11 +484,11 @@ export function NoteEditor({
   }, { success: "Note translated to Burmese!", error: "Could not translate note." }), [content, checklist, runAiAction]);
 
   const handleTranscriptionComplete = React.useCallback((text: string) => {
-    setContent(prev => `${prev}\n\n${text}`.trim());
+    setContent(prev => [prev, text].filter(Boolean).join('\n\n'));
   }, []);
   
   const handleHandwritingComplete = React.useCallback((text: string) => {
-    setContent(prev => `${prev}\n${text}`.trim());
+    setContent(prev => [prev, text].filter(Boolean).join('\n'));
   }, []);
 
   const handleSaveSketch = React.useCallback((dataUrl: string) => {

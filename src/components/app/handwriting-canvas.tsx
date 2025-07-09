@@ -99,8 +99,29 @@ export function HandwritingCanvas({ onRecognize }: HandwritingCanvasProps) {
   const handleRecognizeClick = () => {
     const canvas = canvasRef.current;
     if (canvas) {
-      const dataUrl = canvas.toDataURL("image/png");
-      onRecognize(dataUrl);
+      // Create a new canvas to ensure a consistent background for better OCR
+      const newCanvas = document.createElement('canvas');
+      newCanvas.width = canvas.width;
+      newCanvas.height = canvas.height;
+      const ctx = newCanvas.getContext('2d');
+      if(ctx) {
+        // Fill background with the card color from the theme to match the app's look
+        const computedStyle = getComputedStyle(document.documentElement);
+        const cardColor = `hsl(${computedStyle.getPropertyValue('--card').trim()})`;
+        ctx.fillStyle = cardColor;
+        ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+        
+        // Draw the existing handwriting on top of the background
+        ctx.drawImage(canvas, 0, 0);
+
+        // Get the data URL from the new canvas with the background
+        const dataUrl = newCanvas.toDataURL("image/png");
+        onRecognize(dataUrl);
+      } else {
+        // Fallback to the original canvas if context creation fails
+        const dataUrl = canvas.toDataURL("image/png");
+        onRecognize(dataUrl);
+      }
     }
   };
 
