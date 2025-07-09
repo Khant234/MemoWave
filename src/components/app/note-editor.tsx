@@ -367,7 +367,6 @@ export function NoteEditor({
         }
 
         setIsAutoAiRunning(true);
-        let contentForPrediction = currentContent;
         const containsBurmese = /[\u1000-\u109F]/.test(currentContent);
         const language = containsBurmese ? 'Burmese' : 'English';
 
@@ -381,29 +380,27 @@ export function NoteEditor({
             }
 
             if (grammarResult.correctedText && grammarResult.correctedText !== currentContent) {
-                // Correction found, apply it and use it for the next step.
+                // Correction found, apply it and STOP for this cycle.
+                // The state update will trigger a new effect run for suggestions.
                 setContent(grammarResult.correctedText);
                 lastCorrectedText.current = grammarResult.correctedText;
-                contentForPrediction = grammarResult.correctedText;
                 toast({
                     title: "Auto-corrected",
                     description: "Grammar and spelling mistakes have been automatically fixed.",
                     duration: 3000,
                 });
-            }
+            } else {
+                // Step 2: Predictive Completion (only runs if no grammar errors were found/fixed)
+                const completionResult = await completeText({ currentText: currentContent, language });
+                
+                if (content !== currentContent) {
+                    setIsAutoAiRunning(false);
+                    return;
+                }
 
-            // Step 2: Predictive Completion (always runs after grammar check)
-            const completionResult = await completeText({ currentText: contentForPrediction, language });
-            
-            // If the user typed while we were getting the completion, the UI state will be different.
-            // It's safest not to show a stale suggestion. We check against what we sent.
-            if (content !== contentForPrediction) {
-                setIsAutoAiRunning(false);
-                return;
-            }
-
-            if (completionResult.completion) {
-                setSuggestion(completionResult.completion);
+                if (completionResult.completion) {
+                    setSuggestion(completionResult.completion);
+                }
             }
         } catch (error: any) {
              console.error("Background AI task failed:", error);
@@ -969,3 +966,5 @@ export function NoteEditor({
     </>
   );
 }
+
+    
