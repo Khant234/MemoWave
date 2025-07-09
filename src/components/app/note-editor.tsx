@@ -500,20 +500,29 @@ export function NoteEditor({
     }
   }, [isAiLoading, content, toast]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault(); // Prevent default tab behavior (focus change/indent)
-      if (suggestion) {
-        // If there's a suggestion, Tab accepts it
-        setContent(currentContent => currentContent + suggestion);
-        setSuggestion(null);
-      } else if (content.trim()) {
-        // If no suggestion, Tab requests one
+  React.useEffect(() => {
+    if (!isOpen || isAiLoading || suggestion) {
+      return;
+    }
+
+    const handler = setTimeout(() => {
+      if (content.trim()) {
         handleRequestCompletion();
       }
+    }, 1000); // 1-second debounce
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [content, isOpen, isAiLoading, suggestion, handleRequestCompletion]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Tab' && suggestion) {
+      e.preventDefault(); // Prevent focus change
+      setContent(currentContent => currentContent + suggestion);
+      setSuggestion(null);
     }
   };
-
 
   const handleExtractText = React.useCallback(() => runAiAction(async () => {
     if(!imageUrl) throw new Error("Please attach an image first.");
@@ -685,7 +694,7 @@ export function NoteEditor({
                                 bgTextareaRef.current.scrollLeft = fgTextareaRef.current.scrollLeft;
                             }
                         }}
-                        placeholder="Start weaving your thoughts... (Press Tab for AI completion)"
+                        placeholder="Start weaving your thoughts... (AI will suggest completions as you type)"
                         className="col-start-1 row-start-1 resize-none whitespace-pre-wrap bg-transparent text-foreground min-h-[200px]"
                     />
                 </div>
@@ -861,7 +870,6 @@ export function NoteEditor({
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
-                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleRequestCompletion}><Wand2 className="mr-2 h-4 w-4"/>Complete</Button>
                   <Button variant="outline" disabled={!note} onClick={() => setIsHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>History</Button>
                   <Button variant="outline" onClick={() => setIsHandwritingOpen(true)}><PenLine className="mr-2 h-4 w-4"/>Write</Button>
                   <Button variant="outline" onClick={() => setIsSketcherOpen(true)}><Palette className="mr-2 h-4 w-4"/>Sketch</Button>
