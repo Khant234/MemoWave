@@ -118,7 +118,10 @@ export function NoteEditor({
   const [checklist, setChecklist] = React.useState<{ id: string; text: string; completed: boolean }[]>([]);
   const [newChecklistItem, setNewChecklistItem] = React.useState("");
   const [editingChecklistItemId, setEditingChecklistItemId] = React.useState<string | null>(null);
-  const [isAiLoading, setIsAiLoading] = React.useState(false);
+  
+  const [isActionLoading, setIsActionLoading] = React.useState(false);
+  const [isAutoAiRunning, setIsAutoAiRunning] = React.useState(false);
+
   const [isTranscriberOpen, setIsTranscriberOpen] = React.useState(false);
   const [isRecorderOpen, setIsRecorderOpen] = React.useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
@@ -151,6 +154,7 @@ export function NoteEditor({
   const fgTextareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { toast } = useToast();
+  const isAiLoading = isActionLoading || isAutoAiRunning;
 
   const timeOptions = React.useMemo(() => {
     const options: { value: string; label: string }[] = [];
@@ -171,7 +175,6 @@ export function NoteEditor({
         const fgTextarea = fgTextareaRef.current;
         const bgTextarea = bgTextareaRef.current;
         
-        // Temporarily reset height to allow scrollHeight to be calculated correctly
         fgTextarea.style.height = 'auto';
         bgTextarea.style.height = 'auto';
 
@@ -185,7 +188,6 @@ export function NoteEditor({
   }, []);
 
   React.useLayoutEffect(() => {
-    // Sync heights whenever the content or suggestion changes to keep them aligned
     if (isOpen) {
       syncTextareaHeights();
     }
@@ -352,6 +354,70 @@ export function NoteEditor({
     return () => clearTimeout(handler);
   }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems]);
 
+  // Combined background AI effect for grammar check and predictive completion.
+  React.useEffect(() => {
+    if (!isOpen || isActionLoading || isAutoAiRunning || suggestion) {
+        return;
+    }
+
+    const handler = setTimeout(async () => {
+        const currentContent = content;
+        if (!currentContent.trim() || currentContent === lastCorrectedText.current) {
+            return;
+        }
+
+        setIsAutoAiRunning(true);
+        const containsBurmese = /[\u1000-\u109F]/.test(currentContent);
+        const language = containsBurmese ? 'Burmese' : 'English';
+
+        // Step 1: Grammar and Spelling Check
+        try {
+            const grammarResult = await checkGrammarAndSpelling({ text: currentContent, language });
+            
+            if (content !== currentContent) { // User typed while we were checking
+                setIsAutoAiRunning(false);
+                return;
+            }
+
+            if (grammarResult.correctedText && grammarResult.correctedText !== currentContent) {
+                // Correction found, apply it and stop this cycle.
+                setContent(grammarResult.correctedText);
+                lastCorrectedText.current = grammarResult.correctedText;
+                toast({
+                    title: "Auto-corrected",
+                    description: "Grammar and spelling mistakes have been automatically fixed.",
+                    duration: 3000,
+                });
+                setIsAutoAiRunning(false);
+                return;
+            }
+        } catch (error) {
+            console.error("Auto grammar check failed:", error);
+        }
+
+        // Step 2: Predictive Completion (only if no grammar changes were made)
+        try {
+            const completionResult = await completeText({ currentText: content, language });
+            
+            if (content !== currentContent) { // User typed while we were checking
+              setIsAutoAiRunning(false);
+              return;
+            }
+
+            if (completionResult.completion) {
+                setSuggestion(completionResult.completion);
+            }
+        } catch (error: any) {
+            toast({ title: "AI Completion Error", description: error.message || "Could not generate completion.", variant: "destructive" });
+        } finally {
+            setIsAutoAiRunning(false);
+        }
+    }, 1200); // 1.2-second debounce
+
+    return () => clearTimeout(handler);
+  }, [content, isOpen, isActionLoading, isAutoAiRunning, suggestion, toast]);
+
+
   React.useEffect(() => {
     if (isOpen) {
         if (checklist.length > 0 && prevChecklistLength.current === 0 && !showOnBoard) {
@@ -463,14 +529,14 @@ export function NoteEditor({
   }, [checklist]);
 
   const runAiAction = React.useCallback(async (action: () => Promise<boolean | void>, messages: {success: string, error: string}) => {
-    setIsAiLoading(true);
+    setIsActionLoading(true);
     try {
         const shouldToast = await action();
         if (shouldToast !== false) toast({ title: messages.success });
     } catch(error: any) {
         toast({ title: "AI Error", description: error.message || messages.error, variant: "destructive"});
     }
-    setIsAiLoading(false);
+    setIsActionLoading(false);
   }, [toast]);
   
   const handleGenerateTitle = React.useCallback(() => runAiAction(async () => {
@@ -484,92 +550,6 @@ export function NoteEditor({
     const result = await summarizeNote({ noteContent: content });
     if (result.summary) setContent(prev => `${prev}\n\n**Summary:**\n${result.summary}`);
   }, { success: "Note Summarized!", error: "Could not summarize note." }), [content, runAiAction]);
-
-  const handleRequestCompletion = React.useCallback(async () => {
-    if (isAiLoading || !content.trim() || suggestion) return;
-
-    setIsAiLoading(true);
-    
-    const containsBurmese = /[\u1000-\u109F]/.test(content);
-    const language = containsBurmese ? 'Burmese' : 'English';
-
-    try {
-        const result = await completeText({ currentText: content, language });
-        if (result.completion) {
-            setSuggestion(result.completion);
-        }
-    } catch (error: any) {
-        toast({ title: "AI Completion Error", description: error.message || "Could not generate completion.", variant: "destructive" });
-    } finally {
-        setIsAiLoading(false);
-    }
-  }, [isAiLoading, content, toast, suggestion]);
-
-  React.useEffect(() => {
-    if (!isOpen || isAiLoading || suggestion) {
-      return;
-    }
-
-    const handler = setTimeout(() => {
-      if (content.trim()) {
-        handleRequestCompletion();
-      }
-    }, 1000); // 1-second debounce
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [content, isOpen, isAiLoading, suggestion, handleRequestCompletion]);
-
-  // AUTO GRAMMAR CHECK EFFECT
-  React.useEffect(() => {
-    if (isAiLoading || suggestion) { // Don't run if another AI op is in progress or a suggestion is displayed
-        return;
-    }
-
-    const handler = setTimeout(async () => {
-        const currentContent = content; // Capture content at the time of timeout creation
-        if (!currentContent.trim() || currentContent === lastCorrectedText.current) {
-            return;
-        }
-
-        setIsAiLoading(true);
-        try {
-            const containsBurmese = /[\u1000-\u109F]/.test(currentContent);
-            const language = containsBurmese ? 'Burmese' : 'English';
-
-            const result = await checkGrammarAndSpelling({ text: currentContent, language });
-            
-            // Using functional update to prevent race conditions with stale state
-            if (result.correctedText && result.correctedText !== currentContent) {
-                setContent(prevContent => {
-                    // Only apply the correction if the user hasn't typed anything new
-                    if (prevContent === currentContent) {
-                        lastCorrectedText.current = result.correctedText;
-                        toast({
-                            title: "Auto-corrected",
-                            description: "Grammar and spelling mistakes have been automatically fixed.",
-                            duration: 3000,
-                        });
-                        return result.correctedText;
-                    }
-                    // If the content changed while the AI was working, discard the correction.
-                    return prevContent;
-                });
-            }
-        } catch (error) {
-            console.error("Auto grammar check failed:", error);
-            // Silently fail for a background feature to avoid annoying users
-        } finally {
-            setIsAiLoading(false);
-        }
-    }, 1500); // 1.5-second debounce after user stops typing
-
-    return () => {
-        clearTimeout(handler);
-    };
-  }, [content, isAiLoading, suggestion, toast, setContent, setIsAiLoading]);
-
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab' && suggestion) {
