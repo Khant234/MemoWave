@@ -485,8 +485,11 @@ export function NoteEditor({
     setIsAiLoading(true);
     setSuggestion(null);
 
+    const containsBurmese = /[\u1000-\u109F]/.test(content);
+    const language = containsBurmese ? 'Burmese' : 'English';
+
     try {
-        const result = await completeText({ currentText: content });
+        const result = await completeText({ currentText: content, language });
         if (result.completion) {
             setSuggestion(result.completion);
         }

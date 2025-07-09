@@ -12,6 +12,7 @@ import {z} from 'genkit';
 
 const CompleteTextInputSchema = z.object({
   currentText: z.string().describe('The current text to be completed.'),
+  language: z.string().optional().describe('The language for the completion (e.g., "English", "Burmese").'),
 });
 export type CompleteTextInput = z.infer<typeof CompleteTextInputSchema>;
 
@@ -29,6 +30,9 @@ const prompt = ai.definePrompt({
   input: {schema: CompleteTextInputSchema},
   output: {schema: CompleteTextOutputSchema},
   prompt: `You are an intelligent writing assistant. Your task is to continue the text provided by the user in a natural and coherent way.
+{{#if language}}
+**IMPORTANT: The completion must be in {{language}}.**
+{{/if}}
 Provide only the next sentence or a short paragraph that logically follows the input text.
 Do not repeat the original text in your response. The completion should start with a space if it's meant to be appended directly.
 
