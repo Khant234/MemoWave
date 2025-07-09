@@ -367,48 +367,46 @@ export function NoteEditor({
         }
 
         setIsAutoAiRunning(true);
+        let contentForPrediction = currentContent;
         const containsBurmese = /[\u1000-\u109F]/.test(currentContent);
         const language = containsBurmese ? 'Burmese' : 'English';
 
-        // Step 1: Grammar and Spelling Check
         try {
+            // Step 1: Grammar and Spelling Check
             const grammarResult = await checkGrammarAndSpelling({ text: currentContent, language });
             
-            if (content !== currentContent) { // User typed while we were checking
+            if (content !== currentContent) { // User typed while grammar check was running
                 setIsAutoAiRunning(false);
                 return;
             }
 
             if (grammarResult.correctedText && grammarResult.correctedText !== currentContent) {
-                // Correction found, apply it and stop this cycle.
+                // Correction found, apply it and use it for the next step.
                 setContent(grammarResult.correctedText);
                 lastCorrectedText.current = grammarResult.correctedText;
+                contentForPrediction = grammarResult.correctedText;
                 toast({
                     title: "Auto-corrected",
                     description: "Grammar and spelling mistakes have been automatically fixed.",
                     duration: 3000,
                 });
+            }
+
+            // Step 2: Predictive Completion (always runs after grammar check)
+            const completionResult = await completeText({ currentText: contentForPrediction, language });
+            
+            // If the user typed while we were getting the completion, the UI state will be different.
+            // It's safest not to show a stale suggestion. We check against what we sent.
+            if (content !== contentForPrediction) {
                 setIsAutoAiRunning(false);
                 return;
-            }
-        } catch (error) {
-            console.error("Auto grammar check failed:", error);
-        }
-
-        // Step 2: Predictive Completion (only if no grammar changes were made)
-        try {
-            const completionResult = await completeText({ currentText: content, language });
-            
-            if (content !== currentContent) { // User typed while we were checking
-              setIsAutoAiRunning(false);
-              return;
             }
 
             if (completionResult.completion) {
                 setSuggestion(completionResult.completion);
             }
         } catch (error: any) {
-            toast({ title: "AI Completion Error", description: error.message || "Could not generate completion.", variant: "destructive" });
+             console.error("Background AI task failed:", error);
         } finally {
             setIsAutoAiRunning(false);
         }
