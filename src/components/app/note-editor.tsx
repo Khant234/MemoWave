@@ -540,14 +540,21 @@ export function NoteEditor({
 
             const result = await checkGrammarAndSpelling({ text: currentContent, language });
             
-            // Only update if the user hasn't typed anything new
-            if (content === currentContent && result.correctedText && result.correctedText !== currentContent) {
-                setContent(result.correctedText);
-                lastCorrectedText.current = result.correctedText;
-                toast({
-                    title: "Auto-corrected",
-                    description: "Grammar and spelling mistakes have been automatically fixed.",
-                    duration: 3000,
+            // Using functional update to prevent race conditions with stale state
+            if (result.correctedText && result.correctedText !== currentContent) {
+                setContent(prevContent => {
+                    // Only apply the correction if the user hasn't typed anything new
+                    if (prevContent === currentContent) {
+                        lastCorrectedText.current = result.correctedText;
+                        toast({
+                            title: "Auto-corrected",
+                            description: "Grammar and spelling mistakes have been automatically fixed.",
+                            duration: 3000,
+                        });
+                        return result.correctedText;
+                    }
+                    // If the content changed while the AI was working, discard the correction.
+                    return prevContent;
                 });
             }
         } catch (error) {
