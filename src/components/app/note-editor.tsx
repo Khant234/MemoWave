@@ -520,6 +520,48 @@ export function NoteEditor({
     };
   }, [content, isOpen, isAiLoading, suggestion, handleRequestCompletion]);
 
+  // AUTO GRAMMAR CHECK EFFECT
+  React.useEffect(() => {
+    if (isAiLoading || suggestion) { // Don't run if another AI op is in progress or a suggestion is displayed
+        return;
+    }
+
+    const handler = setTimeout(async () => {
+        const currentContent = content; // Capture content at the time of timeout creation
+        if (!currentContent.trim()) {
+            return;
+        }
+
+        setIsAiLoading(true);
+        try {
+            const containsBurmese = /[\u1000-\u109F]/.test(currentContent);
+            const language = containsBurmese ? 'Burmese' : 'English';
+
+            const result = await checkGrammarAndSpelling({ text: currentContent, language });
+            
+            // Only update if the user hasn't typed anything new
+            if (content === currentContent && result.correctedText && result.correctedText !== currentContent) {
+                setContent(result.correctedText);
+                toast({
+                    title: "Auto-corrected",
+                    description: "Grammar and spelling mistakes have been automatically fixed.",
+                    duration: 3000,
+                });
+            }
+        } catch (error) {
+            console.error("Auto grammar check failed:", error);
+            // Silently fail for a background feature to avoid annoying users
+        } finally {
+            setIsAiLoading(false);
+        }
+    }, 2500); // 2.5-second debounce after user stops typing
+
+    return () => {
+        clearTimeout(handler);
+    };
+  }, [content, isAiLoading, suggestion, toast, setContent, setIsAiLoading]);
+
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab' && suggestion) {
       e.preventDefault(); // Prevent focus change
@@ -562,18 +604,6 @@ export function NoteEditor({
       setChecklist(prev => prev.map(item => ({...item, text: translatedMap.get(item.id) || item.text})));
     }
   }, { success: "Note translated to Burmese!", error: "Could not translate note." }), [content, checklist, runAiAction]);
-
-  const handleGrammarCheck = React.useCallback(() => runAiAction(async () => {
-    if (!content) throw new Error("Please write some content to check.");
-
-    const containsBurmese = /[\u1000-\u109F]/.test(content);
-    const language = containsBurmese ? 'Burmese' : 'English';
-
-    const result = await checkGrammarAndSpelling({ text: content, language });
-    if (result.correctedText) {
-        setContent(result.correctedText);
-    }
-  }, { success: "Grammar & Spelling Checked!", error: "Could not check grammar." }), [content, runAiAction]);
 
   const handleTranscriptionComplete = React.useCallback((text: string) => {
     setContent(prev => [prev, text].filter(Boolean).join('\n\n'));
@@ -889,7 +919,6 @@ export function NoteEditor({
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
-                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGrammarCheck}><SpellCheck className="mr-2 h-4 w-4" />Proofread</Button>
                   <Button variant="outline" disabled={isAiLoading || (!content && checklist.length === 0)} onClick={handleTranslate}><Languages className="mr-2 h-4 w-4"/>Translate</Button>
                   
                   <Button variant="outline" onClick={() => setIsHandwritingOpen(true)}><PenLine className="mr-2 h-4 w-4"/>Write</Button>
