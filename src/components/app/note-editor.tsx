@@ -51,6 +51,7 @@ import {
   BookCopy,
   PenLine,
   Palette,
+  SpellCheck,
 } from "lucide-react";
 import {
   Tooltip,
@@ -70,6 +71,7 @@ import { translateNote } from "@/ai/flows/translate-note";
 import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
 import { extractTextFromImage } from "@/ai/flows/extract-text-from-image";
 import { completeText } from "@/ai/flows/complete-text";
+import { checkGrammarAndSpelling } from "@/ai/flows/grammar-and-spelling-check";
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEGORY_TITLES } from "@/lib/constants";
@@ -483,11 +485,10 @@ export function NoteEditor({
   }, { success: "Note Summarized!", error: "Could not summarize note." }), [content, runAiAction]);
 
   const handleRequestCompletion = React.useCallback(async () => {
-    if (isAiLoading || !content.trim()) return;
+    if (isAiLoading || !content.trim() || suggestion) return;
 
     setIsAiLoading(true);
-    setSuggestion(null);
-
+    
     const containsBurmese = /[\u1000-\u109F]/.test(content);
     const language = containsBurmese ? 'Burmese' : 'English';
 
@@ -501,7 +502,7 @@ export function NoteEditor({
     } finally {
         setIsAiLoading(false);
     }
-  }, [isAiLoading, content, toast]);
+  }, [isAiLoading, content, toast, suggestion]);
 
   React.useEffect(() => {
     if (!isOpen || isAiLoading || suggestion) {
@@ -561,6 +562,18 @@ export function NoteEditor({
       setChecklist(prev => prev.map(item => ({...item, text: translatedMap.get(item.id) || item.text})));
     }
   }, { success: "Note translated to Burmese!", error: "Could not translate note." }), [content, checklist, runAiAction]);
+
+  const handleGrammarCheck = React.useCallback(() => runAiAction(async () => {
+    if (!content) throw new Error("Please write some content to check.");
+
+    const containsBurmese = /[\u1000-\u109F]/.test(content);
+    const language = containsBurmese ? 'Burmese' : 'English';
+
+    const result = await checkGrammarAndSpelling({ text: content, language });
+    if (result.correctedText) {
+        setContent(result.correctedText);
+    }
+  }, { success: "Grammar & Spelling Checked!", error: "Could not check grammar." }), [content, runAiAction]);
 
   const handleTranscriptionComplete = React.useCallback((text: string) => {
     setContent(prev => [prev, text].filter(Boolean).join('\n\n'));
@@ -873,15 +886,18 @@ export function NoteEditor({
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
-                  <Button variant="outline" disabled={!note} onClick={() => setIsHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>History</Button>
+                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGrammarCheck}><SpellCheck className="mr-2 h-4 w-4" />Proofread</Button>
+                  <Button variant="outline" disabled={isAiLoading || (!content && checklist.length === 0)} onClick={handleTranslate}><Languages className="mr-2 h-4 w-4"/>Translate</Button>
+                  
                   <Button variant="outline" onClick={() => setIsHandwritingOpen(true)}><PenLine className="mr-2 h-4 w-4"/>Write</Button>
                   <Button variant="outline" onClick={() => setIsSketcherOpen(true)}><Palette className="mr-2 h-4 w-4"/>Sketch</Button>
                   <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
+                  <Button variant="outline" disabled={!note} onClick={() => setIsHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>History</Button>
+                  
                   <Button variant="outline" onClick={() => setIsRecorderOpen(true)}><Mic className="mr-2 h-4 w-4"/>Record Audio</Button>
                   <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>
-                  <Button variant="outline" onClick={() => setIsTranscriberOpen(true)}><BookText className="mr-2 h-4 w-4" />Transcribe Voice</Button>
-                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateAudio}><Volume2 className="mr-2 h-4 w-4"/>Listen (BU)</Button>
-                  <Button variant="outline" disabled={isAiLoading || (!content && checklist.length === 0)} onClick={handleTranslate}><Languages className="mr-2 h-4 w-4"/>Translate to Burmese</Button>
+                  <Button variant="outline" onClick={() => setIsTranscriberOpen(true)}><BookText className="mr-2 h-4 w-4" />Transcribe</Button>
+                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateAudio}><Volume2 className="mr-2 h-4 w-4"/>Listen (Burmese)</Button>
               </div>
             </div>
           </ScrollArea>
