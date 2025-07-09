@@ -146,6 +146,7 @@ export function NoteEditor({
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
   const autoChecklistRunning = React.useRef(false);
+  const lastCorrectedText = React.useRef<string | null>(null);
   const bgTextareaRef = React.useRef<HTMLTextAreaElement>(null);
   const fgTextareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -528,7 +529,7 @@ export function NoteEditor({
 
     const handler = setTimeout(async () => {
         const currentContent = content; // Capture content at the time of timeout creation
-        if (!currentContent.trim()) {
+        if (!currentContent.trim() || currentContent === lastCorrectedText.current) {
             return;
         }
 
@@ -542,6 +543,7 @@ export function NoteEditor({
             // Only update if the user hasn't typed anything new
             if (content === currentContent && result.correctedText && result.correctedText !== currentContent) {
                 setContent(result.correctedText);
+                lastCorrectedText.current = result.correctedText;
                 toast({
                     title: "Auto-corrected",
                     description: "Grammar and spelling mistakes have been automatically fixed.",
@@ -554,7 +556,7 @@ export function NoteEditor({
         } finally {
             setIsAiLoading(false);
         }
-    }, 2500); // 2.5-second debounce after user stops typing
+    }, 1500); // 1.5-second debounce after user stops typing
 
     return () => {
         clearTimeout(handler);
