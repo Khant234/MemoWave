@@ -354,7 +354,7 @@ export function NoteEditor({
     return () => clearTimeout(handler);
   }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems]);
 
-  // Combined background AI effect for grammar check and predictive completion.
+  // Background AI effect for predictive completion.
   React.useEffect(() => {
     if (!isOpen || isActionLoading || isAutoAiRunning || suggestion) {
         return;
@@ -362,7 +362,7 @@ export function NoteEditor({
 
     const handler = setTimeout(async () => {
         const currentContent = content;
-        if (!currentContent.trim() || currentContent === lastCorrectedText.current) {
+        if (!currentContent.trim()) {
             return;
         }
 
@@ -371,36 +371,15 @@ export function NoteEditor({
         const language = containsBurmese ? 'Burmese' : 'English';
 
         try {
-            // Step 1: Grammar and Spelling Check
-            const grammarResult = await checkGrammarAndSpelling({ text: currentContent, language });
+            const completionResult = await completeText({ currentText: currentContent, language });
             
-            if (content !== currentContent) { // User typed while grammar check was running
+            if (content !== currentContent) { // User typed while AI was working
                 setIsAutoAiRunning(false);
                 return;
             }
 
-            if (grammarResult.correctedText && grammarResult.correctedText !== currentContent) {
-                // Correction found, apply it and STOP for this cycle.
-                // The state update will trigger a new effect run for suggestions.
-                setContent(grammarResult.correctedText);
-                lastCorrectedText.current = grammarResult.correctedText;
-                toast({
-                    title: "Auto-corrected",
-                    description: "Grammar and spelling mistakes have been automatically fixed.",
-                    duration: 3000,
-                });
-            } else {
-                // Step 2: Predictive Completion (only runs if no grammar errors were found/fixed)
-                const completionResult = await completeText({ currentText: currentContent, language });
-                
-                if (content !== currentContent) {
-                    setIsAutoAiRunning(false);
-                    return;
-                }
-
-                if (completionResult.completion) {
-                    setSuggestion(completionResult.completion);
-                }
+            if (completionResult.completion) {
+                setSuggestion(completionResult.completion);
             }
         } catch (error: any) {
              console.error("Background AI task failed:", error);
@@ -410,7 +389,7 @@ export function NoteEditor({
     }, 1200); // 1.2-second debounce
 
     return () => clearTimeout(handler);
-  }, [content, isOpen, isActionLoading, isAutoAiRunning, suggestion, toast]);
+  }, [content, isOpen, isActionLoading, isAutoAiRunning, suggestion]);
 
 
   React.useEffect(() => {
@@ -545,6 +524,23 @@ export function NoteEditor({
     const result = await summarizeNote({ noteContent: content });
     if (result.summary) setContent(prev => `${prev}\n\n**Summary:**\n${result.summary}`);
   }, { success: "Note Summarized!", error: "Could not summarize note." }), [content, runAiAction]);
+
+  const handleGrammarCheck = React.useCallback(() => runAiAction(async () => {
+    if(!content) throw new Error("Please write some content to check.");
+    const containsBurmese = /[\u1000-\u109F]/.test(content);
+    const language = containsBurmese ? 'Burmese' : 'English';
+    const result = await checkGrammarAndSpelling({ text: content, language });
+
+    if (result.correctedText && result.correctedText !== content) {
+        setContent(result.correctedText);
+        toast({ title: "Corrections Applied", description: "Grammar and spelling mistakes have been fixed." });
+        return false; // Prevent default success toast
+    } else {
+        toast({ title: "No Errors Found", description: "Your text looks good!" });
+        return false; // Prevent default success toast
+    }
+  }, { success: "Grammar check complete!", error: "Could not check grammar." }), [content, runAiAction, toast]);
+
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab' && suggestion) {
@@ -903,6 +899,7 @@ export function NoteEditor({
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
+                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGrammarCheck}><SpellCheck className="mr-2 h-4 w-4"/>Proofread</Button>
                   <Button variant="outline" disabled={isAiLoading || (!content && checklist.length === 0)} onClick={handleTranslate}><Languages className="mr-2 h-4 w-4"/>Translate</Button>
                   
                   <Button variant="outline" onClick={() => setIsHandwritingOpen(true)}><PenLine className="mr-2 h-4 w-4"/>Write</Button>
@@ -966,5 +963,3 @@ export function NoteEditor({
     </>
   );
 }
-
-    
