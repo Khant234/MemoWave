@@ -710,10 +710,13 @@ export function NoteEditor({
                                 bgTextareaRef.current.scrollLeft = fgTextareaRef.current.scrollLeft;
                             }
                         }}
-                        placeholder="Start weaving your thoughts... (AI will suggest completions as you type)"
+                        placeholder="Start writing... AI will suggest completions automatically."
                         className="col-start-1 row-start-1 resize-none whitespace-pre-wrap bg-transparent text-foreground min-h-[200px]"
                     />
                 </div>
+                 <p className="text-xs text-muted-foreground px-1">
+                    Press <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">Tab</kbd> to accept an AI suggestion.
+                </p>
               </div>
 
               <div className="space-y-2">
