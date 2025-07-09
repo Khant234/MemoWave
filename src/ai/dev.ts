@@ -1,3 +1,4 @@
+'use server';
 import { config } from 'dotenv';
 config();
 
@@ -10,3 +11,4 @@ import '@/ai/flows/translate-note.ts';
 import '@/ai/flows/generate-goal-plan.ts';
 import '@/ai/flows/extract-text-from-image.ts';
 import '@/ai/flows/generate-template.ts';
+import '@/ai/flows/complete-text.ts';

@@ -51,6 +51,7 @@ import {
   BookCopy,
   PenLine,
   Palette,
+  Wand2,
 } from "lucide-react";
 import {
   Tooltip,
@@ -69,6 +70,7 @@ import { burmeseTextToVoice } from "@/ai/flows/burmese-text-to-voice";
 import { translateNote } from "@/ai/flows/translate-note";
 import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
 import { extractTextFromImage } from "@/ai/flows/extract-text-from-image";
+import { completeText } from "@/ai/flows/complete-text";
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEGORY_TITLES } from "@/lib/constants";
@@ -119,6 +121,7 @@ export function NoteEditor({
   const [ignoredChecklistItems, setIgnoredChecklistItems] = React.useState(new Set<string>());
   const [templateToApply, setTemplateToApply] = React.useState<NoteTemplate | null>(null);
   const { templates } = useTemplates();
+  const [suggestion, setSuggestion] = React.useState<string | null>(null);
 
   const [status, setStatus] = React.useState<NoteStatus>('todo');
   const [priority, setPriority] = React.useState<NotePriority>('none');
@@ -133,6 +136,8 @@ export function NoteEditor({
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
   const autoChecklistRunning = React.useRef(false);
+  const bgTextareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const fgTextareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { toast } = useToast();
 
@@ -204,6 +209,7 @@ export function NoteEditor({
       const draft = drafts[draftId];
       
       setIgnoredChecklistItems(new Set());
+      setSuggestion(null);
 
       if (draft) {
         loadStateFromData(draft);
@@ -448,6 +454,36 @@ export function NoteEditor({
     if (result.summary) setContent(prev => `${prev}\n\n**Summary:**\n${result.summary}`);
   }, { success: "Note Summarized!", error: "Could not summarize note." }), [content, runAiAction]);
 
+  const handleRequestCompletion = React.useCallback(async () => {
+    if (isAiLoading || !content.trim()) return;
+
+    setIsAiLoading(true);
+    setSuggestion(null);
+
+    try {
+        const result = await completeText({ currentText: content });
+        if (result.completion) {
+            setSuggestion(result.completion);
+        }
+    } catch (error: any) {
+        toast({ title: "AI Completion Error", description: error.message || "Could not generate completion.", variant: "destructive" });
+    } finally {
+        setIsAiLoading(false);
+    }
+  }, [isAiLoading, content, toast]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Tab' && suggestion) {
+        e.preventDefault();
+        setContent(currentContent => currentContent + suggestion);
+        setSuggestion(null);
+    } else if ((e.ctrlKey || e.metaKey) && e.key === ' ') {
+        e.preventDefault();
+        handleRequestCompletion();
+    }
+  };
+
+
   const handleExtractText = React.useCallback(() => runAiAction(async () => {
     if(!imageUrl) throw new Error("Please attach an image first.");
     const result = await extractTextFromImage({ imageDataUri: imageUrl });
@@ -593,7 +629,35 @@ export function NoteEditor({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="content">Content</Label>
-                <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Start weaving your thoughts..." className="min-h-[200px]"/>
+                <div className="relative grid">
+                    <Textarea
+                        ref={bgTextareaRef}
+                        readOnly
+                        className="col-start-1 row-start-1 resize-none whitespace-pre-wrap text-muted-foreground [caret-color:transparent] min-h-[200px]"
+                        value={suggestion ? content + suggestion : ''}
+                        tabIndex={-1}
+                    />
+                    <Textarea
+                        ref={fgTextareaRef}
+                        id="content"
+                        value={content}
+                        onChange={(e) => {
+                            setContent(e.target.value);
+                            if (suggestion) {
+                                setSuggestion(null);
+                            }
+                        }}
+                        onKeyDown={handleKeyDown}
+                        onScroll={() => {
+                            if (bgTextareaRef.current && fgTextareaRef.current) {
+                                bgTextareaRef.current.scrollTop = fgTextareaRef.current.scrollTop;
+                                bgTextareaRef.current.scrollLeft = fgTextareaRef.current.scrollLeft;
+                            }
+                        }}
+                        placeholder="Start weaving your thoughts... (Ctrl+Space for AI completion)"
+                        className="col-start-1 row-start-1 resize-none whitespace-pre-wrap bg-transparent text-foreground min-h-[200px]"
+                    />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -747,7 +811,7 @@ export function NoteEditor({
                   </div>
               </div>
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <DropdownMenu>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -766,6 +830,7 @@ export function NoteEditor({
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
+                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleRequestCompletion}><Wand2 className="mr-2 h-4 w-4"/>Complete</Button>
                   <Button variant="outline" disabled={!note} onClick={() => setIsHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>History</Button>
                   <Button variant="outline" onClick={() => setIsHandwritingOpen(true)}><PenLine className="mr-2 h-4 w-4"/>Write</Button>
                   <Button variant="outline" onClick={() => setIsSketcherOpen(true)}><Palette className="mr-2 h-4 w-4"/>Sketch</Button>
