@@ -17,10 +17,11 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { type Note } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Edit, CheckSquare, Square, Music, Download, Clock } from "lucide-react";
+import { Edit, CheckSquare, Square, Music, Download, Clock, FileDown, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { ChecklistCompleteMessage } from "./checklist-complete";
 import { useClickSound } from "@/hooks/use-click-sound";
+import { jsPDF } from "jspdf";
 
 type NoteViewerProps = {
   isOpen: boolean;
@@ -71,6 +72,7 @@ const LinkifiedText = ({ text }: { text: string }) => {
 
 export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemToggle }: NoteViewerProps) {
   const [formattedUpdateDate, setFormattedUpdateDate] = React.useState('');
+  const [isExporting, setIsExporting] = React.useState(false);
   const playClickSound = useClickSound();
   
   const audioFileExtension = React.useMemo(() => {
@@ -93,6 +95,78 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
   }, [note]);
 
   if (!note) return null;
+
+  const handleExportPDF = () => {
+    if (!note) return;
+
+    setIsExporting(true);
+    
+    // Use a timeout to allow UI to update before blocking with PDF generation
+    setTimeout(() => {
+      const doc = new jsPDF();
+      let yPos = 20;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const leftMargin = 15;
+      const rightMargin = 15;
+      const usableWidth = doc.internal.pageSize.getWidth() - leftMargin - rightMargin;
+
+      const addPageIfNeeded = (spaceNeeded: number) => {
+          if (yPos + spaceNeeded > pageHeight - 20) { // 20 for bottom margin
+              doc.addPage();
+              yPos = 20;
+          }
+      }
+
+      // Title
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      const titleLines = doc.splitTextToSize(note.title || 'Untitled Note', usableWidth);
+      addPageIfNeeded(titleLines.length * 10);
+      doc.text(titleLines, leftMargin, yPos);
+      yPos += titleLines.length * 10;
+      
+      // Subtitle (date)
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(150);
+      yPos += 2;
+      addPageIfNeeded(5);
+      doc.text(`Last updated on ${formattedUpdateDate}`, leftMargin, yPos);
+      yPos += 10;
+      doc.setTextColor(0);
+
+      // Content
+      doc.setFontSize(12);
+      const contentLines = doc.splitTextToSize(note.content, usableWidth);
+      addPageIfNeeded(contentLines.length * 7);
+      doc.text(contentLines, leftMargin, yPos);
+      yPos += contentLines.length * 7;
+
+      // Checklist
+      if (note.checklist && note.checklist.length > 0) {
+        yPos += 10;
+        addPageIfNeeded(12);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Checklist", leftMargin, yPos);
+        yPos += 8;
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        note.checklist.forEach(item => {
+            const itemText = `${item.completed ? '[x]' : '[ ]'} ${item.text}`;
+            const itemLines = doc.splitTextToSize(itemText, usableWidth - 5);
+            addPageIfNeeded(itemLines.length * 7);
+            doc.text(itemLines, leftMargin + 5, yPos);
+            yPos += itemLines.length * 7 + 2;
+        });
+      }
+
+      doc.save(`${note.title.replace(/\s/g, '_') || 'note'}.pdf`);
+      setIsExporting(false);
+    }, 100);
+  };
+
 
   const handleEditClick = () => {
     playClickSound();
@@ -199,6 +273,10 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
                 {note.isArchived && <Badge variant="secondary">Archived</Badge>}
             </div>
             <div className="flex gap-2">
+                <Button variant="outline" onClick={handleExportPDF} disabled={isExporting}>
+                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4"/>}
+                    {isExporting ? 'Exporting...' : 'Export PDF'}
+                </Button>
                 <SheetClose asChild>
                     <Button variant="outline" onClick={playClickSound}>Close</Button>
                 </SheetClose>
