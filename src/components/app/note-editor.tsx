@@ -51,7 +51,6 @@ import {
   BookCopy,
   PenLine,
   Palette,
-  SpellCheck,
 } from "lucide-react";
 import {
   Tooltip,
@@ -149,7 +148,6 @@ export function NoteEditor({
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
   const autoChecklistRunning = React.useRef(false);
-  const lastCorrectedText = React.useRef<string | null>(null);
   const bgTextareaRef = React.useRef<HTMLTextAreaElement>(null);
   const fgTextareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -314,6 +312,7 @@ export function NoteEditor({
     }
   }, [isOpen, note, title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard]);
 
+  // Background AI task for auto checklist generation
   React.useEffect(() => {
     if (!isOpen) return;
 
@@ -354,42 +353,67 @@ export function NoteEditor({
     return () => clearTimeout(handler);
   }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems]);
 
-  // Background AI effect for predictive completion.
+  // Background AI for auto grammar fix and predictive text
   React.useEffect(() => {
-    if (!isOpen || isActionLoading || isAutoAiRunning || suggestion) {
-        return;
-    }
-
+    if (!isOpen) return;
+    
     const handler = setTimeout(async () => {
-        const currentContent = content;
-        if (!currentContent.trim()) {
-            return;
-        }
-
+        const textToCheck = content;
+        if (!textToCheck.trim() || isActionLoading) return;
+        
         setIsAutoAiRunning(true);
-        const containsBurmese = /[\u1000-\u109F]/.test(currentContent);
-        const language = containsBurmese ? 'Burmese' : 'English';
+        setSuggestion(null);
 
+        const containsBurmese = /[\u1000-\u109F]/.test(textToCheck);
+        const language = containsBurmese ? 'Burmese' : 'English';
+        
         try {
-            const completionResult = await completeText({ currentText: currentContent, language });
-            
-            if (content !== currentContent) { // User typed while AI was working
+            // Step 1: Check for grammar and spelling errors
+            const grammarResult = await checkGrammarAndSpelling({ text: textToCheck, language });
+
+            // If user typed while AI was working, abort.
+            if (content !== textToCheck) {
                 setIsAutoAiRunning(false);
                 return;
+            }
+
+            const correctedText = grammarResult.correctedText;
+            let textForCompletion = textToCheck;
+            let grammarCorrectionApplied = false;
+
+            if (correctedText && correctedText !== textToCheck) {
+                textForCompletion = correctedText;
+                grammarCorrectionApplied = true;
+            }
+
+            // Step 2: Get predictive text
+            const completionResult = await completeText({ currentText: textForCompletion, language });
+
+            // If user typed while AI was working, abort.
+            if (content !== textToCheck) {
+                setIsAutoAiRunning(false);
+                return;
+            }
+            
+            // Apply changes now
+            if (grammarCorrectionApplied) {
+                setContent(correctedText);
+                toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
             }
 
             if (completionResult.completion) {
                 setSuggestion(completionResult.completion);
             }
-        } catch (error: any) {
-             console.error("Background AI task failed:", error);
+
+        } catch (error) {
+            console.error("Background AI task failed:", error);
         } finally {
             setIsAutoAiRunning(false);
         }
-    }, 1200); // 1.2-second debounce
+    }, 1500); // 1.5 second debounce
 
     return () => clearTimeout(handler);
-  }, [content, isOpen, isActionLoading, isAutoAiRunning, suggestion]);
+  }, [content, isOpen, isActionLoading, toast]);
 
 
   React.useEffect(() => {
@@ -524,22 +548,6 @@ export function NoteEditor({
     const result = await summarizeNote({ noteContent: content });
     if (result.summary) setContent(prev => `${prev}\n\n**Summary:**\n${result.summary}`);
   }, { success: "Note Summarized!", error: "Could not summarize note." }), [content, runAiAction]);
-
-  const handleGrammarCheck = React.useCallback(() => runAiAction(async () => {
-    if(!content) throw new Error("Please write some content to check.");
-    const containsBurmese = /[\u1000-\u109F]/.test(content);
-    const language = containsBurmese ? 'Burmese' : 'English';
-    const result = await checkGrammarAndSpelling({ text: content, language });
-
-    if (result.correctedText && result.correctedText !== content) {
-        setContent(result.correctedText);
-        toast({ title: "Corrections Applied", description: "Grammar and spelling mistakes have been fixed." });
-        return false; // Prevent default success toast
-    } else {
-        toast({ title: "No Errors Found", description: "Your text looks good!" });
-        return false; // Prevent default success toast
-    }
-  }, { success: "Grammar check complete!", error: "Could not check grammar." }), [content, runAiAction, toast]);
 
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -899,7 +907,6 @@ export function NoteEditor({
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
-                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGrammarCheck}><SpellCheck className="mr-2 h-4 w-4"/>Proofread</Button>
                   <Button variant="outline" disabled={isAiLoading || (!content && checklist.length === 0)} onClick={handleTranslate}><Languages className="mr-2 h-4 w-4"/>Translate</Button>
                   
                   <Button variant="outline" onClick={() => setIsHandwritingOpen(true)}><PenLine className="mr-2 h-4 w-4"/>Write</Button>
