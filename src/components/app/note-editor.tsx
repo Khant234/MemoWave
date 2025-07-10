@@ -53,6 +53,10 @@ import {
   Palette,
   Lock,
   ScanLine,
+  Bold,
+  Italic,
+  Strikethrough,
+  Code,
 } from "lucide-react";
 import {
   Tooltip,
@@ -79,6 +83,7 @@ import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEG
 import { Switch } from "@/components/ui/switch";
 import { useTemplates } from "@/contexts/templates-context";
 import { hashText } from "@/lib/crypto";
+import { Separator } from "../ui/separator";
 
 // Lazy load dialogs
 const AudioTranscriber = React.lazy(() => import('./audio-transcriber').then(module => ({ default: module.AudioTranscriber })));
@@ -399,9 +404,10 @@ export function NoteEditor({
         }
   
         let correctedText = grammarResult.correctedText;
-  
+        let wasCorrected = false;
         if (correctedText && correctedText !== textToCheck) {
           setContent(correctedText);
+          wasCorrected = true;
           toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
         } else {
           // If no corrections, use the original text for completion
@@ -412,7 +418,6 @@ export function NoteEditor({
         const completionResult = await completeText({ currentText: correctedText, language });
         
         // If user typed while AI was working, abort.
-        // This needs to check against the potentially corrected text
         if (content !== correctedText) {
           setIsAutoAiRunning(false);
           return;
@@ -747,6 +752,33 @@ export function NoteEditor({
     setPasswordInput({current: "", new: "", confirm: ""});
   };
 
+  const applyMarkdown = (syntax: 'bold' | 'italic' | 'strikethrough' | 'code') => {
+    const textarea = fgTextareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.substring(start, end);
+
+    const markers = {
+        bold: '**',
+        italic: '*',
+        strikethrough: '~~',
+        code: '`'
+    };
+    const marker = markers[syntax];
+    const newText = `${content.substring(0, start)}${marker}${selectedText}${marker}${content.substring(end)}`;
+    
+    setContent(newText);
+
+    // Focus and set cursor position after update
+    setTimeout(() => {
+        textarea.focus();
+        textarea.selectionStart = start + marker.length;
+        textarea.selectionEnd = end + marker.length;
+    }, 0);
+  };
+
 
   return (
     <>
@@ -777,34 +809,42 @@ export function NoteEditor({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="content">Content</Label>
-                <div className="relative grid">
-                    <Textarea
-                        ref={bgTextareaRef}
-                        readOnly
-                        className="col-start-1 row-start-1 resize-none whitespace-pre-wrap text-muted-foreground [caret-color:transparent] min-h-[200px]"
-                        value={suggestion ? content + suggestion : content}
-                        tabIndex={-1}
-                    />
-                    <Textarea
-                        ref={fgTextareaRef}
-                        id="content"
-                        value={content}
-                        onChange={(e) => {
-                            setContent(e.target.value);
-                            if (suggestion) {
-                                setSuggestion(null);
-                            }
-                        }}
-                        onKeyDown={handleKeyDown}
-                        onScroll={() => {
-                            if (bgTextareaRef.current && fgTextareaRef.current) {
-                                bgTextareaRef.current.scrollTop = fgTextareaRef.current.scrollTop;
-                                bgTextareaRef.current.scrollLeft = fgTextareaRef.current.scrollLeft;
-                            }
-                        }}
-                        placeholder="Start writing... AI will suggest completions automatically."
-                        className="col-start-1 row-start-1 resize-none whitespace-pre-wrap bg-transparent text-foreground min-h-[200px]"
-                    />
+                <div className="rounded-md border border-input focus-within:ring-2 focus-within:ring-ring">
+                    <div className="p-2 flex items-center gap-1 border-b">
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyMarkdown('bold')}><Bold className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Bold</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyMarkdown('italic')}><Italic className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Italic</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyMarkdown('strikethrough')}><Strikethrough className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Strikethrough</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyMarkdown('code')}><Code className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Code</p></TooltipContent></Tooltip>
+                    </div>
+                    <div className="relative grid">
+                        <Textarea
+                            ref={bgTextareaRef}
+                            readOnly
+                            className="col-start-1 row-start-1 resize-none whitespace-pre-wrap text-muted-foreground [caret-color:transparent] min-h-[200px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            value={suggestion ? content + suggestion : content}
+                            tabIndex={-1}
+                        />
+                        <Textarea
+                            ref={fgTextareaRef}
+                            id="content"
+                            value={content}
+                            onChange={(e) => {
+                                setContent(e.target.value);
+                                if (suggestion) {
+                                    setSuggestion(null);
+                                }
+                            }}
+                            onKeyDown={handleKeyDown}
+                            onScroll={() => {
+                                if (bgTextareaRef.current && fgTextareaRef.current) {
+                                    bgTextareaRef.current.scrollTop = fgTextareaRef.current.scrollTop;
+                                    bgTextareaRef.current.scrollLeft = fgTextareaRef.current.scrollLeft;
+                                }
+                            }}
+                            placeholder="Start writing... AI will suggest completions automatically."
+                            className="col-start-1 row-start-1 resize-none whitespace-pre-wrap bg-transparent text-foreground min-h-[200px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                        />
+                    </div>
                 </div>
                 <div className="flex items-center justify-between">
                     <p className="text-xs text-muted-foreground px-1">

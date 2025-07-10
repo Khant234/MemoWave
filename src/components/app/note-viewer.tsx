@@ -4,6 +4,8 @@
 
 import * as React from "react";
 import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   Sheet,
   SheetContent,
@@ -42,41 +44,49 @@ const formatTime = (time24: string | null | undefined): string => {
     return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
 };
 
-// Helper component to render text with clickable links and LaTeX
+// Helper component to render text with clickable links, LaTeX, and Markdown
 const FormattedContent = ({ text }: { text: string }) => {
-  // Regex to find URLs. \S+ matches non-whitespace characters.
-  const urlRegex = /(https?:\/\/\S+)/g;
-  const parts = text.split(urlRegex);
-
   return (
-    <>
-      {parts.map((part, index) => {
-        if (part.match(urlRegex)) {
-          return (
-            <a
-              key={index}
-              href={part}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline decoration-primary/50 underline-offset-4 transition-colors hover:text-primary/80 hover:decoration-primary/80"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {part}
-            </a>
-          );
-        }
-        return (
-          <Latex key={index} delimiters={[
-              {left: "$$", right: "$$", display: true},
-              {left: "$", right: "$", display: false},
-              {left: "\\(", right: "\\)", display: false},
-              {left: "\\[", right: "\\]", display: true}
-          ]}>
-              {part}
-          </Latex>
-        );
-      })}
-    </>
+    <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+            a: ({node, ...props}) => <a {...props} className="text-primary underline decoration-primary/50 underline-offset-4 transition-colors hover:text-primary/80 hover:decoration-primary/80" target="_blank" rel="noopener noreferrer" />,
+            p: ({node, ...props}) => <p {...props} className="mb-4 last:mb-0" />,
+            h1: ({node, ...props}) => <h1 {...props} className="text-2xl font-bold mb-4 mt-6" />,
+            h2: ({node, ...props}) => <h2 {...props} className="text-xl font-bold mb-3 mt-5" />,
+            h3: ({node, ...props}) => <h3 {...props} className="text-lg font-bold mb-3 mt-4" />,
+            ul: ({node, ...props}) => <ul {...props} className="list-disc pl-6 mb-4 space-y-2" />,
+            ol: ({node, ...props}) => <ol {...props} className="list-decimal pl-6 mb-4 space-y-2" />,
+            code: ({node, inline, ...props}) => {
+                if (inline) {
+                    return <code {...props} className="bg-muted text-muted-foreground px-1 py-0.5 rounded-sm font-mono text-sm" />;
+                }
+                return <code {...props} className="block bg-muted text-muted-foreground p-3 rounded-md font-mono text-sm" />;
+            },
+            blockquote: ({node, ...props}) => <blockquote {...props} className="border-l-4 border-muted-foreground/20 pl-4 italic text-muted-foreground" />,
+            table: ({node, ...props}) => <table {...props} className="w-full my-4 border-collapse border border-border" />,
+            th: ({node, ...props}) => <th {...props} className="border border-border px-4 py-2 text-left font-semibold" />,
+            td: ({node, ...props}) => <td {...props} className="border border-border px-4 py-2" />,
+            hr: ({node, ...props}) => <hr {...props} className="my-6 border-border" />,
+            // Custom LaTeX handling
+            text: ({node, ...props}) => {
+                const textContent = node.value;
+                const parts = textContent.split(/(\$[^\$]+\$|\$\$[^\$]+\$\$)/g);
+                return (
+                    <>
+                        {parts.map((part, index) => {
+                            if (part.startsWith('$')) {
+                                return <Latex key={index}>{part}</Latex>;
+                            }
+                            return <React.Fragment key={index}>{part}</React.Fragment>;
+                        })}
+                    </>
+                );
+            }
+        }}
+    >
+      {text}
+    </ReactMarkdown>
   );
 };
 
@@ -229,7 +239,7 @@ export function NoteViewer({ isOpen, setIsOpen, note, onEdit, onChecklistItemTog
               </div>
             )}
             
-            <div className="whitespace-pre-wrap text-base leading-relaxed">
+            <div className="prose dark:prose-invert prose-sm max-w-none">
               <FormattedContent text={note.content} />
             </div>
 
