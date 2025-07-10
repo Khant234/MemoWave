@@ -33,6 +33,8 @@ const prompt = ai.definePrompt({
 Do not change the meaning of the text.
 If there are no errors, return the original text.
 
+**IMPORTANT: Do not change any markdown formatting syntax. Preserve symbols like *, **, _, \` and # exactly as they are.**
+
 **Language: {{#if language}}{{language}}{{else}}English{{/if}}**
 
 Text to check:
