@@ -57,6 +57,8 @@ import {
   Italic,
   Strikethrough,
   Code,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import {
   Tooltip,
@@ -84,6 +86,9 @@ import { Switch } from "@/components/ui/switch";
 import { useTemplates } from "@/contexts/templates-context";
 import { hashText } from "@/lib/crypto";
 import { Separator } from "../ui/separator";
+import { useEditorHistory, type EditorState } from "@/hooks/use-editor-history";
+import { useHotkeys } from "react-hotkeys-hook";
+
 
 // Lazy load dialogs
 const AudioTranscriber = React.lazy(() => import('./audio-transcriber').then(module => ({ default: module.AudioTranscriber })));
@@ -102,8 +107,6 @@ type NoteEditorProps = {
   isSaving?: boolean;
 };
 
-type NoteDraft = Partial<Omit<Note, 'id' | 'isPinned' | 'isArchived' | 'isTrashed' | 'createdAt' | 'updatedAt'>>;
-
 const formatTime = (time24: string | null | undefined): string => {
     if (!time24) return '';
     const [h, m] = time24.split(':').map(Number);
@@ -113,6 +116,24 @@ const formatTime = (time24: string | null | undefined): string => {
     return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
 };
 
+const initialEditorState: EditorState = {
+    title: '',
+    content: '',
+    color: NOTE_COLORS[0],
+    checklist: [],
+    imageUrl: undefined,
+    audioUrl: null,
+    status: 'todo',
+    priority: 'none',
+    category: 'uncategorized',
+    dueDate: null,
+    startTime: null,
+    endTime: null,
+    showOnBoard: false,
+    isPasswordProtected: false,
+    password: undefined,
+};
+
 export function NoteEditor({
   isOpen,
   setIsOpen,
@@ -120,10 +141,39 @@ export function NoteEditor({
   onSave,
   isSaving = false,
 }: NoteEditorProps) {
-  const [title, setTitle] = React.useState("");
-  const [content, setContent] = React.useState("");
-  const [color, setColor] = React.useState(NOTE_COLORS[0]);
-  const [checklist, setChecklist] = React.useState<{ id: string; text: string; completed: boolean }[]>([]);
+  const { 
+    state: editorState, 
+    setState: setEditorState,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    resetHistory,
+    isDirty
+  } = useEditorHistory(initialEditorState);
+
+  const {
+      title, content, color, checklist, imageUrl, audioUrl: generatedAudio,
+      status, priority, category, dueDate, startTime, endTime, showOnBoard,
+      isPasswordProtected, password
+  } = editorState;
+
+  const setTitle = (newTitle: string) => setEditorState({ ...editorState, title: newTitle });
+  const setContent = (newContent: string) => setEditorState({ ...editorState, content: newContent });
+  const setColor = (newColor: string) => setEditorState({ ...editorState, color: newColor });
+  const setChecklist = (newChecklist: EditorState['checklist']) => setEditorState({ ...editorState, checklist: newChecklist });
+  const setImageUrl = (newImageUrl: string | undefined) => setEditorState({ ...editorState, imageUrl: newImageUrl });
+  const setGeneratedAudio = (newAudioUrl: string | null) => setEditorState({ ...editorState, audioUrl: newAudioUrl });
+  const setStatus = (newStatus: NoteStatus) => setEditorState({ ...editorState, status: newStatus });
+  const setPriority = (newPriority: NotePriority) => setEditorState({ ...editorState, priority: newPriority });
+  const setCategory = (newCategory: NoteCategory) => setEditorState({ ...editorState, category: newCategory });
+  const setDueDate = (newDueDate: Date | null | undefined) => setEditorState({ ...editorState, dueDate: newDueDate });
+  const setStartTime = (newStartTime: string | null) => setEditorState({ ...editorState, startTime: newStartTime });
+  const setEndTime = (newEndTime: string | null) => setEditorState({ ...editorState, endTime: newEndTime });
+  const setShowOnBoard = (newShowOnBoard: boolean) => setEditorState({ ...editorState, showOnBoard: newShowOnBoard });
+  const setIsPasswordProtected = (newIsPasswordProtected: boolean) => setEditorState({ ...editorState, isPasswordProtected: newIsPasswordProtected });
+  const setPassword = (newPassword: string | undefined) => setEditorState({ ...editorState, password: newPassword });
+
   const [newChecklistItem, setNewChecklistItem] = React.useState("");
   const [editingChecklistItemId, setEditingChecklistItemId] = React.useState<string | null>(null);
   
@@ -136,28 +186,16 @@ export function NoteEditor({
   const [isHandwritingOpen, setIsHandwritingOpen] = React.useState(false);
   const [isSketcherOpen, setIsSketcherOpen] = React.useState(false);
   const [isScannerOpen, setIsScannerOpen] = React.useState(false);
-  const [imageUrl, setImageUrl] = React.useState<string | undefined>();
-  const [generatedAudio, setGeneratedAudio] = React.useState<string | null>(null);
-  const [isDirty, setIsDirty] = React.useState(false);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
   const [ignoredChecklistItems, setIgnoredChecklistItems] = React.useState(new Set<string>());
   const [templateToApply, setTemplateToApply] = React.useState<NoteTemplate | null>(null);
   const { templates } = useTemplates();
   const [suggestion, setSuggestion] = React.useState<string | null>(null);
 
-  const [status, setStatus] = React.useState<NoteStatus>('todo');
-  const [priority, setPriority] = React.useState<NotePriority>('none');
-  const [category, setCategory] = React.useState<NoteCategory>('uncategorized');
-  const [dueDate, setDueDate] = React.useState<Date | null | undefined>(null);
-  const [startTime, setStartTime] = React.useState<string | null>(null);
-  const [endTime, setEndTime] = React.useState<string | null>(null);
-  const [showOnBoard, setShowOnBoard] = React.useState(false);
   const [isKanbanConfirmOpen, setIsKanbanConfirmOpen] = React.useState(false);
   const prevChecklistLength = React.useRef(0);
 
   // Password state
-  const [isPasswordProtected, setIsPasswordProtected] = React.useState(false);
-  const [password, setPassword] = React.useState<string | undefined>(); // This now stores the HASH
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = React.useState(false);
   const [passwordInput, setPasswordInput] = React.useState({current: "", new: "", confirm: ""});
   const [passwordError, setPasswordError] = React.useState("");
@@ -170,6 +208,9 @@ export function NoteEditor({
 
   const { toast } = useToast();
   const isAiLoading = isActionLoading || isAutoAiRunning;
+
+  useHotkeys('mod+z', undo, { enabled: isOpen && canUndo });
+  useHotkeys('mod+y, mod+shift+z', redo, { enabled: isOpen && canRedo });
 
   const timeOptions = React.useMemo(() => {
     const options: { value: string; label: string }[] = [];
@@ -208,135 +249,37 @@ export function NoteEditor({
     }
   }, [isOpen, content, suggestion, syncTextareaHeights]);
 
-  const getDrafts = React.useCallback((): Record<string, NoteDraft> => {
-    if (typeof window === 'undefined') return {};
-    const draftsRaw = localStorage.getItem('noteDrafts');
-    try {
-        return draftsRaw ? JSON.parse(draftsRaw) : {};
-    } catch {
-        return {};
-    }
-  }, []);
-
-  const saveDraft = React.useCallback((draftData: NoteDraft) => {
-    if (typeof window === 'undefined') return;
-    const draftId = note ? note.id : 'new';
-    const drafts = getDrafts();
-    drafts[draftId] = draftData;
-    localStorage.setItem('noteDrafts', JSON.stringify(drafts));
-  }, [note, getDrafts]);
-
-  const clearDraft = React.useCallback(() => {
-    if (typeof window === 'undefined') return;
-    const draftId = note ? note.id : 'new';
-    const drafts = getDrafts();
-    delete drafts[draftId];
-    localStorage.setItem('noteDrafts', JSON.stringify(drafts));
-  }, [note, getDrafts]);
-
-  const loadStateFromData = React.useCallback((data: Note | NoteDraft) => {
-    setTitle(data.title || '');
-    setContent(data.content || '');
-    setColor(data.color || NOTE_COLORS[0]);
-    setChecklist(data.checklist || []);
-    setImageUrl(data.imageUrl);
-    setGeneratedAudio('audioUrl' in data ? data.audioUrl || null : null);
-    setStatus(data.status || 'todo');
-    setPriority(data.priority || 'none');
-    setCategory(data.category || 'uncategorized');
-    setDueDate(data.dueDate ? new Date(data.dueDate) : null);
-    setStartTime(data.startTime || null);
-    setEndTime(data.endTime || null);
-    setShowOnBoard(data.showOnBoard || false);
-    setIsPasswordProtected(data.isPasswordProtected || false);
-    setPassword(data.password || undefined);
-  }, []);
 
   React.useEffect(() => {
     if (isOpen) {
-      const drafts = getDrafts();
-      const draftId = note ? note.id : 'new';
-      const draft = drafts[draftId];
-      
       setIgnoredChecklistItems(new Set());
       setSuggestion(null);
 
-      if (draft) {
-        loadStateFromData(draft);
-      } else if (note) {
-        loadStateFromData(note);
-      } else {
-        setTitle('');
-        setContent('');
-        setColor(NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)]);
-        setChecklist([]);
-        setImageUrl(undefined);
-        setGeneratedAudio(null);
-        setStatus('todo');
-        setPriority('none');
-        setCategory('uncategorized');
-        setDueDate(null);
-        setStartTime(null);
-        setEndTime(null);
-        setShowOnBoard(false);
-        setIsPasswordProtected(false);
-        setPassword(undefined);
-      }
-      
-      const currentChecklist = (draft || note)?.checklist || [];
-      prevChecklistLength.current = currentChecklist.length;
-    }
-  }, [note, isOpen, getDrafts, loadStateFromData]);
-
-  React.useEffect(() => {
-    if (isOpen) {
-      const draftNote: NoteDraft = {
-        title, content, color, checklist, imageUrl, 
-        audioUrl: generatedAudio, status, priority, category,
-        dueDate: dueDate ? dueDate.toISOString() : null, 
-        startTime, endTime, showOnBoard,
-        isPasswordProtected, password,
-      };
-      saveDraft(draftNote);
-    }
-  }, [isOpen, title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, saveDraft]);
-
-  React.useEffect(() => {
-    if (!isOpen) {
-      setIsDirty(false);
-      return;
-    }
-  
-    const currentState = {
-      title, content, color, checklist, imageUrl,
-      audioUrl: generatedAudio || undefined, status, priority,
-      category,
-      dueDate: dueDate ? dueDate.toISOString() : undefined,
-      startTime: startTime || undefined,
-      endTime: endTime || undefined,
-      showOnBoard,
-      isPasswordProtected,
-      password,
-    };
-  
-    if (note) {
-      const noteState = {
-        title: note.title, content: note.content, color: note.color,
-        checklist: note.checklist, imageUrl: note.imageUrl, audioUrl: note.audioUrl,
-        status: note.status, priority: note.priority, category: note.category,
-        dueDate: note.dueDate || undefined,
-        startTime: note.startTime || undefined,
-        endTime: note.endTime || undefined,
+      const dataToLoad = note ? {
+        title: note.title,
+        content: note.content,
+        color: note.color,
+        checklist: note.checklist,
+        imageUrl: note.imageUrl,
+        audioUrl: note.audioUrl || null,
+        status: note.status,
+        priority: note.priority,
+        category: note.category,
+        dueDate: note.dueDate ? new Date(note.dueDate) : null,
+        startTime: note.startTime || null,
+        endTime: note.endTime || null,
         showOnBoard: note.showOnBoard || false,
         isPasswordProtected: note.isPasswordProtected || false,
         password: note.password || undefined,
+      } : {
+        ...initialEditorState,
+        color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
       };
-      setIsDirty(JSON.stringify(currentState) !== JSON.stringify(noteState));
-    } else {
-      const isEmpty = !title && !content && checklist.length === 0 && !imageUrl && !generatedAudio && !showOnBoard && !dueDate && !isPasswordProtected;
-      setIsDirty(!isEmpty);
+      
+      resetHistory(dataToLoad);
+      prevChecklistLength.current = (note?.checklist || []).length;
     }
-  }, [isOpen, note, title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password]);
+  }, [note, isOpen, resetHistory]);
 
   // Background AI task for auto checklist generation
   React.useEffect(() => {
@@ -377,7 +320,7 @@ export function NoteEditor({
     }, 2000);
 
     return () => clearTimeout(handler);
-  }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems]);
+  }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems, setChecklist]);
 
   // Background AI for auto grammar fix and predictive text
   React.useEffect(() => {
@@ -435,7 +378,7 @@ export function NoteEditor({
     }, 1500); // 1.5 second debounce
   
     return () => clearTimeout(handler);
-  }, [content, isOpen, isActionLoading, toast]);
+  }, [content, isOpen, isActionLoading, toast, setContent]);
 
 
   React.useEffect(() => {
@@ -452,7 +395,7 @@ export function NoteEditor({
         setStartTime(null);
         setEndTime(null);
     }
-  }, [dueDate]);
+  }, [dueDate, setStartTime, setEndTime]);
 
   const handleSave = React.useCallback(() => {
     if (!title && !content) {
@@ -465,7 +408,8 @@ export function NoteEditor({
     }
 
     const newNote: Note = {
-      id: note?.id || new Date().toISOString(), title, content, color,
+      id: note?.id || new Date().toISOString(), 
+      title, content, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
@@ -475,20 +419,35 @@ export function NoteEditor({
       endTime: dueDate ? endTime : null,
       showOnBoard, order: note?.order || Date.now(),
       isPasswordProtected, password,
+      imageUrl,
+      audioUrl: generatedAudio
     };
-    if (imageUrl) newNote.imageUrl = imageUrl;
-    if (generatedAudio) newNote.audioUrl = generatedAudio;
-
+    
     onSave(newNote);
   }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, note, onSave, toast]);
   
   const handleDiscardChanges = React.useCallback(() => {
     if (note) {
-      loadStateFromData(note);
-      clearDraft();
+      resetHistory({
+        title: note.title,
+        content: note.content,
+        color: note.color,
+        checklist: note.checklist,
+        imageUrl: note.imageUrl,
+        audioUrl: note.audioUrl || null,
+        status: note.status,
+        priority: note.priority,
+        category: note.category,
+        dueDate: note.dueDate ? new Date(note.dueDate) : null,
+        startTime: note.startTime || null,
+        endTime: note.endTime || null,
+        showOnBoard: note.showOnBoard || false,
+        isPasswordProtected: note.isPasswordProtected || false,
+        password: note.password || undefined,
+      });
       toast({ title: "Changes discarded", description: "Your changes have been discarded." });
     }
-  }, [note, loadStateFromData, clearDraft, toast]);
+  }, [note, resetHistory, toast]);
 
   const handleOpenChange = React.useCallback((open: boolean) => {
     if (!open && isDirty && !isSaving) {
@@ -500,7 +459,8 @@ export function NoteEditor({
 
   const handleSaveAsDraftAndClose = React.useCallback(() => {
     const draftNote: Note = {
-      id: note?.id || new Date().toISOString(), title, content, color,
+      id: note?.id || new Date().toISOString(), 
+      title, content, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
@@ -510,37 +470,36 @@ export function NoteEditor({
       endTime: dueDate ? endTime : null,
       showOnBoard, order: note?.order || Date.now(),
       isPasswordProtected, password,
+      imageUrl,
+      audioUrl: generatedAudio,
     };
-    if (imageUrl) draftNote.imageUrl = imageUrl;
-    if (generatedAudio) draftNote.audioUrl = generatedAudio;
     
     onSave(draftNote);
     setIsCloseConfirmOpen(false);
   }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, note, onSave]);
 
   const handleDiscardAndClose = React.useCallback(() => {
-    clearDraft();
     setIsCloseConfirmOpen(false);
     setIsOpen(false);
-  }, [clearDraft, setIsOpen]);
+  }, [setIsOpen]);
   
   const handleAddChecklistItem = React.useCallback(() => {
     if (newChecklistItem.trim()) {
       setChecklist([ ...checklist, { id: new Date().toISOString(), text: newChecklistItem.trim(), completed: false }]);
       setNewChecklistItem("");
     }
-  }, [newChecklistItem, checklist]);
+  }, [newChecklistItem, checklist, setChecklist]);
 
   const handleToggleChecklistItem = React.useCallback((id: string) => {
     setChecklist(checklist.map((item) => item.id === id ? { ...item, completed: !item.completed } : item));
-  }, [checklist]);
+  }, [checklist, setChecklist]);
 
   const handleUpdateChecklistItemText = React.useCallback((id: string, newText: string) => {
     if (newText.trim()) {
       setChecklist(checklist.map((item) => item.id === id ? { ...item, text: newText.trim() } : item));
     }
     setEditingChecklistItemId(null);
-  }, [checklist]);
+  }, [checklist, setChecklist]);
 
   const handleRemoveChecklistItem = React.useCallback((id: string) => {
     const itemToRemove = checklist.find((item) => item.id === id);
@@ -548,7 +507,7 @@ export function NoteEditor({
       setIgnoredChecklistItems(prev => new Set(prev).add(itemToRemove.text.trim().toLowerCase()));
     }
     setChecklist(checklist.filter((item) => item.id !== id));
-  }, [checklist]);
+  }, [checklist, setChecklist]);
 
   const runAiAction = React.useCallback(async (action: () => Promise<boolean | void>, messages: {success: string, error: string}) => {
     setIsActionLoading(true);
@@ -565,13 +524,13 @@ export function NoteEditor({
     if(!content) throw new Error("Please write some content to generate a title.");
     const result = await generateTitle({ noteContent: content });
     if (result.title) setTitle(result.title);
-  }, { success: "Title Generated!", error: "Could not generate title." }), [content, runAiAction]);
+  }, { success: "Title Generated!", error: "Could not generate title." }), [content, runAiAction, setTitle]);
   
   const handleSummarizeNote = React.useCallback(() => runAiAction(async () => {
     if(!content) throw new Error("Please write some content to summarize.");
     const result = await summarizeNote({ noteContent: content });
     if (result.summary) setContent(prev => `${prev}\n\n**Summary:**\n${result.summary}`);
-  }, { success: "Note Summarized!", error: "Could not summarize note." }), [content, runAiAction]);
+  }, { success: "Note Summarized!", error: "Could not summarize note." }), [content, runAiAction, setContent]);
 
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -594,13 +553,13 @@ export function NoteEditor({
       });
       return false; // prevent success toast
     }
-  }, { success: "Text Extracted!", error: "Could not extract text from the image." }), [imageUrl, content, runAiAction, toast]);
+  }, { success: "Text Extracted!", error: "Could not extract text from the image." }), [imageUrl, runAiAction, toast, setContent]);
 
   const handleGenerateAudio = React.useCallback(() => runAiAction(async () => {
     if(!content) throw new Error("Please write some content to generate audio.");
     const result = await burmeseTextToVoice(content);
     if(result.media) setGeneratedAudio(result.media);
-  }, { success: "Audio Generated!", error: "Could not generate audio." }), [content, runAiAction]);
+  }, { success: "Audio Generated!", error: "Could not generate audio." }), [content, runAiAction, setGeneratedAudio]);
 
   const handleTranslate = React.useCallback(() => runAiAction(async () => {
     if (!content && checklist.length === 0) throw new Error("Please add content or checklist items to translate.");
@@ -615,24 +574,24 @@ export function NoteEditor({
       const translatedMap = new Map(result.translatedChecklistItems.map(item => [item.id, item.translatedText]));
       setChecklist(prev => prev.map(item => ({...item, text: translatedMap.get(item.id) || item.text})));
     }
-  }, { success: "Note translated to Burmese!", error: "Could not translate note." }), [content, checklist, runAiAction]);
+  }, { success: "Note translated to Burmese!", error: "Could not translate note." }), [content, checklist, runAiAction, setContent, setChecklist]);
 
   const handleTranscriptionComplete = React.useCallback((text: string) => {
     setContent(prev => [prev, text].filter(Boolean).join('\n\n'));
-  }, []);
+  }, [setContent]);
   
   const handleHandwritingComplete = React.useCallback((text: string) => {
     setContent(prev => [prev, text].filter(Boolean).join('\n'));
-  }, []);
+  }, [setContent]);
   
   const handleTextScanned = React.useCallback((text: string) => {
     setContent(prev => `${prev}\n\n--- Scanned Text ---\n${text}`.trim());
-  }, []);
+  }, [setContent]);
 
   const handleSaveSketch = React.useCallback((dataUrl: string) => {
     setImageUrl(dataUrl);
     toast({ title: "Sketch Attached" });
-  }, [toast]);
+  }, [toast, setImageUrl]);
 
   const handleAttachImage = React.useCallback(() => imageInputRef.current?.click(), []);
   const handleImageUpload = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -645,7 +604,7 @@ export function NoteEditor({
       };
       reader.readAsDataURL(file);
     }
-  }, [toast]);
+  }, [toast, setImageUrl]);
 
   const handleAttachAudio = React.useCallback(() => audioInputRef.current?.click(), []);
   const handleAudioUpload = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -658,7 +617,7 @@ export function NoteEditor({
       };
       reader.readAsDataURL(file);
     }
-  }, [toast]);
+  }, [toast, setGeneratedAudio]);
 
   const handleSaveRecording = React.useCallback((blob: Blob) => {
     const reader = new FileReader();
@@ -667,26 +626,28 @@ export function NoteEditor({
       setGeneratedAudio(reader.result as string);
       toast({ title: "Audio Attached" });
     };
-  }, [toast]);
+  }, [toast, setGeneratedAudio]);
 
   const handleRestoreVersion = React.useCallback((version: NoteVersion) => {
     setTitle(version.title);
     setContent(version.content);
     toast({ title: "Version Restored" });
-  }, [toast]);
+  }, [toast, setTitle, setContent]);
 
   const applyTemplate = (template: NoteTemplate) => {
     const today = new Date().toLocaleDateString();
-    if (template.title) {
-        setTitle(template.title.replace(/\[Date\]/g, today));
-    }
-    setContent(template.content);
-    if (template.checklist) {
-        setChecklist(template.checklist.map(item => ({ ...item, id: new Date().toISOString() + Math.random(), completed: false })));
-    }
-    if (template.category) {
-        setCategory(template.category);
-    }
+    let newContent = template.content;
+    let newTitle = template.title || '';
+    if(newTitle) newTitle = newTitle.replace(/\[Date\]/g, today);
+    
+    setEditorState({
+        ...editorState,
+        title: newTitle,
+        content: newContent,
+        checklist: template.checklist ? template.checklist.map(item => ({ ...item, id: new Date().toISOString() + Math.random(), completed: false })) : [],
+        category: template.category || 'uncategorized'
+    });
+
     toast({
         title: "Template Applied",
         description: `The "${template.name}" template has been applied.`,
@@ -815,6 +776,9 @@ export function NoteEditor({
                         <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyMarkdown('italic')}><Italic className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Italic</p></TooltipContent></Tooltip>
                         <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyMarkdown('strikethrough')}><Strikethrough className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Strikethrough</p></TooltipContent></Tooltip>
                         <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => applyMarkdown('code')}><Code className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Code</p></TooltipContent></Tooltip>
+                        <Separator orientation="vertical" className="h-6 mx-2" />
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo}><Undo2 className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Undo (Ctrl+Z)</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo}><Redo2 className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Redo (Ctrl+Y)</p></TooltipContent></Tooltip>
                     </div>
                     <div className="relative grid">
                         <Textarea
