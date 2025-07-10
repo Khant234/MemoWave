@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import 'katex/dist/katex.min.css';
 import './globals.css';
-import 'rehype-prism-plus/dist/rehype-prism-plus.css';
-import 'prism-themes/themes/prism-okaidia.css';
 import { Inter, Sora } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';

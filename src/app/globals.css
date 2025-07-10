@@ -103,3 +103,72 @@
 .dark .token.operator, .dark .token.entity, .dark .token.url, .dark .language-css .token.string, .dark .style .token.string {
   background: none;
 }
+
+/* Fallback Okaidia-like theme for dark mode */
+.dark .prose :where(pre):not(:where([class~="not-prose"] *)) {
+  background-color: #272822 !important;
+  color: #f8f8f2 !important;
+}
+.dark .token.comment,
+.dark .token.prolog,
+.dark .token.doctype,
+.dark .token.cdata {
+  color: #8292a2;
+}
+.dark .token.punctuation {
+  color: #f8f8f2;
+}
+.dark .token.namespace {
+  opacity: .7;
+}
+.dark .token.property,
+.dark .token.tag,
+.dark .token.constant,
+.dark .token.symbol,
+.dark .token.deleted {
+  color: #f92672;
+}
+.dark .token.boolean,
+.dark .token.number {
+  color: #ae81ff;
+}
+.dark .token.selector,
+.dark .token.attr-name,
+.dark .token.string,
+.dark .token.char,
+.dark .token.builtin,
+.dark .token.inserted {
+  color: #a6e22e;
+}
+.dark .token.operator,
+.dark .token.entity,
+.dark .token.url,
+.language-css .token.string,
+.style .token.string,
+.dark .token.variable {
+  color: #f8f8f2;
+  background: none;
+}
+.dark .token.atrule,
+.dark .token.attr-value,
+.dark .token.function,
+.dark .token.class-name {
+  color: #e6db74;
+}
+.dark .token.keyword {
+  color: #66d9ef;
+}
+.dark .token.regex,
+.dark .token.important {
+  color: #fd971f;
+}
+.dark .token.important,
+.dark .token.bold {
+  font-weight: bold;
+}
+.dark .token.italic {
+  font-style: italic;
+}
+.dark .token.entity {
+  cursor: help;
+}
