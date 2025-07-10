@@ -1,9 +1,9 @@
+@import 'rehype-prism-plus/dist/rehype-prism-plus.css';
+@import 'prism-themes/themes/prism-okaidia.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import 'rehype-prism-plus/dist/rehype-prism-plus.css';
-@import 'prism-themes/themes/prism-okaidia.css';
 
 @layer base {
   :root {
