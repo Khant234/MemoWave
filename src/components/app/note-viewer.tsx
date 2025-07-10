@@ -6,6 +6,8 @@ import * as React from "react";
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypePrism from 'rehype-prism-plus';
 import {
   Sheet,
   SheetContent,
@@ -48,6 +50,7 @@ const formatTime = (time24: string | null | undefined): string => {
 const FormattedContent = ({ text }: { text: string }) => {
   return (
     <ReactMarkdown
+        rehypePlugins={[rehypeRaw, [rehypePrism, { ignoreMissing: true }]]}
         remarkPlugins={[remarkGfm]}
         components={{
             a: ({node, ...props}) => <a {...props} className="text-primary underline decoration-primary/50 underline-offset-4 transition-colors hover:text-primary/80 hover:decoration-primary/80" target="_blank" rel="noopener noreferrer" />,
@@ -57,9 +60,19 @@ const FormattedContent = ({ text }: { text: string }) => {
             h3: ({node, ...props}) => <h3 {...props} className="text-lg font-bold mb-3 mt-4" />,
             ul: ({node, ...props}) => <ul {...props} className="list-disc pl-6 mb-4 space-y-2" />,
             ol: ({node, ...props}) => <ol {...props} className="list-decimal pl-6 mb-4 space-y-2" />,
-            code: ({node, inline, ...props}) => {
+            code: ({node, inline, className, children, ...props}) => {
+                const match = /language-(\w+)/.exec(className || '')
+                if (!inline && match) {
+                  return (
+                    <div className="my-4 rounded-md overflow-hidden">
+                       <pre {...props} className={cn(className, "not-prose")}>
+                          <code className="not-prose">{children}</code>
+                       </pre>
+                    </div>
+                  )
+                }
                 if (inline) {
-                    return <code {...props} className="bg-muted text-muted-foreground px-1 py-0.5 rounded-sm font-mono text-sm" />;
+                  return <code {...props} className="bg-muted text-muted-foreground px-1 py-0.5 rounded-sm font-mono text-sm" />;
                 }
                 return <code {...props} className="block bg-muted text-muted-foreground p-3 rounded-md font-mono text-sm" />;
             },

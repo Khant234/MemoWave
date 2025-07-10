@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+@import 'rehype-prism-plus/dist/rehype-prism-plus.css';
+@import 'prism-themes/themes/prism-okaidia.css';
+
 @layer base {
   :root {
     --background: 220 20% 97%;
@@ -83,4 +86,23 @@
     border-radius: 9999px;
     background-color: hsl(var(--primary));
   }
+}
+
+/* Custom styles for code blocks to match dark/light theme */
+.prose :where(pre):not(:where([class~="not-prose"] *)) {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+.prose :where(code):not(:where([class~="not-prose"] *))::before {
+  content: "" !important;
+}
+.prose :where(code):not(:where([class~="not-prose"] *))::after {
+  content: "" !important;
+}
+
+.dark .token.operator, .dark .token.entity, .dark .token.url, .dark .language-css .token.string, .dark .style .token.string {
+  background: none;
 }
