@@ -59,6 +59,7 @@ import {
   Code,
   Undo2,
   Redo2,
+  ClipboardPaste,
 } from "lucide-react";
 import {
   Tooltip,
@@ -79,6 +80,7 @@ import { extractChecklistItems } from "@/ai/flows/extract-checklist-items";
 import { extractTextFromImage } from "@/ai/flows/extract-text-from-image";
 import { completeText } from "@/ai/flows/complete-text";
 import { checkGrammarAndSpelling } from "@/ai/flows/grammar-and-spelling-check";
+import { smartPaste } from "@/ai/flows/smart-paste";
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEGORY_TITLES } from "@/lib/constants";
@@ -575,6 +577,38 @@ export function NoteEditor({
       setChecklist(prev => prev.map(item => ({...item, text: translatedMap.get(item.id) || item.text})));
     }
   }, { success: "Note translated to Burmese!", error: "Could not translate note." }), [content, checklist, runAiAction, setContent, setChecklist]);
+  
+  const handleSmartPaste = React.useCallback(() => runAiAction(async () => {
+    try {
+        const pastedText = await navigator.clipboard.readText();
+        if (!pastedText.trim()) {
+            toast({ title: "Clipboard is empty", variant: "destructive" });
+            return false;
+        }
+
+        const result = await smartPaste({ pastedText });
+
+        const newState: EditorState = {
+            ...editorState,
+            title: result.title,
+            content: result.content,
+            checklist: result.checklist ? result.checklist.map(item => ({...item, id: new Date().toISOString() + Math.random(), completed: false})) : [],
+        };
+        setEditorState(newState);
+        toast({ title: "Smart Paste Complete!", description: "AI has organized the pasted content." });
+        return false;
+
+    } catch (error: any) {
+        if (error.name === 'NotAllowedError') {
+             toast({ title: "Clipboard Permission Denied", description: "Please allow clipboard access in your browser settings.", variant: "destructive" });
+        } else {
+            console.error("Smart paste error:", error);
+            toast({ title: "Paste Failed", description: "Could not read from clipboard.", variant: "destructive" });
+        }
+        return false;
+    }
+  }, { success: "", error: "Could not process the pasted text."}), [runAiAction, setEditorState, toast, editorState]);
+
 
   const handleTranscriptionComplete = React.useCallback((text: string) => {
     setContent(prev => [prev, text].filter(Boolean).join('\n\n'));
@@ -989,6 +1023,9 @@ export function NoteEditor({
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  <Button variant="outline" disabled={isAiLoading} onClick={handleSmartPaste}>
+                    <ClipboardPaste className="mr-2 h-4 w-4"/>Smart Paste
+                  </Button>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
                   <Button variant="outline" disabled={isAiLoading || (!content && checklist.length === 0)} onClick={handleTranslate}><Languages className="mr-2 h-4 w-4"/>Translate</Button>
                   

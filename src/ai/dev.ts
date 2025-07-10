@@ -13,3 +13,4 @@ import '@/ai/flows/extract-text-from-image.ts';
 import '@/ai/flows/generate-template.ts';
 import '@/ai/flows/complete-text.ts';
 import '@/ai/flows/grammar-and-spelling-check.ts';
+import '@/ai/flows/smart-paste.ts';
