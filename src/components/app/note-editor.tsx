@@ -359,21 +359,23 @@ export function NoteEditor({
           wasCorrected = true;
           toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
         } else {
-          // If no corrections, use the original text for completion
           correctedText = textToCheck;
         }
-  
-        // Step 2: Get predictive text
-        const completionResult = await completeText({ currentText: correctedText, language });
-        
-        // If user typed while AI was working, abort.
-        if (content !== correctedText) {
-          setIsAutoAiRunning(false);
-          return;
-        }
-  
-        if (completionResult.completion) {
-          setSuggestion(completionResult.completion);
+
+        // Only run completion if no correction happened, to avoid a double run.
+        if (!wasCorrected) {
+          // Step 2: Get predictive text
+          const completionResult = await completeText({ currentText: correctedText, language });
+          
+          // If user typed while AI was working, abort.
+          if (content !== correctedText) {
+            setIsAutoAiRunning(false);
+            return;
+          }
+    
+          if (completionResult.completion) {
+            setSuggestion(completionResult.completion);
+          }
         }
   
       } catch (error) {
