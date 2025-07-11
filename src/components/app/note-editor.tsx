@@ -85,7 +85,6 @@ import { extractTextFromImage } from "@/ai/flows/extract-text-from-image";
 import { completeText } from "@/ai/flows/complete-text";
 import { checkGrammarAndSpelling } from "@/ai/flows/grammar-and-spelling-check";
 import { smartPaste } from "@/ai/flows/smart-paste";
-import { generateNoteFromPrompt } from "@/ai/flows/generate-note-from-prompt";
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEGORY_TITLES } from "@/lib/constants";
@@ -647,19 +646,6 @@ export function NoteEditor({
     }
   }, { success: "Grammar and spelling fixed!", error: "Could not check grammar." }), [content, runAiAction, toast, setContent]);
 
-  const handleGenerateNote = React.useCallback(() => runAiAction(async () => {
-    if (!content.trim()) throw new Error("Please write a prompt in the content area first.");
-    const result = await generateNoteFromPrompt({ prompt: content });
-    if (result.title && result.content) {
-      const newState: EditorState = {
-        ...editorState,
-        title: result.title,
-        content: result.content,
-      };
-      setEditorState(newState);
-    }
-  }, { success: "Note generated from your prompt!", error: "Could not generate the note." }), [content, runAiAction, editorState, setEditorState]);
-
   const handleTranscriptionComplete = React.useCallback((text: string) => {
     setContent(prev => [prev, text].filter(Boolean).join('\n\n'));
   }, [setContent]);
@@ -1107,7 +1093,6 @@ export function NoteEditor({
                   <Button variant="outline" onClick={() => setIsTranscriberOpen(true)}><BookText className="mr-2 h-4 w-4" />Transcribe</Button>
                   <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateAudio}><Volume2 className="mr-2 h-4 w-4"/>Listen (Burmese)</Button>
                   <Button variant="outline" onClick={openPasswordDialog}><Lock className="mr-2 h-4 w-4"/>Password</Button>
-                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleGenerateNote}><FileText className="mr-2 h-4 w-4"/>Generate Note</Button>
               </div>
             </div>
           </ScrollArea>
