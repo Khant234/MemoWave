@@ -60,6 +60,8 @@ import {
   Undo2,
   Redo2,
   ClipboardPaste,
+  Wand,
+  SpellCheck,
 } from "lucide-react";
 import {
   Tooltip,
@@ -609,6 +611,28 @@ export function NoteEditor({
     }
   }, { success: "", error: "Could not process the pasted text."}), [runAiAction, setEditorState, toast, editorState]);
 
+  const handleContinueWriting = React.useCallback(() => runAiAction(async () => {
+    if (!content.trim()) throw new Error("Please write some content first.");
+    const containsBurmese = /[\u1000-\u109F]/.test(content);
+    const language = containsBurmese ? 'Burmese' : 'English';
+    const result = await completeText({ currentText: content, language });
+    if (result.completion) {
+      setContent(prev => prev + result.completion);
+    }
+  }, { success: "AI completed your text!", error: "Could not complete text."}), [content, runAiAction, setContent]);
+
+  const handleFixGrammar = React.useCallback(() => runAiAction(async () => {
+    if (!content.trim()) throw new Error("Please write some content first.");
+    const containsBurmese = /[\u1000-\u109F]/.test(content);
+    const language = containsBurmese ? 'Burmese' : 'English';
+    const result = await checkGrammarAndSpelling({ text: content, language });
+    if (result.correctedText && result.correctedText !== content) {
+      setContent(result.correctedText);
+    } else {
+      toast({ title: "No Errors Found", description: "The AI didn't find any grammar or spelling mistakes."});
+      return false;
+    }
+  }, { success: "Grammar and spelling fixed!", error: "Could not check grammar." }), [content, runAiAction, toast, setContent]);
 
   const handleTranscriptionComplete = React.useCallback((text: string) => {
     setContent(prev => [prev, text].filter(Boolean).join('\n\n'));
@@ -813,6 +837,9 @@ export function NoteEditor({
                         <Separator orientation="vertical" className="h-6 mx-2" />
                         <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo}><Undo2 className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Undo (Ctrl+Z)</p></TooltipContent></Tooltip>
                         <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo}><Redo2 className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Redo (Ctrl+Y)</p></TooltipContent></Tooltip>
+                        <div className="flex-grow" />
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={handleContinueWriting} disabled={isAiLoading || !content}><Wand className="mr-2 h-4 w-4"/>Continue Writing</Button></TooltipTrigger><TooltipContent><p>Have AI continue writing</p></TooltipContent></Tooltip>
+                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={handleFixGrammar} disabled={isAiLoading || !content}><SpellCheck className="mr-2 h-4 w-4"/>Fix Grammar</Button></TooltipTrigger><TooltipContent><p>Let AI fix spelling and grammar</p></TooltipContent></Tooltip>
                     </div>
                     <div className="relative grid">
                         <Textarea
@@ -912,7 +939,7 @@ export function NoteEditor({
                         </div>
                     </div>
                     <div>
-                        <Label>Date & Time</Label>
+                        <Label>Date &amp; Time</Label>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
                             <div className="sm:col-span-1">
                                 <DatePicker date={dueDate} setDate={(d) => setDueDate(d)} />
