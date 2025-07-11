@@ -63,6 +63,7 @@ import {
   Wand,
   SpellCheck,
   FileText,
+  BrainCircuit,
 } from "lucide-react";
 import {
   Tooltip,
@@ -185,6 +186,7 @@ export function NoteEditor({
   
   const [isActionLoading, setIsActionLoading] = React.useState(false);
   const [isAutoAiRunning, setIsAutoAiRunning] = React.useState(false);
+  const [isSmartMode, setIsSmartMode] = React.useState(true);
 
   const [isTranscriberOpen, setIsTranscriberOpen] = React.useState(false);
   const [isRecorderOpen, setIsRecorderOpen] = React.useState(false);
@@ -261,6 +263,10 @@ export function NoteEditor({
       setIgnoredChecklistItems(new Set());
       setSuggestion(null);
 
+      // Reset scroll position
+      if (bgTextareaRef.current) bgTextareaRef.current.scrollTop = 0;
+      if (fgTextareaRef.current) fgTextareaRef.current.scrollTop = 0;
+
       const dataToLoad = note ? {
         title: note.title,
         content: note.content,
@@ -289,7 +295,7 @@ export function NoteEditor({
 
   // Background AI task for auto checklist generation
   React.useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !isSmartMode) return;
 
     const handler = setTimeout(async () => {
       if (!content.trim() || autoChecklistRunning.current || isAiLoading) return;
@@ -326,11 +332,14 @@ export function NoteEditor({
     }, 2000);
 
     return () => clearTimeout(handler);
-  }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems, setChecklist]);
+  }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems, setChecklist, isSmartMode]);
 
   // Background AI for auto grammar fix and predictive text
   React.useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !isSmartMode) {
+      if(suggestion) setSuggestion(null); // Clear suggestion if smart mode is toggled off
+      return;
+    }
   
     const handler = setTimeout(async () => {
       const textToCheck = content;
@@ -386,7 +395,7 @@ export function NoteEditor({
     }, 1500); // 1.5 second debounce
   
     return () => clearTimeout(handler);
-  }, [content, isOpen, isActionLoading, toast, setContent]);
+  }, [content, isOpen, isActionLoading, toast, setContent, isSmartMode, suggestion]);
 
 
   React.useEffect(() => {
@@ -855,8 +864,22 @@ export function NoteEditor({
                         <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo}><Undo2 className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Undo (Ctrl+Z)</p></TooltipContent></Tooltip>
                         <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo}><Redo2 className="h-4 w-4"/></Button></TooltipTrigger><TooltipContent><p>Redo (Ctrl+Y)</p></TooltipContent></Tooltip>
                         <div className="flex-grow" />
-                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={handleContinueWriting} disabled={isAiLoading || !content}><Wand className="mr-2 h-4 w-4"/>Continue Writing</Button></TooltipTrigger><TooltipContent><p>Have AI continue writing</p></TooltipContent></Tooltip>
-                        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="sm" onClick={handleFixGrammar} disabled={isAiLoading || !content}><SpellCheck className="mr-2 h-4 w-4"/>Fix Grammar</Button></TooltipTrigger><TooltipContent><p>Let AI fix spelling and grammar</p></TooltipContent></Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsSmartMode(!isSmartMode)}
+                                    className={cn(isSmartMode && "text-primary bg-primary/10")}
+                                >
+                                    <BrainCircuit className="mr-2 h-4 w-4" />
+                                    Smart Mode
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Toggle AI auto-correction and prediction</p>
+                            </TooltipContent>
+                        </Tooltip>
                     </div>
                     <div className="relative grid">
                         <Textarea
