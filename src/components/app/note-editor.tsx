@@ -354,36 +354,32 @@ export function NoteEditor({
         // Step 1: Check for grammar and spelling errors
         const grammarResult = await checkGrammarAndSpelling({ text: textToCheck, language });
   
-        // If user typed while AI was working, abort.
+        // If user typed while AI was working, abort to prevent overriding newer state.
         if (content !== textToCheck) {
           setIsAutoAiRunning(false);
           return;
         }
   
-        let correctedText = grammarResult.correctedText;
-        let wasCorrected = false;
-        if (correctedText && correctedText !== textToCheck) {
-          setContent(correctedText);
-          wasCorrected = true;
+        // If there was a correction, apply it and stop for this cycle.
+        if (grammarResult.correctedText && grammarResult.correctedText !== textToCheck) {
+          setContent(grammarResult.correctedText);
           toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
-        } else {
-          correctedText = textToCheck;
+          // Important: Stop here to prevent a loop.
+          setIsAutoAiRunning(false);
+          return; 
         }
-
-        // Only run completion if no correction happened, to avoid a double run.
-        if (!wasCorrected) {
-          // Step 2: Get predictive text
-          const completionResult = await completeText({ currentText: correctedText, language });
-          
-          // If user typed while AI was working, abort.
-          if (content !== correctedText) {
-            setIsAutoAiRunning(false);
-            return;
-          }
-    
-          if (completionResult.completion) {
-            setSuggestion(completionResult.completion);
-          }
+        
+        // Step 2: If no correction was made, get predictive text
+        const completionResult = await completeText({ currentText: textToCheck, language });
+        
+        // Check again if user typed while AI was working.
+        if (content !== textToCheck) {
+          setIsAutoAiRunning(false);
+          return;
+        }
+  
+        if (completionResult.completion) {
+          setSuggestion(completionResult.completion);
         }
   
       } catch (error) {
