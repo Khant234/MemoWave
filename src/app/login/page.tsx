@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, type AuthError } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,13 @@ export default function LoginPage() {
         description: "Welcome back!",
       });
     } catch (error) {
+      const authError = error as AuthError;
+      // Don't show an error toast if the user simply closes the popup.
+      if (authError.code === 'auth/popup-closed-by-user') {
+        console.log("Sign-in popup closed by user.");
+        return;
+      }
+
       console.error("Error signing in with Google: ", error);
       toast({
         title: "Sign In Failed",
