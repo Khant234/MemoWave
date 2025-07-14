@@ -17,6 +17,7 @@ const initializeFirebase = () => {
   const areAllConfigValuesDefined = Object.values(firebaseConfig).every(value => value);
   if (!areAllConfigValuesDefined) {
     console.error("Firebase config is missing one or more values. Check your .env file.");
+    // Return null or throw an error, depending on how you want to handle missing config
     return null;
   }
   
