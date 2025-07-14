@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/auth-context';
 import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getAuthInstance } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -32,6 +32,8 @@ export function UserNav() {
   }
 
   const handleSignOut = async () => {
+    const auth = getAuthInstance();
+    if (!auth) return;
     try {
       await signOut(auth);
       router.push('/login');

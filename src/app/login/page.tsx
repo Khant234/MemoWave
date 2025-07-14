@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { signInWithPopup, GoogleAuthProvider, type AuthError } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { getAuthInstance } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -26,6 +26,12 @@ export default function LoginPage() {
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
+    const auth = getAuthInstance();
+    if (!auth) {
+        toast({ title: "Authentication Error", description: "Could not initialize Firebase Auth.", variant: "destructive" });
+        setIsSigningIn(false);
+        return;
+    }
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -39,15 +45,14 @@ export default function LoginPage() {
       // Don't show an error toast if the user simply closes the popup.
       if (authError.code === 'auth/popup-closed-by-user') {
         console.log("Sign-in popup closed by user.");
-        return;
+      } else {
+        console.error("Error signing in with Google: ", error);
+        toast({
+            title: "Sign In Failed",
+            description: "Could not sign you in with Google. Please try again.",
+            variant: "destructive",
+        });
       }
-
-      console.error("Error signing in with Google: ", error);
-      toast({
-        title: "Sign In Failed",
-        description: "Could not sign you in with Google. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setIsSigningIn(false);
     }

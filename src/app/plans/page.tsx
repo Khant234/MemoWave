@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { collection, writeBatch, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDb } from "@/lib/firebase";
 import { PlanCard } from "./plan-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -60,7 +60,8 @@ export default function PlansPage() {
   const [viewingNote, setViewingNote] = React.useState<Note | null>(null);
   const [isPlannerOpen, setIsPlannerOpen] = React.useState(false);
 
-  const notesCollectionRef = React.useMemo(() => collection(db, "notes"), []);
+  const db = getDb();
+  const notesCollectionRef = React.useMemo(() => db ? collection(db, "notes") : null, [db]);
   
   const allPlans = React.useMemo(() => {
     const groupedByPlanId: Record<string, Note[]> = {};
@@ -106,7 +107,7 @@ export default function PlansPage() {
       toast({ title: "Not Authenticated", description: "You must be logged in to create a plan.", variant: "destructive" });
       return;
     }
-    if (planNotes.length === 0) return;
+    if (planNotes.length === 0 || !db || !notesCollectionRef) return;
 
     const batch = writeBatch(db);
     const planId = new Date().toISOString() + Math.random();
@@ -152,11 +153,11 @@ export default function PlansPage() {
         variant: "destructive",
       });
     }
-  }, [notesCollectionRef, toast, user]);
+  }, [notesCollectionRef, toast, user, db]);
 
 
   const handleBatchAction = async () => {
-    if (!isConfirmingAction) return;
+    if (!isConfirmingAction || !db) return;
 
     const { action, planId } = isConfirmingAction;
     const plan = allPlans.find(p => p.id === planId);

@@ -12,7 +12,7 @@ import {
   doc,
   writeBatch,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDb } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppHeader } from "@/components/app/app-header";
 import { NoteList } from "@/components/app/note-list";
@@ -84,8 +84,8 @@ export default function Home() {
   const router = useRouter();
   const { recordTaskCompletion } = useGamification();
 
-
-  const notesCollectionRef = React.useMemo(() => collection(db, "notes"), []);
+  const db = getDb();
+  const notesCollectionRef = React.useMemo(() => db ? collection(db, "notes") : null, [db]);
 
   React.useEffect(() => {
     const filter = searchParams.get('filter');
@@ -155,7 +155,7 @@ export default function Home() {
   }, []);
 
   const handleTranscriptionToNewNote = React.useCallback(async (transcription: string) => {
-    if (!user) return;
+    if (!user || !notesCollectionRef) return;
     if (!transcription.trim()) {
       toast({
         title: "Empty Transcription",
@@ -189,6 +189,7 @@ export default function Home() {
         dueDate: null,
         showOnBoard: true,
         order: Date.now(),
+        summary: null,
       };
 
       const docRef = await addDoc(notesCollectionRef, newNoteData);
@@ -216,6 +217,7 @@ export default function Home() {
 
   const handleSaveNote = React.useCallback(async (noteToSave: Omit<Note, 'id'>) => {
     setIsSaving(true);
+    if (!db) return;
     
     const isExisting = editingNote && notes.some((n) => n.id === editingNote.id);
 
@@ -241,6 +243,7 @@ export default function Home() {
         await updateDoc(noteRef, finalNoteData as any);
 
       } else {
+        if (!notesCollectionRef) return;
         const noteDataForFirestore: { [key: string]: any } = { ...noteToSave, history: [] };
         Object.keys(noteDataForFirestore).forEach(key => {
           if (noteDataForFirestore[key] === undefined) {
@@ -275,10 +278,10 @@ export default function Home() {
     } finally {
         setIsSaving(false);
     }
-  }, [notes, toast, notesCollectionRef, editingNote]);
+  }, [notes, toast, notesCollectionRef, editingNote, db]);
   
   const handleSavePlan = React.useCallback(async (planNotes: GenerateGoalPlanOutput['notes'], goal: string) => {
-    if (!user) return;
+    if (!user || !db || !notesCollectionRef) return;
     if (planNotes.length === 0) return;
 
     const batch = writeBatch(db);
@@ -322,11 +325,11 @@ export default function Home() {
         variant: "destructive",
       });
     }
-  }, [notesCollectionRef, router, toast, user]);
+  }, [notesCollectionRef, router, toast, user, db]);
 
   const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id' | 'userId'>>) => {
     setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } as Note : prev);
-
+    if (!db) return;
     try {
       const noteRef = doc(db, "notes", noteId);
       await updateDoc(noteRef, updates);
@@ -338,7 +341,7 @@ export default function Home() {
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast, db]);
 
   const handleChecklistItemToggle = React.useCallback((noteId: string, checklistItemId: string) => {
     const note = notes.find((n) => n.id === noteId);
@@ -397,6 +400,7 @@ export default function Home() {
   }, []);
 
   const handleConfirmEmptyTrash = React.useCallback(async () => {
+    if (!db) return;
     const trashedNotes = notes.filter(note => note.isTrashed);
     if (trashedNotes.length === 0) {
       setIsEmptyTrashConfirmOpen(false);
@@ -425,10 +429,10 @@ export default function Home() {
     } finally {
       setIsEmptyTrashConfirmOpen(false);
     }
-  }, [notes, toast]);
+  }, [notes, toast, db]);
 
   const handleCopyNote = React.useCallback(async (noteId: string) => {
-    if (!user) return;
+    if (!user || !notesCollectionRef) return;
     const noteToCopy = notes.find((n) => n.id === noteId);
     if (!noteToCopy) {
       toast({
@@ -479,7 +483,7 @@ export default function Home() {
   }, [notes, toast, notesCollectionRef, user]);
 
   const handleConfirmDelete = React.useCallback(async () => {
-    if (!deleteConfirmation) return;
+    if (!deleteConfirmation || !db) return;
     const { noteId, type } = deleteConfirmation;
 
     if (type === 'trash') {
@@ -507,7 +511,7 @@ export default function Home() {
       }
     }
     setDeleteConfirmation(null);
-  }, [deleteConfirmation, toast, updateNoteField, viewingNote?.id]);
+  }, [deleteConfirmation, toast, updateNoteField, viewingNote?.id, db]);
   
   const handleCancelDelete = React.useCallback(() => {
     setDeleteConfirmation(null);

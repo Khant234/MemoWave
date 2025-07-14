@@ -8,7 +8,7 @@ import {
   onSnapshot,
   where,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getDb } from '@/lib/firebase';
 import { type Note } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './auth-context';
@@ -34,6 +34,12 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     }
 
     setIsLoading(true);
+    const db = getDb();
+    if (!db) {
+        setIsLoading(false);
+        return;
+    }
+
     const notesCollectionRef = collection(db, "notes");
     // The orderBy clause was removed from the query to prevent the missing index error.
     // The sorting is now handled on the client-side after the data is fetched.

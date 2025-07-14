@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, enableIndexedDbPersistence, type Firestore } from "firebase/firestore";
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,42 +13,52 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 let app;
-let auth;
-let db;
+let auth: Auth;
+let db: Firestore;
 
-// This check ensures we're in a browser environment and have a valid API key.
-if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
-  // Initialize Firebase only once
-  if (!getApps().length) {
-    try {
-      app = initializeApp(firebaseConfig);
-    } catch (e) {
-      console.error("Firebase initialization error", e);
-    }
-  } else {
-    app = getApp();
-  }
-
-  if (app) {
-    auth = getAuth(app);
-    db = getFirestore(app);
-    try {
-      enableIndexedDbPersistence(db)
-        .catch((err) => {
-          if (err.code == 'failed-precondition') {
+function initializeFirebase() {
+  if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
+    if (!getApps().length) {
+      try {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        
+        enableIndexedDbPersistence(db).catch((err) => {
+          if (err.code === 'failed-precondition') {
             console.warn("Firebase persistence failed due to multiple tabs.");
-          } else if (err.code == 'unimplemented') {
+          } else if (err.code === 'unimplemented') {
             console.warn("Firebase persistence is not supported in this browser.");
           }
         });
-    } catch(e) {
-      console.warn("Firebase persistence could not be enabled.");
+        
+      } catch (e) {
+        console.error("Firebase initialization error", e);
+      }
+    } else {
+      app = getApp();
+      auth = getAuth(app);
+      db = getFirestore(app);
     }
-  }
-} else if (!firebaseConfig.apiKey) {
+  } else if (!firebaseConfig.apiKey) {
     console.error("Firebase API key is missing. Please check your environment variables.");
+  }
 }
 
-// Export the initialized services.
-// Components should handle the possibility of these being null if initialization fails.
-export { db, auth };
+// Call initialization
+initializeFirebase();
+
+// Export getters to ensure initialization has occurred
+export const getDb = () => {
+  if (!db) {
+    initializeFirebase();
+  }
+  return db;
+};
+
+export const getAuthInstance = () => {
+  if (!auth) {
+    initializeFirebase();
+  }
+  return auth;
+};

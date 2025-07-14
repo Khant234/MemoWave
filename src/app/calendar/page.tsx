@@ -4,7 +4,7 @@
 import * as React from "react";
 import { format, isSameDay, isBefore, startOfDay, isToday } from 'date-fns';
 import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDb } from "@/lib/firebase";
 import { useNotes } from "@/contexts/notes-context";
 import { type Note, type NoteVersion } from "@/lib/types";
 import { AppHeader } from "@/components/app/app-header";
@@ -76,6 +76,8 @@ export default function CalendarPage() {
     const [isEditorOpen, setIsEditorOpen] = React.useState(false);
     const [editingNote, setEditingNote] = React.useState<Note | null>(null);
     const [isSaving, setIsSaving] = React.useState(false);
+
+    const db = getDb();
 
     const notesWithDueDate = React.useMemo(() => {
         return notes.filter(note => 
@@ -228,7 +230,7 @@ export default function CalendarPage() {
 
     const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
         setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
-
+        if (!db) return;
         try {
           const noteRef = doc(db, "notes", noteId);
           await updateDoc(noteRef, updates);
@@ -240,7 +242,7 @@ export default function CalendarPage() {
             variant: "destructive",
           });
         }
-    }, [toast]);
+    }, [toast, db]);
 
     const handleChecklistItemToggle = React.useCallback((noteId: string, checklistItemId: string) => {
         const note = notes.find((n) => n.id === noteId);
@@ -270,6 +272,7 @@ export default function CalendarPage() {
 
     const handleSaveNote = React.useCallback(async (noteToSave: Note) => {
         setIsSaving(true);
+        if (!db) return;
         try {
             const originalNote = notes.find((n) => n.id === noteToSave.id);
             let newHistory: Note['history'] = originalNote?.history ? [...originalNote.history] : [];
@@ -307,7 +310,7 @@ export default function CalendarPage() {
         } finally {
             setIsSaving(false);
         }
-    }, [notes, toast]);
+    }, [notes, toast, db]);
 
     return (
         <>

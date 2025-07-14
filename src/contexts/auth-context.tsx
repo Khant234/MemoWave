@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getAuthInstance } from '@/lib/firebase';
 import { usePathname, useRouter } from 'next/navigation';
 
 type AuthContextType = {
@@ -22,6 +22,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   React.useEffect(() => {
+    const auth = getAuthInstance();
+    if (!auth) {
+        setIsLoading(false);
+        return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setIsLoading(false);

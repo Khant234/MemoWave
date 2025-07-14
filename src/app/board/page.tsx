@@ -15,7 +15,7 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
 import { doc, writeBatch, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDb } from "@/lib/firebase";
 import { useNotes } from "@/contexts/notes-context";
 import { AppHeader } from "@/components/app/app-header";
 import { AppSidebar } from "@/components/app/app-sidebar";
@@ -69,6 +69,7 @@ export default function BoardPage() {
   const [isChecklistViewerOpen, setIsChecklistViewerOpen] = React.useState(false);
   const [viewingChecklistNote, setViewingChecklistNote] = React.useState<Note | null>(null);
 
+  const db = getDb();
 
   React.useEffect(() => {
     if (isBoardUpdating.current) {
@@ -200,7 +201,7 @@ export default function BoardPage() {
     const { active, over } = event;
     setActiveNote(null);
   
-    if (!over || active.id === over.id) {
+    if (!over || active.id === over.id || !db) {
       isBoardUpdating.current = false;
       return;
     }
@@ -323,7 +324,7 @@ export default function BoardPage() {
     } finally {
         isBoardUpdating.current = false;
     }
-  }, [containers, findContainer, groupBy, notes, toast]);
+  }, [containers, findContainer, groupBy, notes, toast, db]);
 
   const handleCardClick = React.useCallback((note: Note) => {
     setViewingChecklistNote(note);
@@ -345,7 +346,7 @@ export default function BoardPage() {
   const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
     setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
     setViewingChecklistNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
-
+    if (!db) return;
     try {
       const noteRef = doc(db, "notes", noteId);
       await updateDoc(noteRef, updates);
@@ -357,7 +358,7 @@ export default function BoardPage() {
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast, db]);
 
   const handleChecklistItemToggle = React.useCallback((noteId: string, checklistItemId: string) => {
     const note = notes.find((n) => n.id === noteId);
@@ -387,6 +388,7 @@ export default function BoardPage() {
 
   const handleSaveNote = React.useCallback(async (noteToSave: Note) => {
     setIsSaving(true);
+    if (!db) return;
     
     try {
         const originalNote = notes.find((n) => n.id === noteToSave.id);
@@ -426,7 +428,7 @@ export default function BoardPage() {
     } finally {
         setIsSaving(false);
     }
-  }, [notes, toast]);
+  }, [notes, toast, db]);
 
   const renderContent = () => {
     if (isLoading) {

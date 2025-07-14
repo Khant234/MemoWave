@@ -6,7 +6,7 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDb } from "@/lib/firebase";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppHeader } from "@/components/app/app-header";
 import { type Note, type NoteVersion } from "@/lib/types";
@@ -56,10 +56,12 @@ export default function TodosPage() {
   const [isEditorOpen, setIsEditorOpen] = React.useState(false);
   const [editingNote, setEditingNote] = React.useState<Note | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
+
+  const db = getDb();
   
   const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
     setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
-
+    if (!db) return;
     try {
       const noteRef = doc(db, "notes", noteId);
       await updateDoc(noteRef, updates);
@@ -71,7 +73,7 @@ export default function TodosPage() {
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast, db]);
 
   const handleChecklistItemToggle = React.useCallback((noteId: string, checklistItemId: string) => {
     playClickSound();
@@ -154,6 +156,7 @@ export default function TodosPage() {
 
   const handleSaveNote = React.useCallback(async (noteToSave: Note) => {
     setIsSaving(true);
+    if (!db) return;
     try {
         const originalNote = notes.find((n) => n.id === noteToSave.id);
         let newHistory: Note['history'] = originalNote?.history ? [...originalNote.history] : [];
@@ -191,7 +194,7 @@ export default function TodosPage() {
     } finally {
         setIsSaving(false);
     }
-  }, [notes, toast]);
+  }, [notes, toast, db]);
 
   const renderChecklistGroup = (group: GroupedChecklist) => {
     const allComplete = group.items.length > 0 && group.items.every(item => item.completed);
