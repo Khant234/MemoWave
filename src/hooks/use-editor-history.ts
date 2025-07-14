@@ -20,17 +20,16 @@ export const useEditorHistory = (initialState: EditorState) => {
     const [index, setIndex] = useState(0);
 
     const state = history[index];
-    const getInitialState = useCallback(() => history[0], [history]);
 
     const setState = useCallback((newState: EditorState | ((prevState: EditorState) => EditorState)) => {
-        const resolvedState = typeof newState === 'function' ? newState(state) : newState;
-        
-        const newHistory = history.slice(0, index + 1);
-        newHistory.push(resolvedState);
-        setHistory(newHistory);
-        setIndex(newHistory.length - 1);
-
-    }, [index, state, history]);
+        setHistory(currentHistory => {
+            const resolvedState = typeof newState === 'function' ? newState(currentHistory[index]) : newState;
+            const newHistory = currentHistory.slice(0, index + 1);
+            newHistory.push(resolvedState);
+            setIndex(newHistory.length - 1);
+            return newHistory;
+        });
+    }, [index]);
 
     const undo = useCallback(() => {
         if (index > 0) {
@@ -51,6 +50,8 @@ export const useEditorHistory = (initialState: EditorState) => {
 
     const canUndo = index > 0;
     const canRedo = index < history.length - 1;
+    
+    const getInitialState = useCallback(() => history[0], [history]);
 
     return {
         state,

@@ -170,7 +170,7 @@ export function NoteEditor({
       isPasswordProtected, password, cid
   } = editorState;
   
-  const isDirty = !areStatesEqual(getInitialState(), editorState);
+  const isDirtyRef = React.useRef(false);
 
   const setTitle = (newTitle: string) => setEditorState({ ...editorState, title: newTitle });
   const setContent = (newContent: string) => setEditorState({ ...editorState, content: newContent });
@@ -268,6 +268,10 @@ export function NoteEditor({
     }
   }, [isOpen, content, suggestion, syncTextareaHeights]);
 
+  React.useEffect(() => {
+      isDirtyRef.current = !areStatesEqual(getInitialState(), editorState);
+  }, [editorState, getInitialState]);
+
 
   React.useEffect(() => {
     if (isOpen) {
@@ -298,6 +302,7 @@ export function NoteEditor({
         cid: note.cid || undefined,
       } : {
         ...initialEditorState,
+        content: '',
         color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
       };
       
@@ -473,13 +478,12 @@ export function NoteEditor({
   }, [note, resetHistory, toast]);
 
   const handleOpenChange = React.useCallback((open: boolean) => {
-    const isActuallyDirty = !areStatesEqual(getInitialState(), editorState);
-    if (!open && isActuallyDirty && !isSaving) {
+    if (!open && isDirtyRef.current && !isSaving) {
         setIsCloseConfirmOpen(true);
     } else {
         setIsOpen(open);
     }
-  }, [editorState, getInitialState, isSaving, setIsOpen]);
+  }, [isSaving, setIsOpen]);
 
   const handleSaveAsDraftAndClose = React.useCallback(() => {
     if (!user) {
@@ -855,7 +859,7 @@ export function NoteEditor({
               <div className="space-y-2">
                 <Label htmlFor="title">Title</Label>
                 <div className="flex gap-2">
-                  <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title"/>
+                  <Input id="title" value={title || ''} onChange={(e) => setTitle(e.target.value)} placeholder="Note title"/>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button variant="outline" size="icon" onClick={handleGenerateTitle} disabled={isAiLoading || !content}>
@@ -1144,11 +1148,11 @@ export function NoteEditor({
           </ScrollArea>
           <SheetFooter className="p-6 bg-background border-t flex items-center gap-2">
             <div className="mr-auto">
-              {isDirty && note && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
+              {note && isDirtyRef.current && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
             </div>
-            <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : isDirty ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
+            <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : isDirtyRef.current ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
             <SheetClose asChild><Button variant="outline">Cancel</Button></SheetClose>
-            <Button onClick={handleSave} disabled={isAiLoading || !isDirty || isSaving}>
+            <Button onClick={handleSave} disabled={isAiLoading || !isDirtyRef.current || isSaving}>
               {isSaving ? <Loader2 className="animate-spin" /> : null}
               {isSaving ? "Saving..." : "Save Note"}
             </Button>
