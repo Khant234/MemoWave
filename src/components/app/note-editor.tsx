@@ -309,7 +309,7 @@ export function NoteEditor({
     if (!isOpen || !isSmartMode) return;
 
     const handler = setTimeout(async () => {
-      if (!content.trim() || autoChecklistRunning.current || isAiLoading) return;
+      if (typeof content !== 'string' || !content.trim() || autoChecklistRunning.current || isAiLoading) return;
       
       autoChecklistRunning.current = true;
       try {
@@ -358,7 +358,7 @@ export function NoteEditor({
   
     grammarDebounceTimer.current = setTimeout(async () => {
       const textToCheck = content;
-      if (!textToCheck.trim() || isActionLoading) return;
+      if (typeof textToCheck !== 'string' || !textToCheck.trim() || isActionLoading) return;
   
       setIsAutoAiRunning(true);
       setSuggestion(null);
@@ -427,7 +427,7 @@ export function NoteEditor({
 
     const newNoteData: Omit<Note, 'id'> = {
       userId: user.uid,
-      title, content, summary, color,
+      title, content: content || '', summary, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
@@ -485,7 +485,7 @@ export function NoteEditor({
     }
     const draftNoteData: Omit<Note, 'id'> = {
       userId: user.uid,
-      title, content, summary, color,
+      title, content: content || '', summary, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
@@ -573,7 +573,7 @@ export function NoteEditor({
     if(!imageUrl) throw new Error("Please attach an image first.");
     const result = await extractTextFromImage({ imageDataUri: imageUrl });
     if (result.extractedText && result.extractedText.trim()) {
-      setContent(prev => `${prev}\n\n--- Extracted Text ---\n${result.extractedText}`.trim());
+      setContent(prev => `${prev || ''}\n\n--- Extracted Text ---\n${result.extractedText}`.trim());
     } else {
       toast({
           title: "No Text Found",
@@ -592,7 +592,7 @@ export function NoteEditor({
   const handleTranslate = React.useCallback(() => runAiAction(async () => {
     if (!content && checklist.length === 0) throw new Error("Please add content or checklist items to translate.");
     const result = await translateNote({
-      noteContent: content,
+      noteContent: content || '',
       checklistItems: checklist.map(item => ({ id: item.id, text: item.text })),
       targetLanguage: "Burmese",
     });
@@ -636,7 +636,7 @@ export function NoteEditor({
   }, { success: "", error: "Could not process the pasted text."}), [runAiAction, setEditorState, toast, editorState]);
 
   const handleContinueWriting = React.useCallback(() => runAiAction(async () => {
-    if (!content.trim()) throw new Error("Please write some content first.");
+    if (!content || !content.trim()) throw new Error("Please write some content first.");
     const containsBurmese = /[\u1000-\u109F]/.test(content);
     const language = containsBurmese ? 'Burmese' : 'English';
     const result = await completeText({ currentText: content, language });
@@ -646,7 +646,7 @@ export function NoteEditor({
   }, { success: "AI completed your text!", error: "Could not complete text."}), [content, runAiAction, setContent]);
 
   const handleFixGrammar = React.useCallback(() => runAiAction(async () => {
-    if (!content.trim()) throw new Error("Please write some content first.");
+    if (!content || !content.trim()) throw new Error("Please write some content first.");
     const containsBurmese = /[\u1000-\u109F]/.test(content);
     const language = containsBurmese ? 'Burmese' : 'English';
     const result = await checkGrammarAndSpelling({ text: content, language });
@@ -660,7 +660,7 @@ export function NoteEditor({
   
   const handlePinToIpfs = React.useCallback(() => runAiAction(async () => {
     if (!content && !title) throw new Error("Please add a title or content to pin.");
-    const result = await pinToDecentralizedStorage({ title, content });
+    const result = await pinToDecentralizedStorage({ title, content: content || '' });
     if (result.cid) {
         setCid(result.cid);
         toast({
@@ -680,7 +680,7 @@ export function NoteEditor({
   }, [setContent]);
   
   const handleTextScanned = React.useCallback((text: string) => {
-    setContent(prev => `${prev}\n\n--- Scanned Text ---\n${text}`.trim());
+    setContent(prev => `${prev || ''}\n\n--- Scanned Text ---\n${text}`.trim());
   }, [setContent]);
 
   const handleSaveSketch = React.useCallback((dataUrl: string) => {
@@ -814,7 +814,7 @@ export function NoteEditor({
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
+    const selectedText = (content || '').substring(start, end);
 
     const markers = {
         bold: '**',
@@ -823,7 +823,7 @@ export function NoteEditor({
         code: '`'
     };
     const marker = markers[syntax];
-    const newText = `${content.substring(0, start)}${marker}${selectedText}${marker}${content.substring(end)}`;
+    const newText = `${(content || '').substring(0, start)}${marker}${selectedText}${marker}${(content || '').substring(end)}`;
     
     setContent(newText);
 
