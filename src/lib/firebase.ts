@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, type FirebaseOptions } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
@@ -21,18 +22,16 @@ const app = !getApps().length && areAllConfigValuesDefined ? initializeApp(fireb
 const db = app ? getFirestore(app) : null;
 const auth = app ? getAuth(app) : null;
 
-if (app) {
+if (app && db) {
   try {
-    if (db) {
-        enableIndexedDbPersistence(db)
-          .catch((err) => {
-            if (err.code == 'failed-precondition') {
-              // This can happen if multiple tabs are open.
-            } else if (err.code == 'unimplemented') {
-              // This can happen if the browser doesn't support persistence.
-            }
-          });
-    }
+    enableIndexedDbPersistence(db)
+      .catch((err) => {
+        if (err.code == 'failed-precondition') {
+          // This can happen if multiple tabs are open.
+        } else if (err.code == 'unimplemented') {
+          // This can happen if the browser doesn't support persistence.
+        }
+      });
   } catch(e) {
     // This can happen if persistence is already enabled.
   }
