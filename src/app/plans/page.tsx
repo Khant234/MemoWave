@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type GenerateGoalPlanOutput } from "@/ai/flows/generate-goal-plan";
 import { NOTE_COLORS } from "@/lib/data";
+import { useAuth } from "@/contexts/auth-context";
 
 // Lazy load modals
 const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
@@ -44,6 +45,7 @@ export type Plan = {
 };
 
 export default function PlansPage() {
+  const { user } = useAuth();
   const { notes, isLoading } = useNotes();
   const { isCollapsed: isSidebarCollapsed, toggleSidebar } = useSidebar();
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -100,6 +102,10 @@ export default function PlansPage() {
   }, [allPlans, activeFilter, searchTerm]);
 
   const handleSavePlan = React.useCallback(async (planNotes: GenerateGoalPlanOutput['notes'], goal: string) => {
+    if (!user) {
+      toast({ title: "Not Authenticated", description: "You must be logged in to create a plan.", variant: "destructive" });
+      return;
+    }
     if (planNotes.length === 0) return;
 
     const batch = writeBatch(db);
@@ -107,6 +113,7 @@ export default function PlansPage() {
     
     planNotes.forEach((planNote, index) => {
         const newNoteData: Omit<Note, 'id'> = {
+            userId: user.uid,
             title: planNote.title,
             content: planNote.content,
             color: NOTE_COLORS[index % NOTE_COLORS.length],
@@ -145,7 +152,7 @@ export default function PlansPage() {
         variant: "destructive",
       });
     }
-  }, [notesCollectionRef, toast]);
+  }, [notesCollectionRef, toast, user]);
 
 
   const handleBatchAction = async () => {
