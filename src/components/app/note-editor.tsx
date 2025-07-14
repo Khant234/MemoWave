@@ -224,6 +224,7 @@ export function NoteEditor({
 
   const { toast } = useToast();
   const isAiLoading = isActionLoading || isAutoAiRunning;
+  const grammarDebounceTimer = React.useRef<NodeJS.Timeout | null>(null);
 
   useHotkeys('mod+z', undo, { enabled: isOpen && canUndo });
   useHotkeys('mod+y, mod+shift+z', redo, { enabled: isOpen && canRedo });
@@ -346,12 +347,16 @@ export function NoteEditor({
 
   // Background AI for auto grammar fix and predictive text
   React.useEffect(() => {
+    if (grammarDebounceTimer.current) {
+        clearTimeout(grammarDebounceTimer.current);
+    }
+
     if (!isOpen || !isSmartMode) {
       if(suggestion) setSuggestion(null); // Clear suggestion if smart mode is toggled off
       return;
     }
   
-    const handler = setTimeout(async () => {
+    grammarDebounceTimer.current = setTimeout(async () => {
       const textToCheck = content;
       if (!textToCheck.trim() || isActionLoading) return;
   
@@ -381,7 +386,11 @@ export function NoteEditor({
       }
     }, 1500); // 1.5 second debounce
   
-    return () => clearTimeout(handler);
+    return () => {
+        if (grammarDebounceTimer.current) {
+            clearTimeout(grammarDebounceTimer.current);
+        }
+    };
   }, [content, isOpen, isActionLoading, toast, isSmartMode]);
 
 
@@ -888,7 +897,7 @@ export function NoteEditor({
                             ref={bgTextareaRef}
                             readOnly
                             className="col-start-1 row-start-1 resize-none whitespace-pre-wrap text-muted-foreground [caret-color:transparent] min-h-[200px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            value={suggestion ? content + suggestion : content}
+                            value={suggestion ? (content || '') + suggestion : (content || '')}
                             tabIndex={-1}
                         />
                         <Textarea
