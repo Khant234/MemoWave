@@ -15,6 +15,7 @@ export type Note = {
   userId: string; // Added to associate note with a user
   title: string;
   content: string;
+  summary?: string | null; // Added for caching AI summaries
   color: string;
   isPinned: boolean;
   isArchived: boolean;

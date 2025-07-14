@@ -29,7 +29,10 @@ const prompt = ai.definePrompt({
   name: 'summarizeNotePrompt',
   input: {schema: SummarizeNoteInputSchema},
   output: {schema: SummarizeNoteOutputSchema},
-  prompt: `Summarize the following note into key points:\n\n{{{noteContent}}}`,
+  prompt: `Summarize the following note into three key bullet points. If the note is very short, provide a single sentence summary.
+
+Note Content:
+{{{noteContent}}}`,
 });
 
 const summarizeNoteFlow = ai.defineFlow(
@@ -39,7 +42,9 @@ const summarizeNoteFlow = ai.defineFlow(
     outputSchema: SummarizeNoteOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    // Prevent summarizing summaries
+    const contentWithoutSummary = input.noteContent.split('\n\n**Summary:**\n')[0];
+    const {output} = await prompt({ noteContent: contentWithoutSummary });
     return output!;
   }
 );

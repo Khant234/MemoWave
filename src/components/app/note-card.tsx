@@ -76,15 +76,6 @@ const NoteCardComponent = ({
 }: NoteCardProps) => {
   const [formattedDate, setFormattedDate] = React.useState("");
 
-  const { summary, mainContent } = React.useMemo(() => {
-    const summaryMarker = '\n\n**Summary:**\n';
-    const parts = note.content.split(summaryMarker);
-    if (parts.length > 1 && parts[1].trim() !== '') {
-        return { summary: parts[1].trim(), mainContent: parts[0] };
-    }
-    return { summary: null, mainContent: note.content };
-  }, [note.content]);
-
   React.useEffect(() => {
     setFormattedDate(new Date(note.updatedAt).toLocaleDateString());
   }, [note.updatedAt]);
@@ -215,19 +206,19 @@ const NoteCardComponent = ({
           </div>
         )}
         <div className="text-sm">
-          {summary ? (
+          {note.summary ? (
             <div className="space-y-1 rounded-md bg-primary/5 p-2 text-xs">
               <Badge variant="outline" className="border-primary/20 bg-transparent text-primary/90">
                 <Sparkles className="mr-1.5 h-3 w-3" />
                 AI Summary
               </Badge>
               <p className="font-medium italic text-primary/90 line-clamp-3">
-                &ldquo;{summary}&rdquo;
+                &ldquo;{note.summary}&rdquo;
               </p>
             </div>
           ) : (
             <p className="text-muted-foreground line-clamp-3">
-              {mainContent}
+              {note.content}
             </p>
           )}
         </div>

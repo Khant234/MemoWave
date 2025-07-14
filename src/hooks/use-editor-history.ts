@@ -4,7 +4,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { Note } from '@/lib/types';
 
-export type EditorState = Omit<Note, 'id' | 'isPinned' | 'isArchived' | 'isTrashed' | 'createdAt' | 'updatedAt' | 'history' | 'isDraft' | 'order' | 'planId' | 'planGoal'>;
+export type EditorState = Omit<Note, 'id' | 'isPinned' | 'isArchived' | 'isTrashed' | 'createdAt' | 'updatedAt' | 'history' | 'isDraft' | 'order' | 'planId' | 'planGoal' | 'userId'>;
 
 const areStatesEqual = (a: EditorState, b: EditorState) => {
     return JSON.stringify(a) === JSON.stringify(b);

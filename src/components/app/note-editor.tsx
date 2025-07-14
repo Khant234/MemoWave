@@ -128,6 +128,7 @@ const formatTime = (time24: string | null | undefined): string => {
 const initialEditorState: EditorState = {
     title: '',
     content: '',
+    summary: null,
     color: NOTE_COLORS[0],
     checklist: [],
     imageUrl: undefined,
@@ -164,13 +165,14 @@ export function NoteEditor({
   } = useEditorHistory(initialEditorState);
 
   const {
-      title, content, color, checklist, imageUrl, audioUrl: generatedAudio,
+      title, content, summary, color, checklist, imageUrl, audioUrl: generatedAudio,
       status, priority, category, dueDate, startTime, endTime, showOnBoard,
       isPasswordProtected, password, cid
   } = editorState;
 
   const setTitle = (newTitle: string) => setEditorState({ ...editorState, title: newTitle });
   const setContent = (newContent: string) => setEditorState({ ...editorState, content: newContent });
+  const setSummary = (newSummary: string | null) => setEditorState({ ...editorState, summary: newSummary });
   const setColor = (newColor: string) => setEditorState({ ...editorState, color: newColor });
   const setChecklist = (newChecklist: EditorState['checklist']) => setEditorState({ ...editorState, checklist: newChecklist });
   const setImageUrl = (newImageUrl: string | undefined) => setEditorState({ ...editorState, imageUrl: newImageUrl });
@@ -276,6 +278,7 @@ export function NoteEditor({
       const dataToLoad = note ? {
         title: note.title,
         content: note.content,
+        summary: note.summary || null,
         color: note.color,
         checklist: note.checklist,
         imageUrl: note.imageUrl,
@@ -434,7 +437,7 @@ export function NoteEditor({
 
     const newNoteData: Omit<Note, 'id'> = {
       userId: user.uid,
-      title, content, color,
+      title, content, summary, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
@@ -450,13 +453,14 @@ export function NoteEditor({
     };
     
     onSave(newNoteData);
-  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, cid, note, onSave, toast, user]);
+  }, [title, content, summary, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, cid, note, onSave, toast, user]);
   
   const handleDiscardChanges = React.useCallback(() => {
     if (note) {
       resetHistory({
         title: note.title,
         content: note.content,
+        summary: note.summary || null,
         color: note.color,
         checklist: note.checklist,
         imageUrl: note.imageUrl,
@@ -491,7 +495,7 @@ export function NoteEditor({
     }
     const draftNoteData: Omit<Note, 'id'> = {
       userId: user.uid,
-      title, content, color,
+      title, content, summary, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(), checklist, history: note?.history || [],
@@ -508,7 +512,7 @@ export function NoteEditor({
     
     onSave(draftNoteData);
     setIsCloseConfirmOpen(false);
-  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, cid, note, onSave, user, toast]);
+  }, [title, content, summary, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, cid, note, onSave, user, toast]);
 
   const handleDiscardAndClose = React.useCallback(() => {
     setIsCloseConfirmOpen(false);
@@ -561,8 +565,10 @@ export function NoteEditor({
   const handleSummarizeNote = React.useCallback(() => runAiAction(async () => {
     if(!content) throw new Error("Please write some content to summarize.");
     const result = await summarizeNote({ noteContent: content });
-    if (result.summary) setContent(prev => `${prev}\n\n**Summary:**\n${result.summary}`);
-  }, { success: "Note Summarized!", error: "Could not summarize note." }), [content, runAiAction, setContent]);
+    if (result.summary) {
+        setSummary(result.summary);
+    }
+  }, { success: "Note Summarized!", error: "Could not summarize note." }), [content, runAiAction, setSummary]);
 
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -936,6 +942,23 @@ export function NoteEditor({
                 </div>
               </div>
 
+              {summary && (
+                <div className="space-y-2">
+                    <Label>AI Summary</Label>
+                    <div className="relative rounded-lg border bg-secondary/50 p-4 pr-10">
+                        <p className="text-sm italic">{summary}</p>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-2 right-2 h-7 w-7"
+                            onClick={() => setSummary(null)}
+                        >
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                    </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Color</Label>
                 <div className="flex flex-wrap gap-2">
@@ -1108,7 +1131,7 @@ export function NoteEditor({
                   <Button variant="outline" disabled={isAiLoading} onClick={handleSmartPaste}>
                     <ClipboardPaste className="mr-2 h-4 w-4"/>Smart Paste
                   </Button>
-                  <Button variant="outline" disabled={isAiLoading || !content} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
+                  <Button variant="outline" disabled={isAiLoading || !content || !!summary} onClick={handleSummarizeNote}><BotMessageSquare className="mr-2 h-4 w-4"/>Summarize</Button>
                   <Button variant="outline" disabled={isAiLoading || (!content && checklist.length === 0)} onClick={handleTranslate}><Languages className="mr-2 h-4 w-4"/>Translate</Button>
                   
                   <Button variant="outline" onClick={() => setIsHandwritingOpen(true)}><PenLine className="mr-2 h-4 w-4"/>Write</Button>
