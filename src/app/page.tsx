@@ -38,6 +38,7 @@ import { type GenerateGoalPlanOutput } from "@/ai/flows/generate-goal-plan";
 import { NOTE_COLORS } from "@/lib/data";
 import { MobileFab } from "@/components/app/mobile-fab";
 import { isToday, isYesterday, isThisWeek } from 'date-fns';
+import { useAuth } from "@/contexts/auth-context";
 
 // Lazy load modals and heavy components
 const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(module => ({ default: module.NoteViewer })));
@@ -48,6 +49,7 @@ const UnlockNoteDialog = React.lazy(() => import('@/components/app/unlock-note-d
 
 
 export default function Home() {
+  const { user } = useAuth();
   const { notes, isLoading } = useNotes();
   const [isSaving, setIsSaving] = React.useState(false);
   const [activeFilter, setActiveFilter] = React.useState<"all" | "archived" | "trash">(
@@ -153,6 +155,7 @@ export default function Home() {
   }, []);
 
   const handleTranscriptionToNewNote = React.useCallback(async (transcription: string) => {
+    if (!user) return;
     if (!transcription.trim()) {
       toast({
         title: "Empty Transcription",
@@ -168,6 +171,7 @@ export default function Home() {
       const newTitle = titleResult.title || "Voice Note";
 
       const newNoteData: Omit<Note, 'id'> = {
+        userId: user.uid,
         title: newTitle,
         content: transcription,
         color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
@@ -194,7 +198,7 @@ export default function Home() {
         description: `Your new note "${newTitle}" has been created.`,
       });
       
-      const newNote = { ...newNoteData, id: docRef.id } as Note;
+      const newNote = { ...newNoteData, id: docRef.id, userId: user.uid } as Note;
       handleViewNote(newNote);
 
     } catch (error) {
@@ -207,17 +211,17 @@ export default function Home() {
     } finally {
       setIsSaving(false);
     }
-  }, [notesCollectionRef, toast, handleViewNote]);
+  }, [notesCollectionRef, toast, handleViewNote, user]);
 
 
-  const handleSaveNote = React.useCallback(async (noteToSave: Note) => {
+  const handleSaveNote = React.useCallback(async (noteToSave: Omit<Note, 'id'>) => {
     setIsSaving(true);
     
-    const isExisting = notes.some((n) => n.id === noteToSave.id);
+    const isExisting = editingNote && notes.some((n) => n.id === editingNote.id);
 
     try {
       if (isExisting) {
-        const originalNote = notes.find((n) => n.id === noteToSave.id);
+        const originalNote = notes.find((n) => n.id === editingNote.id);
         
         let newHistory: Note['history'] = originalNote?.history ? [...originalNote.history] : [];
         if (originalNote && (originalNote.content !== noteToSave.content || originalNote.title !== noteToSave.title)) {
@@ -232,16 +236,12 @@ export default function Home() {
             newHistory = newHistory.slice(0, 20);
         }
 
-        const noteRef = doc(db, "notes", noteToSave.id);
-        const {id, ...noteData} = noteToSave;
-        const finalNoteData = { ...noteData, history: newHistory };
+        const noteRef = doc(db, "notes", editingNote.id);
+        const finalNoteData = { ...noteToSave, history: newHistory };
         await updateDoc(noteRef, finalNoteData as any);
 
       } else {
-        const { id, ...noteData } = noteToSave;
-        
-        // Firestore doesn't allow 'undefined' fields during document creation.
-        const noteDataForFirestore: { [key: string]: any } = { ...noteData, history: [] };
+        const noteDataForFirestore: { [key: string]: any } = { ...noteToSave, history: [] };
         Object.keys(noteDataForFirestore).forEach(key => {
           if (noteDataForFirestore[key] === undefined) {
             delete noteDataForFirestore[key];
@@ -275,9 +275,10 @@ export default function Home() {
     } finally {
         setIsSaving(false);
     }
-  }, [notes, toast, notesCollectionRef]);
+  }, [notes, toast, notesCollectionRef, editingNote]);
   
   const handleSavePlan = React.useCallback(async (planNotes: GenerateGoalPlanOutput['notes'], goal: string) => {
+    if (!user) return;
     if (planNotes.length === 0) return;
 
     const batch = writeBatch(db);
@@ -285,6 +286,7 @@ export default function Home() {
     
     planNotes.forEach((planNote, index) => {
         const newNoteData: Omit<Note, 'id'> = {
+            userId: user.uid,
             title: planNote.title,
             content: planNote.content,
             color: NOTE_COLORS[index % NOTE_COLORS.length],
@@ -320,10 +322,10 @@ export default function Home() {
         variant: "destructive",
       });
     }
-  }, [notesCollectionRef, router, toast]);
+  }, [notesCollectionRef, router, toast, user]);
 
-  const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id'>>) => {
-    setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } : prev);
+  const updateNoteField = React.useCallback(async (noteId: string, updates: Partial<Omit<Note, 'id' | 'userId'>>) => {
+    setViewingNote(prev => (prev && prev.id === noteId) ? { ...prev, ...updates } as Note : prev);
 
     try {
       const noteRef = doc(db, "notes", noteId);
@@ -426,6 +428,7 @@ export default function Home() {
   }, [notes, toast]);
 
   const handleCopyNote = React.useCallback(async (noteId: string) => {
+    if (!user) return;
     const noteToCopy = notes.find((n) => n.id === noteId);
     if (!noteToCopy) {
       toast({
@@ -436,10 +439,11 @@ export default function Home() {
       return;
     }
 
-    const { id, isPinned, createdAt, updatedAt, history, ...restOfNote } = noteToCopy;
+    const { id, isPinned, createdAt, updatedAt, history, userId, ...restOfNote } = noteToCopy;
 
     const newNoteData = {
       ...restOfNote,
+      userId: user.uid,
       title: `Copy of ${noteToCopy.title || 'Untitled'}`,
       isPinned: false,
       isDraft: false,
@@ -472,7 +476,7 @@ export default function Home() {
         variant: "destructive",
       });
     }
-  }, [notes, toast, notesCollectionRef]);
+  }, [notes, toast, notesCollectionRef, user]);
 
   const handleConfirmDelete = React.useCallback(async () => {
     if (!deleteConfirmation) return;

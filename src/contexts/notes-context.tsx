@@ -6,10 +6,12 @@ import {
   query,
   orderBy,
   onSnapshot,
+  where,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { type Note } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from './auth-context';
 
 type NotesContextType = {
   notes: Note[];
@@ -19,13 +21,25 @@ type NotesContextType = {
 const NotesContext = React.createContext<NotesContextType | undefined>(undefined);
 
 export function NotesProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [notes, setNotes] = React.useState<Note[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const { toast } = useToast();
 
   React.useEffect(() => {
+    if (!user) {
+      setNotes([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
     const notesCollectionRef = collection(db, "notes");
-    const q = query(notesCollectionRef, orderBy("updatedAt", "desc"));
+    const q = query(
+      notesCollectionRef, 
+      where("userId", "==", user.uid),
+      orderBy("updatedAt", "desc")
+    );
 
     const unsubscribe = onSnapshot(
       q,
@@ -48,7 +62,7 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => unsubscribe();
-  }, [toast]);
+  }, [user, toast]);
 
   return (
     <NotesContext.Provider value={{ notes, isLoading }}>

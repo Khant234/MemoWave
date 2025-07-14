@@ -12,6 +12,7 @@ export type NoteCategory = 'personal' | 'professional' | 'business' | 'uncategor
 
 export type Note = {
   id: string;
+  userId: string; // Added to associate note with a user
   title: string;
   content: string;
   color: string;
@@ -43,6 +44,9 @@ export type Note = {
   // AI Goal Plan fields
   planId?: string;
   planGoal?: string;
+
+  // Decentralized storage
+  cid?: string;
 };
 
 export type NoteTemplate = {

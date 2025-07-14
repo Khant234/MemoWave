@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useClickSound } from "@/hooks/use-click-sound";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { UserNav } from "./user-nav";
 
 
 type AppHeaderProps = {
@@ -287,6 +288,7 @@ const AppHeaderComponent = ({
             )}
         </div>
         <ThemeToggle />
+        <UserNav />
       </div>
     </header>
   );

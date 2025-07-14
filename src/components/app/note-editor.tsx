@@ -64,6 +64,7 @@ import {
   SpellCheck,
   FileText,
   BrainCircuit,
+  Globe,
 } from "lucide-react";
 import {
   Tooltip,
@@ -85,6 +86,7 @@ import { extractTextFromImage } from "@/ai/flows/extract-text-from-image";
 import { completeText } from "@/ai/flows/complete-text";
 import { checkGrammarAndSpelling } from "@/ai/flows/grammar-and-spelling-check";
 import { smartPaste } from "@/ai/flows/smart-paste";
+import { pinToDecentralizedStorage } from "@/ai/flows/pin-to-decentralized-storage";
 import { DatePicker } from "../ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { KANBAN_COLUMN_TITLES, NOTE_PRIORITY_TITLES, NOTE_CATEGORIES, NOTE_CATEGORY_TITLES } from "@/lib/constants";
@@ -94,6 +96,7 @@ import { hashText } from "@/lib/crypto";
 import { Separator } from "../ui/separator";
 import { useEditorHistory, type EditorState } from "@/hooks/use-editor-history";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useAuth } from "@/contexts/auth-context";
 
 
 // Lazy load dialogs
@@ -109,7 +112,7 @@ type NoteEditorProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   note: Note | null;
-  onSave: (note: Note) => void;
+  onSave: (note: Omit<Note, 'id' | 'userId'>) => void;
   isSaving?: boolean;
 };
 
@@ -138,6 +141,7 @@ const initialEditorState: EditorState = {
     showOnBoard: false,
     isPasswordProtected: false,
     password: undefined,
+    cid: undefined,
 };
 
 export function NoteEditor({
@@ -147,6 +151,7 @@ export function NoteEditor({
   onSave,
   isSaving = false,
 }: NoteEditorProps) {
+  const { user } = useAuth();
   const { 
     state: editorState, 
     setState: setEditorState,
@@ -161,7 +166,7 @@ export function NoteEditor({
   const {
       title, content, color, checklist, imageUrl, audioUrl: generatedAudio,
       status, priority, category, dueDate, startTime, endTime, showOnBoard,
-      isPasswordProtected, password
+      isPasswordProtected, password, cid
   } = editorState;
 
   const setTitle = (newTitle: string) => setEditorState({ ...editorState, title: newTitle });
@@ -179,6 +184,8 @@ export function NoteEditor({
   const setShowOnBoard = (newShowOnBoard: boolean) => setEditorState({ ...editorState, showOnBoard: newShowOnBoard });
   const setIsPasswordProtected = (newIsPasswordProtected: boolean) => setEditorState({ ...editorState, isPasswordProtected: newIsPasswordProtected });
   const setPassword = (newPassword: string | undefined) => setEditorState({ ...editorState, password: newPassword });
+  const setCid = (newCid: string | undefined) => setEditorState({ ...editorState, cid: newCid });
+
 
   const [newChecklistItem, setNewChecklistItem] = React.useState("");
   const [editingChecklistItemId, setEditingChecklistItemId] = React.useState<string | null>(null);
@@ -282,6 +289,7 @@ export function NoteEditor({
         showOnBoard: note.showOnBoard || false,
         isPasswordProtected: note.isPasswordProtected || false,
         password: note.password || undefined,
+        cid: note.cid || undefined,
       } : {
         ...initialEditorState,
         color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
@@ -410,6 +418,11 @@ export function NoteEditor({
   }, [dueDate, setStartTime, setEndTime]);
 
   const handleSave = React.useCallback(() => {
+    if (!user) {
+      toast({ title: 'Not Authenticated', description: 'You must be logged in to save notes.', variant: 'destructive'});
+      return;
+    }
+
     if (!title && !content) {
       toast({
         title: 'Empty Note',
@@ -419,8 +432,8 @@ export function NoteEditor({
       return;
     }
 
-    const newNote: Note = {
-      id: note?.id || new Date().toISOString(), 
+    const newNoteData: Omit<Note, 'id'> = {
+      userId: user.uid,
       title, content, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
@@ -432,11 +445,12 @@ export function NoteEditor({
       showOnBoard, order: note?.order || Date.now(),
       isPasswordProtected, password,
       imageUrl,
-      audioUrl: generatedAudio
+      audioUrl: generatedAudio,
+      cid,
     };
     
-    onSave(newNote);
-  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, note, onSave, toast]);
+    onSave(newNoteData);
+  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, cid, note, onSave, toast, user]);
   
   const handleDiscardChanges = React.useCallback(() => {
     if (note) {
@@ -456,6 +470,7 @@ export function NoteEditor({
         showOnBoard: note.showOnBoard || false,
         isPasswordProtected: note.isPasswordProtected || false,
         password: note.password || undefined,
+        cid: note.cid || undefined,
       });
       toast({ title: "Changes discarded", description: "Your changes have been discarded." });
     }
@@ -470,8 +485,12 @@ export function NoteEditor({
   }, [isDirty, isSaving, setIsOpen]);
 
   const handleSaveAsDraftAndClose = React.useCallback(() => {
-    const draftNote: Note = {
-      id: note?.id || new Date().toISOString(), 
+    if (!user) {
+      toast({ title: 'Not Authenticated', description: 'You must be logged in to save notes.', variant: 'destructive'});
+      return;
+    }
+    const draftNoteData: Omit<Note, 'id'> = {
+      userId: user.uid,
       title, content, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
       isTrashed: note?.isTrashed || false, createdAt: note?.createdAt || new Date().toISOString(),
@@ -484,11 +503,12 @@ export function NoteEditor({
       isPasswordProtected, password,
       imageUrl,
       audioUrl: generatedAudio,
+      cid,
     };
     
-    onSave(draftNote);
+    onSave(draftNoteData);
     setIsCloseConfirmOpen(false);
-  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, note, onSave]);
+  }, [title, content, color, checklist, imageUrl, generatedAudio, status, priority, category, dueDate, startTime, endTime, showOnBoard, isPasswordProtected, password, cid, note, onSave, user, toast]);
 
   const handleDiscardAndClose = React.useCallback(() => {
     setIsCloseConfirmOpen(false);
@@ -641,6 +661,19 @@ export function NoteEditor({
       return false;
     }
   }, { success: "Grammar and spelling fixed!", error: "Could not check grammar." }), [content, runAiAction, toast, setContent]);
+  
+  const handlePinToIpfs = React.useCallback(() => runAiAction(async () => {
+    if (!content && !title) throw new Error("Please add a title or content to pin.");
+    const result = await pinToDecentralizedStorage({ title, content });
+    if (result.cid) {
+        setCid(result.cid);
+        toast({
+            title: "Note Pinned to IPFS!",
+            description: `Your note's Content ID (CID) is ${result.cid.substring(0, 12)}...`,
+        });
+        return false;
+    }
+  }, { success: "Note pinned!", error: "Could not pin note." }), [content, title, runAiAction, setCid, toast]);
 
   const handleTranscriptionComplete = React.useCallback((text: string) => {
     setContent(prev => [prev, text].filter(Boolean).join('\n\n'));
@@ -1083,6 +1116,7 @@ export function NoteEditor({
                   <Button variant="outline" onClick={() => setIsSketcherOpen(true)}><Palette className="mr-2 h-4 w-4"/>Sketch</Button>
                   <Button variant="outline" onClick={handleAttachImage}><Paperclip className="mr-2 h-4 w-4"/>Attach Image</Button>
                   <Button variant="outline" disabled={!note} onClick={() => setIsHistoryOpen(true)}><History className="mr-2 h-4 w-4"/>History</Button>
+                  <Button variant="outline" disabled={isAiLoading} onClick={handlePinToIpfs}><Globe className="mr-2 h-4 w-4" />Pin to IPFS</Button>
                   
                   <Button variant="outline" onClick={() => setIsRecorderOpen(true)}><Mic className="mr-2 h-4 w-4"/>Record Audio</Button>
                   <Button variant="outline" onClick={handleAttachAudio}><Upload className="mr-2 h-4 w-4"/>Upload Audio</Button>

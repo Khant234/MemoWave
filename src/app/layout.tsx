@@ -10,6 +10,7 @@ import { NotesProvider } from '@/contexts/notes-context';
 import { GamificationProvider } from '@/contexts/gamification-context';
 import { TemplatesProvider } from '@/contexts/templates-context';
 import { ConfettiCelebration } from '@/components/app/confetti-celebration';
+import { AuthProvider } from '@/contexts/auth-context';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
 const sora = Sora({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-headline' });
@@ -34,17 +35,19 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TemplatesProvider>
-            <GamificationProvider>
-              <NotesProvider>
-                <TooltipProvider>
-                  <ConfettiCelebration />
-                  {children}
-                </TooltipProvider>
-                <Toaster />
-              </NotesProvider>
-            </GamificationProvider>
-          </TemplatesProvider>
+          <AuthProvider>
+            <TemplatesProvider>
+              <GamificationProvider>
+                <NotesProvider>
+                  <TooltipProvider>
+                    <ConfettiCelebration />
+                    {children}
+                  </TooltipProvider>
+                  <Toaster />
+                </NotesProvider>
+              </GamificationProvider>
+            </TemplatesProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
