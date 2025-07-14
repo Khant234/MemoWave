@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
@@ -15,36 +16,29 @@ export const useEditorHistory = (initialState: EditorState) => {
     const [index, setIndex] = useState(0);
     const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
-    const state = useMemo(() => history[index] || initialState, [history, index, initialState]);
+    const state = history[index];
     const isDirty = useMemo(() => !areStatesEqual(history[0], history[index]), [history, index]);
 
     const setState = useCallback((newState: EditorState | ((prevState: EditorState) => EditorState)) => {
         const resolvedState = typeof newState === 'function' ? newState(state) : newState;
+        
+        if(areStatesEqual(state, resolvedState)) return;
 
         if (debounceTimer.current) {
             clearTimeout(debounceTimer.current);
         }
 
-        // Set the state immediately for responsiveness without creating a new history entry yet
-        setHistory(currentHistory => {
-            const newHistory = [...currentHistory];
-            newHistory[index] = resolvedState;
-            return newHistory;
-        });
-
         debounceTimer.current = setTimeout(() => {
-            setHistory(currentHistory => {
-                // Only commit to history if the state has actually changed from the last real history entry
-                 if (!areStatesEqual(currentHistory[index], resolvedState)) {
-                    const truncatedHistory = currentHistory.slice(0, index + 1);
-                    const finalHistory = [...truncatedHistory, resolvedState];
-                    setIndex(finalHistory.length - 1);
-                    return finalHistory;
-                }
-                return currentHistory;
-            });
+            const newHistory = history.slice(0, index + 1);
+            setHistory([...newHistory, resolvedState]);
+            setIndex(newHistory.length);
         }, 500); // 500ms debounce
-    }, [index, state]);
+
+        // Set the state immediately for responsiveness without creating a new history entry yet
+        const immediateHistory = [...history];
+        immediateHistory[index] = resolvedState;
+        setHistory(immediateHistory);
+    }, [index, state, history]);
 
 
     const undo = useCallback(() => {
