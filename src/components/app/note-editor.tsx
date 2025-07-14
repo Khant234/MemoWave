@@ -358,32 +358,13 @@ export function NoteEditor({
       setIsAutoAiRunning(true);
       setSuggestion(null);
   
-      const containsBurmese = /[\u1000-\u109F]/.test(textToCheck);
-      const language = containsBurmese ? 'Burmese' : 'English';
-  
       try {
-        // Step 1: Check for grammar and spelling errors
-        const grammarResult = await checkGrammarAndSpelling({ text: textToCheck, language });
-  
-        // If user typed while AI was working, abort to prevent overriding newer state.
-        if (content !== textToCheck) {
-          setIsAutoAiRunning(false);
-          return;
-        }
-  
-        // If there was a correction, apply it and stop for this cycle.
-        if (grammarResult.correctedText && grammarResult.correctedText !== textToCheck) {
-          setContent(grammarResult.correctedText);
-          toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
-          // Important: Stop here to prevent a loop.
-          setIsAutoAiRunning(false);
-          return; 
-        }
-        
-        // Step 2: If no correction was made, get predictive text
+        // Step 2: Get predictive text
+        const containsBurmese = /[\u1000-\u109F]/.test(textToCheck);
+        const language = containsBurmese ? 'Burmese' : 'English';
         const completionResult = await completeText({ currentText: textToCheck, language });
         
-        // Check again if user typed while AI was working.
+        // Check if user typed while AI was working.
         if (content !== textToCheck) {
           setIsAutoAiRunning(false);
           return;
@@ -401,7 +382,7 @@ export function NoteEditor({
     }, 1500); // 1.5 second debounce
   
     return () => clearTimeout(handler);
-  }, [content, isOpen, isActionLoading, toast, setContent, isSmartMode, suggestion]);
+  }, [content, isOpen, isActionLoading, toast, isSmartMode]);
 
 
   React.useEffect(() => {
