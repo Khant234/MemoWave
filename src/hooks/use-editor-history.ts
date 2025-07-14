@@ -2,13 +2,17 @@
 
 'use client';
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { Note } from '@/lib/types';
 
 export type EditorState = Omit<Note, 'id' | 'isPinned' | 'isArchived' | 'isTrashed' | 'createdAt' | 'updatedAt' | 'history' | 'isDraft' | 'order' | 'planId' | 'planGoal' | 'userId'>;
 
 const areStatesEqual = (a: EditorState, b: EditorState) => {
-    return JSON.stringify(a) === JSON.stringify(b);
+    try {
+        return JSON.stringify(a) === JSON.stringify(b);
+    } catch (e) {
+        return false;
+    }
 };
 
 export const useEditorHistory = (initialState: EditorState) => {
@@ -17,14 +21,14 @@ export const useEditorHistory = (initialState: EditorState) => {
 
     const state = history[index];
 
-    // Memoize this calculation to prevent re-creating it on every render, which caused infinite loops.
-    const isDirty = useMemo(() => !areStatesEqual(history[0], history[index]), [history, index]);
+    const isDirty = useMemo(() => {
+        if (!history[0] || !history[index]) return false;
+        return !areStatesEqual(history[0], history[index]);
+    }, [history, index]);
 
     const setState = useCallback((newState: EditorState | ((prevState: EditorState) => EditorState)) => {
         const resolvedState = typeof newState === 'function' ? newState(state) : newState;
         
-        if (areStatesEqual(state, resolvedState)) return;
-
         const newHistory = history.slice(0, index + 1);
         newHistory.push(resolvedState);
         setHistory(newHistory);
