@@ -564,7 +564,7 @@ export function NoteEditor({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab' && suggestion) {
       e.preventDefault(); // Prevent focus change
-      setContent(currentContent => currentContent + suggestion);
+      setContent(currentContent => (currentContent || '') + suggestion);
       setSuggestion(null);
     }
   };
@@ -641,7 +641,7 @@ export function NoteEditor({
     const language = containsBurmese ? 'Burmese' : 'English';
     const result = await completeText({ currentText: content, language });
     if (result.completion) {
-      setContent(prev => prev + result.completion);
+      setContent(prev => (prev || '') + result.completion);
     }
   }, { success: "AI completed your text!", error: "Could not complete text."}), [content, runAiAction, setContent]);
 
@@ -903,7 +903,7 @@ export function NoteEditor({
                         <Textarea
                             ref={fgTextareaRef}
                             id="content"
-                            value={content}
+                            value={content || ''}
                             onChange={(e) => {
                                 setContent(e.target.value);
                                 if (suggestion) {
