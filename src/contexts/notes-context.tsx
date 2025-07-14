@@ -1,10 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import {
   collection,
   query,
-  orderBy,
   onSnapshot,
   where,
 } from 'firebase/firestore';
@@ -35,10 +35,11 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
 
     setIsLoading(true);
     const notesCollectionRef = collection(db, "notes");
+    // The orderBy clause was removed from the query to prevent the missing index error.
+    // The sorting is now handled on the client-side after the data is fetched.
     const q = query(
       notesCollectionRef, 
-      where("userId", "==", user.uid),
-      orderBy("updatedAt", "desc")
+      where("userId", "==", user.uid)
     );
 
     const unsubscribe = onSnapshot(
@@ -47,6 +48,10 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
         const fetchedNotes = querySnapshot.docs.map((doc) => {
           return { ...doc.data(), id: doc.id } as Note;
         });
+        
+        // Sort notes on the client side
+        fetchedNotes.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        
         setNotes(fetchedNotes);
         setIsLoading(false);
       },
