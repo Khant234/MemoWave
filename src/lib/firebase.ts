@@ -12,43 +12,41 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// A function to initialize Firebase if it hasn't been already.
-const initializeFirebase = () => {
-  const areAllConfigValuesDefined = Object.values(firebaseConfig).every(value => value);
-  if (!areAllConfigValuesDefined) {
-    console.error("Firebase config is missing one or more values. Check your .env file.");
-    // Return null or throw an error, depending on how you want to handle missing config
-    return null;
-  }
-  
+let app;
+let auth;
+let db;
+
+// This check ensures we're in a browser environment and have a valid API key.
+if (typeof window !== 'undefined' && firebaseConfig.apiKey) {
+  // Initialize Firebase only once
   if (!getApps().length) {
-    return initializeApp(firebaseConfig);
+    try {
+      app = initializeApp(firebaseConfig);
+    } catch (e) {
+      console.error("Firebase initialization error", e);
+    }
   } else {
-    return getApp();
+    app = getApp();
   }
-};
 
-const app = initializeFirebase();
-
-const db = app ? getFirestore(app) : null;
-const auth = app ? getAuth(app) : null;
-
-if (app && db) {
-  try {
-    enableIndexedDbPersistence(db)
-      .catch((err) => {
-        if (err.code == 'failed-precondition') {
-          // This can happen if multiple tabs are open.
-          console.warn("Firebase persistence failed due to multiple tabs.");
-        } else if (err.code == 'unimplemented') {
-          // This can happen if the browser doesn't support persistence.
-          console.warn("Firebase persistence is not supported in this browser.");
-        }
-      });
-  } catch(e) {
-    // This can happen if persistence is already enabled.
-    console.warn("Firebase persistence already enabled.");
+  if (app) {
+    auth = getAuth(app);
+    db = getFirestore(app);
+    try {
+      enableIndexedDbPersistence(db)
+        .catch((err) => {
+          if (err.code == 'failed-precondition') {
+            console.warn("Firebase persistence failed due to multiple tabs.");
+          } else if (err.code == 'unimplemented') {
+            console.warn("Firebase persistence is not supported in this browser.");
+          }
+        });
+    } catch(e) {
+      console.warn("Firebase persistence could not be enabled.");
+    }
   }
+} else if (!firebaseConfig.apiKey) {
+    console.error("Firebase API key is missing. Please check your environment variables.");
 }
 
 // Export the initialized services.
