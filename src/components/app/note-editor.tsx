@@ -94,7 +94,7 @@ import { Switch } from "@/components/ui/switch";
 import { useTemplates } from "@/contexts/templates-context";
 import { hashText } from "@/lib/crypto";
 import { Separator } from "../ui/separator";
-import { useEditorHistory, type EditorState } from "@/hooks/use-editor-history";
+import { useEditorHistory, type EditorState, areStatesEqual } from "@/hooks/use-editor-history";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -161,7 +161,7 @@ export function NoteEditor({
     canUndo,
     canRedo,
     resetHistory,
-    isDirty
+    getInitialState,
   } = useEditorHistory(initialEditorState);
 
   const {
@@ -169,6 +169,8 @@ export function NoteEditor({
       status, priority, category, dueDate, startTime, endTime, showOnBoard,
       isPasswordProtected, password, cid
   } = editorState;
+  
+  const isDirty = !areStatesEqual(getInitialState(), editorState);
 
   const setTitle = (newTitle: string) => setEditorState({ ...editorState, title: newTitle });
   const setContent = (newContent: string) => setEditorState({ ...editorState, content: newContent });
@@ -471,12 +473,13 @@ export function NoteEditor({
   }, [note, resetHistory, toast]);
 
   const handleOpenChange = React.useCallback((open: boolean) => {
-    if (!open && isDirty && !isSaving) {
+    const isActuallyDirty = !areStatesEqual(getInitialState(), editorState);
+    if (!open && isActuallyDirty && !isSaving) {
         setIsCloseConfirmOpen(true);
     } else {
         setIsOpen(open);
     }
-  }, [isDirty, isSaving, setIsOpen]);
+  }, [editorState, getInitialState, isSaving, setIsOpen]);
 
   const handleSaveAsDraftAndClose = React.useCallback(() => {
     if (!user) {

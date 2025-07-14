@@ -7,7 +7,7 @@ import type { Note } from '@/lib/types';
 
 export type EditorState = Omit<Note, 'id' | 'isPinned' | 'isArchived' | 'isTrashed' | 'createdAt' | 'updatedAt' | 'history' | 'isDraft' | 'order' | 'planId' | 'planGoal' | 'userId'>;
 
-const areStatesEqual = (a: EditorState, b: EditorState) => {
+export const areStatesEqual = (a: EditorState, b: EditorState) => {
     try {
         return JSON.stringify(a) === JSON.stringify(b);
     } catch (e) {
@@ -20,11 +20,7 @@ export const useEditorHistory = (initialState: EditorState) => {
     const [index, setIndex] = useState(0);
 
     const state = history[index];
-
-    const isDirty = useMemo(() => {
-        if (!history[0] || !history[index]) return false;
-        return !areStatesEqual(history[0], history[index]);
-    }, [history, index]);
+    const getInitialState = useCallback(() => history[0], [history]);
 
     const setState = useCallback((newState: EditorState | ((prevState: EditorState) => EditorState)) => {
         const resolvedState = typeof newState === 'function' ? newState(state) : newState;
@@ -64,6 +60,6 @@ export const useEditorHistory = (initialState: EditorState) => {
         canUndo,
         canRedo,
         resetHistory,
-        isDirty
+        getInitialState,
     };
 };
