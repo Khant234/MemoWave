@@ -49,6 +49,13 @@ const checkGrammarAndSpellingFlow = ai.defineFlow(
     name: 'checkGrammarAndSpellingFlow',
     inputSchema: CheckGrammarAndSpellingInputSchema,
     outputSchema: CheckGrammarAndSpellingOutputSchema,
+    retry: {
+      maxAttempts: 3,
+      backoff: {
+        delay: 500, // 500ms delay
+        multiplier: 2, // Double the delay for each retry
+      },
+    }
   },
   async input => {
     if (!input.text.trim()) {
