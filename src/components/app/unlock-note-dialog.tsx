@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -21,10 +22,10 @@ import { hashText } from "@/lib/crypto";
 type UnlockNoteDialogProps = {
   note: Note | null;
   onUnlock: (note: Note) => void;
-  onClose: () => void;
+  onCancel: () => void;
 };
 
-export function UnlockNoteDialog({ note, onUnlock, onClose }: UnlockNoteDialogProps) {
+export function UnlockNoteDialog({ note, onUnlock, onCancel }: UnlockNoteDialogProps) {
   const [password, setPassword] = React.useState("");
   const { toast } = useToast();
 
@@ -61,7 +62,7 @@ export function UnlockNoteDialog({ note, onUnlock, onClose }: UnlockNoteDialogPr
   };
 
   return (
-    <Dialog open={!!note} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={!!note} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-headline">
@@ -84,7 +85,7 @@ export function UnlockNoteDialog({ note, onUnlock, onClose }: UnlockNoteDialogPr
             />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
           <Button onClick={handleUnlock}>Unlock Note</Button>
