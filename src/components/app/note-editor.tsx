@@ -170,8 +170,6 @@ export function NoteEditor({
       isPasswordProtected, password, cid
   } = editorState;
   
-  const isDirtyRef = React.useRef(false);
-
   const setTitle = (newTitle: string) => setEditorState({ ...editorState, title: newTitle });
   const setContent = (newContent: string) => setEditorState({ ...editorState, content: newContent });
   const setSummary = (newSummary: string | null) => setEditorState({ ...editorState, summary: newSummary });
@@ -267,10 +265,6 @@ export function NoteEditor({
       syncTextareaHeights();
     }
   }, [isOpen, content, suggestion, syncTextareaHeights]);
-
-  React.useEffect(() => {
-      isDirtyRef.current = !areStatesEqual(getInitialState(), editorState);
-  }, [editorState, getInitialState]);
 
 
   React.useEffect(() => {
@@ -416,12 +410,13 @@ export function NoteEditor({
   }, [dueDate, setStartTime, setEndTime]);
   
   const handleCloseAttempt = React.useCallback(() => {
-    if (isDirtyRef.current && !isSaving) {
+    const isDirty = !areStatesEqual(getInitialState(), editorState);
+    if (isDirty && !isSaving) {
       setIsCloseConfirmOpen(true);
     } else {
       setIsOpen(false);
     }
-  }, [isSaving, setIsOpen]);
+  }, [isSaving, setIsOpen, getInitialState, editorState, setIsCloseConfirmOpen]);
 
   const handleSave = React.useCallback(() => {
     if (!user) {
@@ -843,7 +838,7 @@ export function NoteEditor({
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={handleCloseAttempt}>
+      <Sheet open={isOpen} onOpenChange={(open) => !open && handleCloseAttempt()}>
         <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden"/>
         <input type="file" ref={audioInputRef} onChange={handleAudioUpload} accept="audio/*" className="hidden"/>
         <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
@@ -1146,11 +1141,11 @@ export function NoteEditor({
           </ScrollArea>
           <SheetFooter className="p-6 bg-background border-t flex items-center gap-2">
             <div className="mr-auto">
-              {note && isDirtyRef.current && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
+              {note && !areStatesEqual(getInitialState(), editorState) && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
             </div>
-            <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : isDirtyRef.current ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
+            <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : !areStatesEqual(getInitialState(), editorState) ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
             <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
-            <Button onClick={handleSave} disabled={isAiLoading || !isDirtyRef.current || isSaving}>
+            <Button onClick={handleSave} disabled={isAiLoading || areStatesEqual(getInitialState(), editorState) || isSaving}>
               {isSaving ? <Loader2 className="animate-spin" /> : null}
               {isSaving ? "Saving..." : "Save Note"}
             </Button>
@@ -1225,6 +1220,7 @@ export function NoteEditor({
     </>
   );
 }
+
 
 
 
