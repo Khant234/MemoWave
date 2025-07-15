@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -19,7 +20,7 @@ type SketchInputProps = {
   onSave: (dataUrl: string) => void;
 };
 
-export function SketchInput({
+export default function SketchInput({
   open,
   setOpen,
   onSave,

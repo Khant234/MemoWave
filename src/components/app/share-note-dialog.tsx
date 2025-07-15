@@ -91,4 +91,3 @@ export function ShareNoteDialog({ open, setOpen, note }: ShareNoteDialogProps) {
     </Dialog>
   );
 }
-

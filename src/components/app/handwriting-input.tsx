@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -21,7 +22,7 @@ type HandwritingInputProps = {
   onRecognitionComplete: (text: string) => void;
 };
 
-export function HandwritingInput({
+export default function HandwritingInput({
   open,
   setOpen,
   onRecognitionComplete,

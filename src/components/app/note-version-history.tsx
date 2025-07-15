@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -49,7 +50,7 @@ const VersionItem = ({ version, isSelected, onSelect }: { version: NoteVersion, 
     );
 };
 
-export function NoteVersionHistory({
+export default function NoteVersionHistory({
   open,
   setOpen,
   history,

@@ -46,7 +46,7 @@ const NoteViewer = React.lazy(() => import('@/components/app/note-viewer').then(
 const NoteEditor = React.lazy(() => import('@/components/app/note-editor').then(module => ({ default: module.NoteEditor })));
 const AudioTranscriber = React.lazy(() => import('@/components/app/audio-transcriber').then(module => ({ default: module.AudioTranscriber })));
 const GoalPlanner = React.lazy(() => import('@/components/app/goal-planner').then(module => ({ default: module.GoalPlanner })));
-const UnlockNoteDialog = React.lazy(() => import('@/components/app/unlock-note-dialog').then(module => ({ default: module.UnlockNoteDialog })));
+const UnlockNoteDialog = React.lazy(() => import('@/components/app/unlock-note-dialog').then(module => ({ default: module.default })));
 
 
 export default function Home() {

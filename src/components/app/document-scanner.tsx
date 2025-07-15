@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -21,7 +22,7 @@ type DocumentScannerProps = {
   onTextExtracted: (text: string) => void;
 };
 
-export function DocumentScanner({ open, setOpen, onTextExtracted }: DocumentScannerProps) {
+export default function DocumentScanner({ open, setOpen, onTextExtracted }: DocumentScannerProps) {
   const [hasCameraPermission, setHasCameraPermission] = React.useState<boolean | null>(null);
   const [capturedImage, setCapturedImage] = React.useState<string | null>(null);
   const [isProcessing, setIsProcessing] = React.useState(false);
