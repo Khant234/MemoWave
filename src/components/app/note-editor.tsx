@@ -324,7 +324,7 @@ export function NoteEditor({
             const correctedText = grammarResult.correctedText;
             
             if (correctedText && correctedText.trim() !== content.trim()) {
-                setEditorState(prev => ({ ...prev, content: correctedText }));
+                setContent(correctedText);
                 // Stop here, let the effect re-run with corrected text if needed.
                 autoAiRunningRef.current = false;
                 setIsAutoAiRunning(false);
@@ -348,7 +348,7 @@ export function NoteEditor({
     }, 1500); // 1.5-second debounce
 
     return () => clearTimeout(handler);
-  }, [content, isOpen, isSmartMode, setEditorState, predictionMade]);
+  }, [content, isOpen, isSmartMode, setContent, predictionMade]);
 
 
   React.useEffect(() => {
@@ -522,7 +522,7 @@ export function NoteEditor({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab' && suggestion) {
       e.preventDefault(); // Prevent focus change
-      setContent(currentContent => currentContent + suggestion);
+      setContent(currentContent => (currentContent || '') + suggestion);
       setSuggestion(null);
       setPredictionMade(false); // Reset prediction lock
     }
@@ -532,7 +532,7 @@ export function NoteEditor({
     if(!imageUrl) throw new Error("Please attach an image first.");
     const result = await extractTextFromImage({ imageDataUri: imageUrl });
     if (result.extractedText && result.extractedText.trim()) {
-      setContent(prev => `${prev}\n\n--- Extracted Text ---\n${result.extractedText}`.trim());
+      setContent(prev => `${prev || ''}\n\n--- Extracted Text ---\n${result.extractedText}`.trim());
     } else {
       toast({
           title: "No Text Found",
@@ -600,7 +600,7 @@ export function NoteEditor({
     const language = containsBurmese ? 'Burmese' : 'English';
     const result = await completeText({ currentText: content, language });
     if (result.completion) {
-      setContent(prev => prev + result.completion);
+      setContent(prev => (prev || '') + result.completion);
     }
   }, { success: "AI completed your text!", error: "Could not complete text."}), [content, runAiAction, setContent]);
 
@@ -639,7 +639,7 @@ export function NoteEditor({
   }, [setContent]);
   
   const handleTextScanned = React.useCallback((text: string) => {
-    setContent(prev => `${prev}\n\n--- Scanned Text ---\n${text}`.trim());
+    setContent(prev => `${prev || ''}\n\n--- Scanned Text ---\n${text}`.trim());
   }, [setContent]);
 
   const handleSaveSketch = React.useCallback((dataUrl: string) => {
@@ -856,13 +856,13 @@ export function NoteEditor({
                             ref={bgTextareaRef}
                             readOnly
                             className="col-start-1 row-start-1 resize-none whitespace-pre-wrap text-muted-foreground [caret-color:transparent] min-h-[200px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            value={suggestion ? content + suggestion : content}
+                            value={suggestion ? (content || '') + suggestion : (content || '')}
                             tabIndex={-1}
                         />
                         <Textarea
                             ref={fgTextareaRef}
                             id="content"
-                            value={content}
+                            value={content || ''}
                             onChange={(e) => {
                                 setContent(e.target.value);
                                 setPredictionMade(false); // Reset prediction lock on user input
@@ -1180,4 +1180,3 @@ export function NoteEditor({
     </>
   );
 }
-
