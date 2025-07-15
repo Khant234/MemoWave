@@ -497,15 +497,16 @@ export function NoteEditor({
     setIsCloseConfirmOpen(false);
     setIsOpen(false);
   }, [setIsOpen]);
-  
-  const handleCloseAttempt = () => {
+
+  const handleCloseAttempt = React.useCallback(() => {
     const isDirty = !areStatesEqual(getInitialState(), editorState);
     if (isDirty && !isSaving) {
       setIsCloseConfirmOpen(true);
     } else {
       setIsOpen(false);
     }
-  };
+  }, [isSaving, setIsOpen, getInitialState, editorState]);
+  
 
   const handleAddChecklistItem = React.useCallback(() => {
     if (newChecklistItem.trim()) {
@@ -835,7 +836,7 @@ export function NoteEditor({
 
   return (
     <>
-      <Sheet open={isOpen}>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden"/>
         <input type="file" ref={audioInputRef} onChange={handleAudioUpload} accept="audio/*" className="hidden"/>
         <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
