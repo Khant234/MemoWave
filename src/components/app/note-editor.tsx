@@ -205,7 +205,6 @@ export function NoteEditor({
   const [isSketcherOpen, setIsSketcherOpen] = React.useState(false);
   const [isScannerOpen, setIsScannerOpen] = React.useState(false);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
-  const [nextOpenState, setNextOpenState] = React.useState(isOpen);
   const [ignoredChecklistItems, setIgnoredChecklistItems] = React.useState(new Set<string>());
   const [templateToApply, setTemplateToApply] = React.useState<NoteTemplate | null>(null);
   const { templates } = useTemplates();
@@ -478,17 +477,13 @@ export function NoteEditor({
     }
   }, [note, resetHistory, toast]);
 
-  const handleOpenChange = React.useCallback((open: boolean) => {
-    if (!open && isDirtyRef.current && !isSaving) {
-        setIsCloseConfirmOpen(true);
+  const handleCloseAttempt = () => {
+    if (isDirtyRef.current && !isSaving) {
+      setIsCloseConfirmOpen(true);
     } else {
-        setNextOpenState(open);
+      setIsOpen(false);
     }
-  }, [isSaving]);
-
-  React.useEffect(() => {
-    setIsOpen(nextOpenState);
-  }, [nextOpenState, setIsOpen]);
+  };
 
   const handleSaveAsDraftAndClose = React.useCallback(() => {
     if (!user) {
@@ -518,8 +513,8 @@ export function NoteEditor({
 
   const handleDiscardAndClose = React.useCallback(() => {
     setIsCloseConfirmOpen(false);
-    setNextOpenState(false);
-  }, []);
+    setIsOpen(false);
+  }, [setIsOpen]);
   
   const handleAddChecklistItem = React.useCallback(() => {
     if (newChecklistItem.trim()) {
@@ -850,7 +845,7 @@ export function NoteEditor({
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden"/>
         <input type="file" ref={audioInputRef} onChange={handleAudioUpload} accept="audio/*" className="hidden"/>
         <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
@@ -1156,7 +1151,9 @@ export function NoteEditor({
               {note && isDirtyRef.current && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
             </div>
             <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : isDirtyRef.current ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
-            <SheetClose asChild><Button variant="outline">Cancel</Button></SheetClose>
+            <SheetClose asChild>
+                <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
+            </SheetClose>
             <Button onClick={handleSave} disabled={isAiLoading || !isDirtyRef.current || isSaving}>
               {isSaving ? <Loader2 className="animate-spin" /> : null}
               {isSaving ? "Saving..." : "Save Note"}
