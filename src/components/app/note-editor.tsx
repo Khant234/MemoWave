@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from "react";
@@ -112,7 +111,7 @@ type NoteEditorProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   note: Note | null;
-  onSave: (note: Omit<Note, 'id' | 'userId'>) => void;
+  onSave: (noteToSave: Omit<Note, 'id' | 'userId'>) => void;
   isSaving?: boolean;
 };
 
@@ -409,13 +408,15 @@ export function NoteEditor({
     }
   }, [dueDate, setStartTime, setEndTime]);
   
-  const handleCloseAttempt = (e: React.MouseEvent) => {
+  const handleCloseAttempt = () => {
     const isDirty = !areStatesEqual(getInitialState(), editorState);
     if (isDirty && !isSaving) {
-      e.preventDefault();
       setIsCloseConfirmOpen(true);
+    } else {
+      setIsOpen(false);
     }
   };
+
 
   const handleSave = React.useCallback(() => {
     if (!user) {
@@ -432,7 +433,7 @@ export function NoteEditor({
       return;
     }
 
-    const newNoteData: Omit<Note, 'id'> = {
+    const newNoteData: Omit<Note, 'id' | 'userId'> = {
       userId: user.uid,
       title, content: content || '', summary, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
@@ -482,7 +483,7 @@ export function NoteEditor({
       toast({ title: 'Not Authenticated', description: 'You must be logged in to save notes.', variant: 'destructive'});
       return;
     }
-    const draftNoteData: Omit<Note, 'id'> = {
+    const draftNoteData: Omit<Note, 'id' | 'userId'> = {
       userId: user.uid,
       title, content: content || '', summary, color,
       isPinned: note?.isPinned || false, isArchived: note?.isArchived || false,
@@ -926,7 +927,7 @@ export function NoteEditor({
                         Press <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">Tab</kbd> to accept an AI suggestion.
                     </p>
                     <p className="text-xs text-muted-foreground px-1">
-                        Math? Use $...$ or $$...$$
+                        Math? Use $...$ or $$\...$$
                     </p>
                 </div>
               </div>
@@ -1143,9 +1144,7 @@ export function NoteEditor({
               {note && !areStatesEqual(getInitialState(), editorState) && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
             </div>
             <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : !areStatesEqual(getInitialState(), editorState) ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
-            <SheetClose asChild>
-                <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
-            </SheetClose>
+            <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
             <Button onClick={handleSave} disabled={isAiLoading || areStatesEqual(getInitialState(), editorState) || isSaving}>
               {isSaving ? <Loader2 className="animate-spin" /> : null}
               {isSaving ? "Saving..." : "Save Note"}
@@ -1221,3 +1220,7 @@ export function NoteEditor({
     </>
   );
 }
+
+    
+
+    
