@@ -409,12 +409,11 @@ export function NoteEditor({
     }
   }, [dueDate, setStartTime, setEndTime]);
   
-  const handleCloseAttempt = () => {
+  const handleCloseAttempt = (e: React.MouseEvent) => {
     const isDirty = !areStatesEqual(getInitialState(), editorState);
     if (isDirty && !isSaving) {
+      e.preventDefault();
       setIsCloseConfirmOpen(true);
-    } else {
-      setIsOpen(false);
     }
   };
 
@@ -1144,7 +1143,9 @@ export function NoteEditor({
               {note && !areStatesEqual(getInitialState(), editorState) && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
             </div>
             <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : !areStatesEqual(getInitialState(), editorState) ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
-            <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
+            <SheetClose asChild>
+                <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
+            </SheetClose>
             <Button onClick={handleSave} disabled={isAiLoading || areStatesEqual(getInitialState(), editorState) || isSaving}>
               {isSaving ? <Loader2 className="animate-spin" /> : null}
               {isSaving ? "Saving..." : "Save Note"}
