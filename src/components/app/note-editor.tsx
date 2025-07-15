@@ -344,7 +344,7 @@ export function NoteEditor({
     return () => clearTimeout(handler);
   }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems, setChecklist, isSmartMode]);
 
-  // Background AI for auto grammar fix and predictive text
+  // Background AI for predictive text
   React.useEffect(() => {
     if (!isOpen || !isSmartMode) {
       if(suggestion) setSuggestion(null); // Clear suggestion if smart mode is toggled off
@@ -353,7 +353,7 @@ export function NoteEditor({
   
     const handler = setTimeout(async () => {
       const textToCheck = content;
-      if (!textToCheck.trim() || isActionLoading) return;
+      if (!textToCheck.trim() || isActionLoading || textToCheck.endsWith(' ')) return;
   
       setIsAutoAiRunning(true);
       setSuggestion(null);
@@ -362,28 +362,9 @@ export function NoteEditor({
       const language = containsBurmese ? 'Burmese' : 'English';
   
       try {
-        // Step 1: Check for grammar and spelling errors
-        const grammarResult = await checkGrammarAndSpelling({ text: textToCheck, language });
-  
-        // If user typed while AI was working, abort to prevent overriding newer state.
-        if (content !== textToCheck) {
-          setIsAutoAiRunning(false);
-          return;
-        }
-  
-        // If there was a correction, apply it and stop for this cycle.
-        if (grammarResult.correctedText && grammarResult.correctedText !== textToCheck) {
-          setContent(grammarResult.correctedText);
-          toast({ title: "Auto-corrected", description: "Grammar and spelling fixed." });
-          // Important: Stop here to prevent a loop.
-          setIsAutoAiRunning(false);
-          return; 
-        }
-        
-        // Step 2: If no correction was made, get predictive text
         const completionResult = await completeText({ currentText: textToCheck, language });
         
-        // Check again if user typed while AI was working.
+        // Check if user typed while AI was working.
         if (content !== textToCheck) {
           setIsAutoAiRunning(false);
           return;
@@ -394,14 +375,14 @@ export function NoteEditor({
         }
   
       } catch (error) {
-        console.error("Background AI task failed:", error);
+        console.error("Background text completion failed:", error);
       } finally {
         setIsAutoAiRunning(false);
       }
     }, 1500); // 1.5 second debounce
   
     return () => clearTimeout(handler);
-  }, [content, isOpen, isActionLoading, toast, setContent, isSmartMode, suggestion]);
+  }, [content, isOpen, isActionLoading, setContent, isSmartMode, suggestion]);
 
 
   React.useEffect(() => {
@@ -480,13 +461,14 @@ export function NoteEditor({
     }
   }, [note, resetHistory, toast]);
 
-  const handleOpenChange = React.useCallback((open: boolean) => {
-    if (!open && isDirty && !isSaving) {
+  const handleCloseAttempt = () => {
+    if (isDirty && !isSaving) {
         setIsCloseConfirmOpen(true);
     } else {
-        setIsOpen(open);
+        setIsOpen(false);
     }
-  }, [isDirty, isSaving, setIsOpen]);
+  };
+
 
   const handleSaveAsDraftAndClose = React.useCallback(() => {
     if (!user) {
@@ -848,7 +830,7 @@ export function NoteEditor({
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden"/>
         <input type="file" ref={audioInputRef} onChange={handleAudioUpload} accept="audio/*" className="hidden"/>
         <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
@@ -1154,7 +1136,7 @@ export function NoteEditor({
               {isDirty && note && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
             </div>
             <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : isDirty ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
-            <SheetClose asChild><Button variant="outline">Cancel</Button></SheetClose>
+            <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
             <Button onClick={handleSave} disabled={isAiLoading || !isDirty || isSaving}>
               {isSaving ? <Loader2 className="animate-spin" /> : null}
               {isSaving ? "Saving..." : "Save Note"}
