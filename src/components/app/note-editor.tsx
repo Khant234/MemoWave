@@ -205,6 +205,7 @@ export function NoteEditor({
   const [isSketcherOpen, setIsSketcherOpen] = React.useState(false);
   const [isScannerOpen, setIsScannerOpen] = React.useState(false);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = React.useState(false);
+  const [nextOpenState, setNextOpenState] = React.useState(isOpen);
   const [ignoredChecklistItems, setIgnoredChecklistItems] = React.useState(new Set<string>());
   const [templateToApply, setTemplateToApply] = React.useState<NoteTemplate | null>(null);
   const { templates } = useTemplates();
@@ -481,9 +482,13 @@ export function NoteEditor({
     if (!open && isDirtyRef.current && !isSaving) {
         setIsCloseConfirmOpen(true);
     } else {
-        setIsOpen(open);
+        setNextOpenState(open);
     }
-  }, [isSaving, setIsOpen]);
+  }, [isSaving]);
+
+  React.useEffect(() => {
+    setIsOpen(nextOpenState);
+  }, [nextOpenState, setIsOpen]);
 
   const handleSaveAsDraftAndClose = React.useCallback(() => {
     if (!user) {
@@ -513,8 +518,8 @@ export function NoteEditor({
 
   const handleDiscardAndClose = React.useCallback(() => {
     setIsCloseConfirmOpen(false);
-    setIsOpen(false);
-  }, [setIsOpen]);
+    setNextOpenState(false);
+  }, []);
   
   const handleAddChecklistItem = React.useCallback(() => {
     if (newChecklistItem.trim()) {
