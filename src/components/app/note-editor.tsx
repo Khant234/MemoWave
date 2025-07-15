@@ -302,7 +302,6 @@ export function NoteEditor({
         cid: note.cid || undefined,
       } : {
         ...initialEditorState,
-        content: '',
         color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
       };
       
@@ -845,7 +844,7 @@ export function NoteEditor({
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <Sheet open={isOpen} onOpenChange={(open) => { if (!open) handleCloseAttempt(); else setIsOpen(true);}}>
         <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden"/>
         <input type="file" ref={audioInputRef} onChange={handleAudioUpload} accept="audio/*" className="hidden"/>
         <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
@@ -1227,3 +1226,4 @@ export function NoteEditor({
     </>
   );
 }
+
