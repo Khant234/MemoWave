@@ -112,7 +112,7 @@ type NoteEditorProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   note: Note | null;
-  onSave: (note: Omit<Note, 'id' | 'userId'>) => void;
+  onSave: (noteToSave: Omit<Note, 'id' | 'userId'>) => void;
   isSaving?: boolean;
 };
 
@@ -343,47 +343,6 @@ export function NoteEditor({
 
     return () => clearTimeout(handler);
   }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems, setChecklist, isSmartMode]);
-
-  // Background AI for predictive text
-  React.useEffect(() => {
-    if (!isOpen || !isSmartMode) {
-      if(suggestion) setSuggestion(null); // Clear suggestion if smart mode is toggled off
-      return;
-    }
-  
-    const handler = setTimeout(async () => {
-      const textToCheck = content;
-      if (!textToCheck.trim() || isActionLoading || textToCheck.endsWith(' ')) return;
-  
-      setIsAutoAiRunning(true);
-      setSuggestion(null);
-  
-      const containsBurmese = /[\u1000-\u109F]/.test(textToCheck);
-      const language = containsBurmese ? 'Burmese' : 'English';
-  
-      try {
-        const completionResult = await completeText({ currentText: textToCheck, language });
-        
-        // Check if user typed while AI was working.
-        if (content !== textToCheck) {
-          setIsAutoAiRunning(false);
-          return;
-        }
-  
-        if (completionResult.completion) {
-          setSuggestion(completionResult.completion);
-        }
-  
-      } catch (error) {
-        console.error("Background text completion failed:", error);
-      } finally {
-        setIsAutoAiRunning(false);
-      }
-    }, 1500); // 1.5 second debounce
-  
-    return () => clearTimeout(handler);
-  }, [content, isOpen, isActionLoading, setContent, isSmartMode, suggestion]);
-
 
   React.useEffect(() => {
     if (isOpen) {
