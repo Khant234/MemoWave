@@ -195,6 +195,8 @@ export function NoteEditor({
   const [isActionLoading, setIsActionLoading] = React.useState(false);
   const [isAutoAiRunning, setIsAutoAiRunning] = React.useState(false);
   const [isSmartMode, setIsSmartMode] = React.useState(true);
+  const [predictionMade, setPredictionMade] = React.useState(false);
+
 
   const [isTranscriberOpen, setIsTranscriberOpen] = React.useState(false);
   const [isRecorderOpen, setIsRecorderOpen] = React.useState(false);
@@ -303,8 +305,8 @@ export function NoteEditor({
     }
   }, [note, isOpen, resetHistory]);
   
-  React.useEffect(() => {
-    if (!isOpen || !isSmartMode || !content.trim() || autoAiRunningRef.current) {
+   React.useEffect(() => {
+    if (!isOpen || !isSmartMode || !content.trim() || autoAiRunningRef.current || predictionMade) {
         return;
     }
 
@@ -333,6 +335,7 @@ export function NoteEditor({
             const completionResult = await completeText({ currentText: content, language });
             if (completionResult.completion) {
                 setSuggestion(completionResult.completion);
+                setPredictionMade(true); // Lock the prediction feature
             }
 
         } catch (error) {
@@ -345,7 +348,7 @@ export function NoteEditor({
     }, 1500); // 1.5-second debounce
 
     return () => clearTimeout(handler);
-  }, [content, isOpen, isSmartMode, setEditorState]);
+  }, [content, isOpen, isSmartMode, setEditorState, predictionMade]);
 
 
   React.useEffect(() => {
@@ -521,6 +524,7 @@ export function NoteEditor({
       e.preventDefault(); // Prevent focus change
       setContent(currentContent => currentContent + suggestion);
       setSuggestion(null);
+      setPredictionMade(false); // Reset prediction lock
     }
   };
 
@@ -861,6 +865,7 @@ export function NoteEditor({
                             value={content}
                             onChange={(e) => {
                                 setContent(e.target.value);
+                                setPredictionMade(false); // Reset prediction lock on user input
                                 if (suggestion) {
                                     setSuggestion(null);
                                 }
@@ -1175,3 +1180,4 @@ export function NoteEditor({
     </>
   );
 }
+
