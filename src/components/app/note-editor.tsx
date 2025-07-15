@@ -10,6 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetFooter,
+  SheetClose,
 } from "@/components/ui/sheet";
 import {
   AlertDialog,
@@ -320,19 +321,15 @@ export function NoteEditor({
             const grammarResult = await checkGrammarAndSpelling({ text: content, language });
             const correctedText = grammarResult.correctedText;
             
-            let textIsCorrected = false;
             if (correctedText && correctedText.trim() !== content.trim()) {
                 setEditorState(prev => ({ ...prev, content: correctedText }));
-                textIsCorrected = true;
-            }
-
-            // If text was corrected, stop here and let the user see the change.
-            // The effect will re-run with the corrected text on the next pause.
-            if (textIsCorrected) {
+                // Stop here, let the effect re-run with corrected text if needed.
+                autoAiRunningRef.current = false;
+                setIsAutoAiRunning(false);
                 return; 
             }
             
-            // Step 2: Text Completion
+            // Step 2: Text Completion (only if no grammar correction was made)
             const completionResult = await completeText({ currentText: content, language });
             if (completionResult.completion) {
                 setSuggestion(completionResult.completion);
