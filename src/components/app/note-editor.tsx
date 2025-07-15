@@ -266,6 +266,15 @@ export function NoteEditor({
     }
   }, [isOpen, content, suggestion, syncTextareaHeights]);
 
+  // Refs to hold the current state for the stable handleCloseAttempt callback
+  const editorStateRef = React.useRef(editorState);
+  const initialStateRef = React.useRef(getInitialState());
+  
+  React.useEffect(() => {
+    editorStateRef.current = editorState;
+    initialStateRef.current = getInitialState();
+  }, [editorState, getInitialState]);
+
 
   React.useEffect(() => {
     if (isOpen) {
@@ -410,13 +419,13 @@ export function NoteEditor({
   }, [dueDate, setStartTime, setEndTime]);
   
   const handleCloseAttempt = React.useCallback(() => {
-    const isDirty = !areStatesEqual(getInitialState(), editorState);
+    const isDirty = !areStatesEqual(initialStateRef.current, editorStateRef.current);
     if (isDirty && !isSaving) {
       setIsCloseConfirmOpen(true);
     } else {
       setIsOpen(false);
     }
-  }, [isSaving, setIsOpen, getInitialState, editorState, setIsCloseConfirmOpen]);
+  }, [isSaving, setIsOpen]);
 
   const handleSave = React.useCallback(() => {
     if (!user) {
@@ -1220,6 +1229,7 @@ export function NoteEditor({
     </>
   );
 }
+
 
 
 
