@@ -477,13 +477,13 @@ export function NoteEditor({
     }
   }, [note, resetHistory, toast]);
 
-  const handleCloseAttempt = () => {
+  const handleCloseAttempt = React.useCallback(() => {
     if (isDirtyRef.current && !isSaving) {
       setIsCloseConfirmOpen(true);
     } else {
       setIsOpen(false);
     }
-  };
+  }, [isSaving, setIsOpen]);
 
   const handleSaveAsDraftAndClose = React.useCallback(() => {
     if (!user) {
@@ -1151,9 +1151,7 @@ export function NoteEditor({
               {note && isDirtyRef.current && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
             </div>
             <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : isDirtyRef.current ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
-            <SheetClose asChild>
-                <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
-            </SheetClose>
+            <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
             <Button onClick={handleSave} disabled={isAiLoading || !isDirtyRef.current || isSaving}>
               {isSaving ? <Loader2 className="animate-spin" /> : null}
               {isSaving ? "Saving..." : "Save Note"}
