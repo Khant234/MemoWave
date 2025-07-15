@@ -9,7 +9,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetFooter,
-  SheetClose,
 } from "@/components/ui/sheet";
 import {
   AlertDialog,
@@ -499,6 +498,15 @@ export function NoteEditor({
     setIsOpen(false);
   }, [setIsOpen]);
   
+  const handleCloseAttempt = () => {
+    const isDirty = !areStatesEqual(getInitialState(), editorState);
+    if (isDirty && !isSaving) {
+      setIsCloseConfirmOpen(true);
+    } else {
+      setIsOpen(false);
+    }
+  };
+
   const handleAddChecklistItem = React.useCallback(() => {
     if (newChecklistItem.trim()) {
       setChecklist([ ...checklist, { id: new Date().toISOString(), text: newChecklistItem.trim(), completed: false }]);
@@ -825,14 +833,6 @@ export function NoteEditor({
     }, 0);
   };
 
-  const handleCloseAttempt = (e: React.MouseEvent) => {
-    const isDirty = !areStatesEqual(getInitialState(), editorState);
-    if (isDirty && !isSaving) {
-      e.preventDefault();
-      setIsCloseConfirmOpen(true);
-    }
-  };
-
   return (
     <>
       <Sheet open={isOpen}>
@@ -1141,9 +1141,7 @@ export function NoteEditor({
               {note && !areStatesEqual(getInitialState(), editorState) && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
             </div>
             <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : !areStatesEqual(getInitialState(), editorState) ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
-            <SheetClose asChild>
-              <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
-            </SheetClose>
+            <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
             <Button onClick={handleSave} disabled={isAiLoading || areStatesEqual(getInitialState(), editorState) || isSaving}>
               {isSaving ? <Loader2 className="animate-spin" /> : null}
               {isSaving ? "Saving..." : "Save Note"}
