@@ -10,7 +10,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetFooter,
-  SheetClose,
 } from "@/components/ui/sheet";
 import {
   AlertDialog,
@@ -304,39 +303,49 @@ export function NoteEditor({
   }, [note, isOpen, resetHistory]);
   
   React.useEffect(() => {
-    if (!isOpen || !isSmartMode || !content.trim() || autoAiRunningRef.current) return;
+    if (!isOpen || !isSmartMode || !content.trim() || autoAiRunningRef.current) {
+        return;
+    }
 
     const handler = setTimeout(async () => {
-      autoAiRunningRef.current = true;
-      setIsAutoAiRunning(true);
-      
-      const containsBurmese = /[\u1000-\u109F]/.test(content);
-      const language = containsBurmese ? 'Burmese' : 'English';
+        autoAiRunningRef.current = true;
+        setIsAutoAiRunning(true);
+        setSuggestion(null); // Clear old suggestions
 
-      try {
-        const [completionResult, grammarResult] = await Promise.all([
-          completeText({ currentText: content, language }),
-          checkGrammarAndSpelling({ text: content, language })
-        ]);
+        const containsBurmese = /[\u1000-\u109F]/.test(content);
+        const language = containsBurmese ? 'Burmese' : 'English';
 
-        if (grammarResult.correctedText && grammarResult.correctedText.trim() !== content.trim()) {
-           // A simple heuristic to prefer completions over corrections if the user is in the middle of a word.
-           if (!content.endsWith(' ')) {
-              setEditorState(prev => ({...prev, content: grammarResult.correctedText }));
-           }
+        try {
+            // Step 1: Grammar and Spelling Check
+            const grammarResult = await checkGrammarAndSpelling({ text: content, language });
+            const correctedText = grammarResult.correctedText;
+            
+            let textIsCorrected = false;
+            if (correctedText && correctedText.trim() !== content.trim()) {
+                setEditorState(prev => ({ ...prev, content: correctedText }));
+                textIsCorrected = true;
+            }
+
+            // If text was corrected, stop here and let the user see the change.
+            // The effect will re-run with the corrected text on the next pause.
+            if (textIsCorrected) {
+                return; 
+            }
+            
+            // Step 2: Text Completion
+            const completionResult = await completeText({ currentText: content, language });
+            if (completionResult.completion) {
+                setSuggestion(completionResult.completion);
+            }
+
+        } catch (error) {
+            console.error("Smart Mode AI Error:", error);
+            // Don't show a toast for background errors to avoid annoying the user
+        } finally {
+            autoAiRunningRef.current = false;
+            setIsAutoAiRunning(false);
         }
-        
-        if (completionResult.completion) {
-          setSuggestion(completionResult.completion);
-        }
-
-      } catch (error) {
-        console.error("Smart Mode AI Error:", error);
-      } finally {
-        autoAiRunningRef.current = false;
-        setIsAutoAiRunning(false);
-      }
-    }, 1500); // 1.5 second debounce
+    }, 1500); // 1.5-second debounce
 
     return () => clearTimeout(handler);
   }, [content, isOpen, isSmartMode, setEditorState]);
@@ -418,13 +427,13 @@ export function NoteEditor({
     }
   }, [note, resetHistory, toast]);
 
-  const handleCloseAttempt = () => {
+  const handleCloseAttempt = React.useCallback(() => {
     if (isDirty && !isSaving) {
         setIsCloseConfirmOpen(true);
     } else {
         setIsOpen(false);
     }
-  };
+  }, [isDirty, isSaving, setIsOpen]);
 
 
   const handleSaveAsDraftAndClose = React.useCallback(() => {
