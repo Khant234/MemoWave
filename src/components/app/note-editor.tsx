@@ -408,16 +408,6 @@ export function NoteEditor({
     }
   }, [dueDate, setStartTime, setEndTime]);
   
-  const handleCloseAttempt = () => {
-    const isDirty = !areStatesEqual(getInitialState(), editorState);
-    if (isDirty && !isSaving) {
-      setIsCloseConfirmOpen(true);
-    } else {
-      setIsOpen(false);
-    }
-  };
-
-
   const handleSave = React.useCallback(() => {
     if (!user) {
       toast({ title: 'Not Authenticated', description: 'You must be logged in to save notes.', variant: 'destructive'});
@@ -835,10 +825,17 @@ export function NoteEditor({
     }, 0);
   };
 
+  const handleCloseAttempt = (e: React.MouseEvent) => {
+    const isDirty = !areStatesEqual(getInitialState(), editorState);
+    if (isDirty && !isSaving) {
+      e.preventDefault();
+      setIsCloseConfirmOpen(true);
+    }
+  };
 
   return (
     <>
-      <Sheet open={isOpen}>
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden"/>
         <input type="file" ref={audioInputRef} onChange={handleAudioUpload} accept="audio/*" className="hidden"/>
         <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
@@ -1144,7 +1141,9 @@ export function NoteEditor({
               {note && !areStatesEqual(getInitialState(), editorState) && (<Button variant="ghost" className="text-destructive hover:text-destructive" onClick={handleDiscardChanges}>Discard Changes</Button>)}
             </div>
             <span className="text-sm text-muted-foreground">{isSaving ? "Saving..." : isAiLoading ? "AI is working..." : !areStatesEqual(getInitialState(), editorState) ? "Unsaved changes" : note ? "All changes saved" : ""}</span>
-            <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
+            <SheetClose asChild>
+              <Button variant="outline" onClick={handleCloseAttempt}>Cancel</Button>
+            </SheetClose>
             <Button onClick={handleSave} disabled={isAiLoading || areStatesEqual(getInitialState(), editorState) || isSaving}>
               {isSaving ? <Loader2 className="animate-spin" /> : null}
               {isSaving ? "Saving..." : "Save Note"}
@@ -1220,5 +1219,3 @@ export function NoteEditor({
     </>
   );
 }
-
-    
