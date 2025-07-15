@@ -363,20 +363,19 @@ export function NoteEditor({
     }
   
     grammarDebounceTimer.current = setTimeout(async () => {
-      const textToCheck = content;
-      if (typeof textToCheck !== 'string' || !textToCheck.trim() || isActionLoading) return;
+      if (typeof content !== 'string' || !content.trim() || isActionLoading) return;
   
       setIsAutoAiRunning(true);
       setSuggestion(null);
   
       try {
         // Step 2: Get predictive text
-        const containsBurmese = /[\u1000-\u109F]/.test(textToCheck);
+        const containsBurmese = /[\u1000-\u109F]/.test(content);
         const language = containsBurmese ? 'Burmese' : 'English';
-        const completionResult = await completeText({ currentText: textToCheck, language });
+        const completionResult = await completeText({ currentText: content, language });
         
         // Check if user typed while AI was working.
-        if (content !== textToCheck) {
+        if (fgTextareaRef.current && fgTextareaRef.current.value !== content) {
           setIsAutoAiRunning(false);
           return;
         }
@@ -415,6 +414,14 @@ export function NoteEditor({
         setEndTime(null);
     }
   }, [dueDate, setStartTime, setEndTime]);
+  
+  const handleCloseAttempt = React.useCallback(() => {
+    if (isDirtyRef.current && !isSaving) {
+      setIsCloseConfirmOpen(true);
+    } else {
+      setIsOpen(false);
+    }
+  }, [isSaving, setIsOpen]);
 
   const handleSave = React.useCallback(() => {
     if (!user) {
@@ -475,15 +482,7 @@ export function NoteEditor({
       toast({ title: "Changes discarded", description: "Your changes have been discarded." });
     }
   }, [note, resetHistory, toast]);
-
-  const handleCloseAttempt = React.useCallback(() => {
-    if (isDirtyRef.current && !isSaving) {
-      setIsCloseConfirmOpen(true);
-    } else {
-      setIsOpen(false);
-    }
-  }, [isSaving, setIsOpen]);
-
+  
   const handleSaveAsDraftAndClose = React.useCallback(() => {
     if (!user) {
       toast({ title: 'Not Authenticated', description: 'You must be logged in to save notes.', variant: 'destructive'});
@@ -844,7 +843,7 @@ export function NoteEditor({
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={(open) => { if (!open) handleCloseAttempt(); else setIsOpen(true);}}>
+      <Sheet open={isOpen} onOpenChange={(open) => !open && handleCloseAttempt()}>
         <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden"/>
         <input type="file" ref={audioInputRef} onChange={handleAudioUpload} accept="audio/*" className="hidden"/>
         <SheetContent className="sm:max-w-2xl w-full flex flex-col p-0">
@@ -1226,4 +1225,5 @@ export function NoteEditor({
     </>
   );
 }
+
 
