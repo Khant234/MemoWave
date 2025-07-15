@@ -306,7 +306,7 @@ export function NoteEditor({
   }, [note, isOpen, resetHistory]);
   
    React.useEffect(() => {
-    if (!isOpen || !isSmartMode || !content.trim() || autoAiRunningRef.current || predictionMade) {
+    if (!isOpen || !isSmartMode || !content || !content.trim() || autoAiRunningRef.current || predictionMade) {
         return;
     }
 
@@ -856,7 +856,7 @@ export function NoteEditor({
                             ref={bgTextareaRef}
                             readOnly
                             className="col-start-1 row-start-1 resize-none whitespace-pre-wrap text-muted-foreground [caret-color:transparent] min-h-[200px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            value={suggestion ? (content || '') + suggestion : (content || '')}
+                            value={(content || '') + (suggestion || '')}
                             tabIndex={-1}
                         />
                         <Textarea
