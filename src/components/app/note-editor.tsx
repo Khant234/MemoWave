@@ -218,7 +218,7 @@ export function NoteEditor({
 
   const imageInputRef = React.useRef<HTMLInputElement>(null);
   const audioInputRef = React.useRef<HTMLInputElement>(null);
-  const autoChecklistRunning = React.useRef(false);
+  const autoAiRunningRef = React.useRef(false);
   const bgTextareaRef = React.useRef<HTMLTextAreaElement>(null);
   const fgTextareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -302,47 +302,45 @@ export function NoteEditor({
       prevChecklistLength.current = (note?.checklist || []).length;
     }
   }, [note, isOpen, resetHistory]);
-
-  // Background AI task for auto checklist generation
+  
   React.useEffect(() => {
-    if (!isOpen || !isSmartMode) return;
+    if (!isOpen || !isSmartMode || !content.trim() || autoAiRunningRef.current) return;
 
     const handler = setTimeout(async () => {
-      if (!content.trim() || autoChecklistRunning.current || isAiLoading) return;
+      autoAiRunningRef.current = true;
+      setIsAutoAiRunning(true);
       
-      autoChecklistRunning.current = true;
+      const containsBurmese = /[\u1000-\u109F]/.test(content);
+      const language = containsBurmese ? 'Burmese' : 'English';
+
       try {
-        const result = await extractChecklistItems({ noteContent: content });
-        if (result.items && result.items.length > 0) {
-          const newItems = result.items.map(item => ({...item, id: new Date().toISOString() + Math.random()}));
-          
-          let addedCount = 0;
-          setChecklist(prev => {
-            const existingTexts = new Set(prev.map(p => p.text.trim().toLowerCase()));
-            const filteredNewItems = newItems.filter(newItem => 
-                !existingTexts.has(newItem.text.trim().toLowerCase()) &&
-                !ignoredChecklistItems.has(newItem.text.trim().toLowerCase())
-            );
-            addedCount = filteredNewItems.length;
-            return filteredNewItems.length > 0 ? [...prev, ...filteredNewItems] : prev;
-          });
-          
-          if (addedCount > 0) {
-            toast({
-              title: "Checklist Items Added",
-              description: `AI automatically found ${addedCount} new checklist item(s).`,
-            });
-          }
+        const [completionResult, grammarResult] = await Promise.all([
+          completeText({ currentText: content, language }),
+          checkGrammarAndSpelling({ text: content, language })
+        ]);
+
+        if (grammarResult.correctedText && grammarResult.correctedText.trim() !== content.trim()) {
+           // A simple heuristic to prefer completions over corrections if the user is in the middle of a word.
+           if (!content.endsWith(' ')) {
+              setEditorState(prev => ({...prev, content: grammarResult.correctedText }));
+           }
         }
+        
+        if (completionResult.completion) {
+          setSuggestion(completionResult.completion);
+        }
+
       } catch (error) {
-        console.error("Auto checklist generation failed", error);
+        console.error("Smart Mode AI Error:", error);
       } finally {
-        autoChecklistRunning.current = false;
+        autoAiRunningRef.current = false;
+        setIsAutoAiRunning(false);
       }
-    }, 2000);
+    }, 1500); // 1.5 second debounce
 
     return () => clearTimeout(handler);
-  }, [content, isOpen, toast, isAiLoading, ignoredChecklistItems, setChecklist, isSmartMode]);
+  }, [content, isOpen, isSmartMode, setEditorState]);
+
 
   React.useEffect(() => {
     if (isOpen) {
