@@ -306,7 +306,7 @@ export function NoteEditor({
   }, [note, isOpen, resetHistory]);
   
    React.useEffect(() => {
-    if (!isOpen || !isSmartMode || !content || !content.trim() || autoAiRunningRef.current || predictionMade) {
+    if (!isOpen || !isSmartMode || typeof content !== 'string' || !content.trim() || autoAiRunningRef.current || predictionMade) {
         return;
     }
 
